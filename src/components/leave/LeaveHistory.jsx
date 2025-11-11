@@ -1,80 +1,122 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Download, Search, Filter } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
-import AdvancedSearchFilter from '../reports/AdvancedSearchFilter';
-import DateRangeFilter from '../reports/DateRangeFilter';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
+import AdvancedSearchFilters from '../reports/AdvancedSearchFilters';
+import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter.js';
 import { toast } from "sonner";
 
 export default function LeaveHistory({ requests = [], employees = [] }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
-  const [searchTerms, setSearchTerms] = useState([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [savedPresets, setSavedPresets] = useState([]);
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    leaveType: 'all',
+    year: new Date().getFullYear().toString(),
+    employee: 'all',
+    dateFrom: '',
+    dateTo: '',
+    daysMin: '',
+    daysMax: '',
+    searches: []
+  });
 
-  const searchableFields = [
-    { value: 'leave_type', label: 'Leave Type' },
-    { value: 'reason', label: 'Reason' },
-    { value: 'status', label: 'Status' },
-    { value: 'total_days', label: 'Total Days' },
-    { value: 'rejection_reason', label: 'Rejection Reason' }
+  const searchConfig = [
+    { key: 'reason', label: 'Reason' },
+    { key: 'rejection_reason', label: 'Rejection Reason' }
   ];
 
-  // Apply advanced search
-  const applyAdvancedSearch = (req, terms) => {
-    if (terms.length === 0) return true;
+  const dateRangeConfig = [
+    { key: 'dateFrom', label: 'Leave Start From', type: 'date' },
+    { key: 'dateTo', label: 'Leave Start To', type: 'date' }
+  ];
 
-    return terms.every(term => {
-      const value = String(req[term.field] || '').toLowerCase();
-      const searchValue = term.value.toLowerCase();
+  const years = [...new Set(requests.map(r => new Date(r.start_date).getFullYear()))].sort((a, b) => b - a);
 
-      switch (term.operator) {
-        case 'contains':
-          return value.includes(searchValue);
-        case 'equals':
-          return value === searchValue;
-        case 'startsWith':
-          return value.startsWith(searchValue);
-        case 'endsWith':
-          return value.endsWith(searchValue);
-        case 'notContains':
-          return !value.includes(searchValue);
-        case 'greaterThan':
-          return parseFloat(value) > parseFloat(searchValue);
-        case 'lessThan':
-          return parseFloat(value) < parseFloat(searchValue);
-        default:
-          return true;
-      }
+  const filterConfig = [
+    {
+      key: 'year',
+      label: 'Year',
+      type: 'select',
+      options: years.map(y => ({ value: y.toString(), label: y.toString() }))
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'pending', label: 'Pending' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ]
+    },
+    {
+      key: 'leaveType',
+      label: 'Leave Type',
+      type: 'select',
+      options: [
+        { value: 'annual', label: 'Annual' },
+        { value: 'sick', label: 'Sick' },
+        { value: 'unpaid', label: 'Unpaid' },
+        { value: 'hajj', label: 'Hajj' },
+        { value: 'maternity', label: 'Maternity' },
+        { value: 'paternity', label: 'Paternity' },
+        { value: 'marriage', label: 'Marriage' },
+        { value: 'bereavement', label: 'Bereavement' },
+        { value: 'emergency', label: 'Emergency' }
+      ]
+    },
+    {
+      key: 'employee',
+      label: 'Employee',
+      type: 'select',
+      options: employees.map(e => ({ 
+        value: e.id, 
+        label: `${e.first_name} ${e.last_name}` 
+      }))
+    },
+    {
+      key: 'daysMin',
+      label: 'Min Days',
+      type: 'number',
+      placeholder: 'Minimum'
+    },
+    {
+      key: 'daysMax',
+      label: 'Max Days',
+      type: 'number',
+      placeholder: 'Maximum'
+    }
+  ];
+
+  // Apply search filters
+  const applySearchFilters = (req) => {
+    if (!filters.searches || filters.searches.length === 0) return true;
+    
+    return filters.searches.every(search => {
+      const fieldValue = String(req[search.field] || '').toLowerCase();
+      return fieldValue.includes(search.value.toLowerCase());
     });
   };
 
-  const filteredRequests = requests.filter(req => {
-    const matchesSearch = searchTerm === '' || 
-      req.reason?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || req.status === filterStatus;
-    const matchesType = filterType === 'all' || req.leave_type === filterType;
-    const matchesYear = filterYear === 'all' || 
-      new Date(req.start_date).getFullYear().toString() === filterYear;
-    const matchesDateRange = 
-      (!dateFrom || req.start_date >= dateFrom) &&
-      (!dateTo || req.start_date <= dateTo);
-    const matchesAdvancedSearch = applyAdvancedSearch(req, searchTerms);
-    
-    return matchesSearch && matchesStatus && matchesType && matchesYear && matchesDateRange && matchesAdvancedSearch;
-  });
+  const filteredRequests = useMemo(() => {
+    return requests.filter(req => {
+      if (filters.status !== 'all' && req.status !== filters.status) return false;
+      if (filters.leaveType !== 'all' && req.leave_type !== filters.leaveType) return false;
+      if (filters.employee !== 'all' && req.employee_id !== filters.employee) return false;
+      if (filters.year !== 'all' && new Date(req.start_date).getFullYear().toString() !== filters.year) return false;
+      if (filters.dateFrom && req.start_date < filters.dateFrom) return false;
+      if (filters.dateTo && req.start_date > filters.dateTo) return false;
+      if (filters.daysMin && req.total_days < Number(filters.daysMin)) return false;
+      if (filters.daysMax && req.total_days > Number(filters.daysMax)) return false;
+      if (!applySearchFilters(req)) return false;
+      return true;
+    });
+  }, [requests, filters]);
 
-  const handleExport = () => {
+  const handleExport = (format) => {
     try {
       const exportData = filteredRequests.map(req => {
         const employee = employees.find(e => e.id === req.employee_id);
@@ -87,154 +129,97 @@ export default function LeaveHistory({ requests = [], employees = [] }) {
           total_days: req.total_days,
           status: req.status,
           reason: req.reason,
-          rejection_reason: req.rejection_reason || '',
-          submission_date: req.created_date
+          submission_date: req.created_date,
+          approval_date: req.approval_date || '',
+          rejection_reason: req.rejection_reason || ''
         };
       });
       
-      exportToFormattedText(exportData, `leave-history-${Date.now()}`, {
-        title: 'Leave History Report',
-        subtitle: `Generated on ${new Date().toLocaleDateString()}`,
-        summary: {
-          'Total Requests': filteredRequests.length,
-          'Approved': filteredRequests.filter(r => r.status === 'approved').length,
-          'Rejected': filteredRequests.filter(r => r.status === 'rejected').length,
-          'Pending': filteredRequests.filter(r => r.status === 'pending').length,
-          'Total Days': filteredRequests.reduce((sum, r) => sum + (r.total_days || 0), 0),
-          'Date Range': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'All Time',
-          'Active Filters': searchTerms.length + (dateFrom || dateTo ? 1 : 0)
-        }
-      });
-      toast.success('Leave history exported successfully');
+      if (format === 'csv') {
+        exportToCSV(exportData, `leave-history-${Date.now()}`);
+      } else {
+        exportToFormattedText(exportData, `leave-history-${Date.now()}`, {
+          title: 'Leave History Report',
+          subtitle: `Generated on ${new Date().toLocaleDateString()} | ${filteredRequests.length} of ${requests.length} requests`,
+          summary: {
+            'Total Requests': filteredRequests.length,
+            'Approved': filteredRequests.filter(r => r.status === 'approved').length,
+            'Pending': filteredRequests.filter(r => r.status === 'pending').length,
+            'Rejected': filteredRequests.filter(r => r.status === 'rejected').length,
+            'Total Days': filteredRequests.reduce((sum, r) => sum + r.total_days, 0)
+          }
+        });
+      }
+      
+      toast.success(`Leave history exported successfully as ${format.toUpperCase()}`);
     } catch (error) {
       toast.error('Failed to export leave history');
     }
   };
 
-  const handleSavePreset = (preset) => {
-    setSavedPresets([...savedPresets, preset]);
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      leaveType: 'all',
+      year: new Date().getFullYear().toString(),
+      employee: 'all',
+      dateFrom: '',
+      dateTo: '',
+      daysMin: '',
+      daysMax: '',
+      searches: []
+    });
   };
-
-  const years = [...new Set(requests.map(r => new Date(r.start_date).getFullYear()))].sort((a, b) => b - a);
 
   return (
     <div className="space-y-6">
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b">
+        <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-white">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-emerald-600" />
-              Leave History ({filteredRequests.length})
+              Leave History
+              <Badge className="bg-emerald-100 text-emerald-700">
+                {filteredRequests.length} of {requests.length}
+              </Badge>
             </CardTitle>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Advanced Search
-              </Button>
-              <Button onClick={handleExport} variant="outline" size="sm">
+              <Button onClick={() => handleExport('csv')} variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                CSV
+              </Button>
+              <Button onClick={() => handleExport('txt')} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Report
               </Button>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-6 space-y-6">
-          {/* Basic Filters */}
-          <div className="grid md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search by reason..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <AdvancedSearchFilters
+            filters={filters}
+            onFilterChange={setFilters}
+            onClearFilters={clearFilters}
+            filterConfig={filterConfig}
+            searchConfig={searchConfig}
+            dateRangeConfig={dateRangeConfig}
+          />
 
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Leave Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="annual">Annual</SelectItem>
-                <SelectItem value="sick">Sick</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="hajj">Hajj</SelectItem>
-                <SelectItem value="maternity">Maternity</SelectItem>
-                <SelectItem value="paternity">Paternity</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger>
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Years</SelectItem>
-                {years.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Advanced Search */}
-          {showAdvancedSearch && (
-            <>
-              <AdvancedSearchFilter
-                onSearch={setSearchTerms}
-                searchableFields={searchableFields}
-                onClearSearch={() => setSearchTerms([])}
-                savedPresets={savedPresets}
-                onSavePreset={handleSavePreset}
-                onLoadPreset={(preset) => setSearchTerms(preset.terms)}
-              />
-
-              <DateRangeFilter
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-                onClear={() => {
-                  setDateFrom('');
-                  setDateTo('');
-                }}
-                label="Leave Date Range"
-              />
-            </>
-          )}
-
-          {/* History List */}
           {filteredRequests.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">No leave requests found</p>
+              <p className="text-slate-500 mb-2">No leave requests found</p>
+              <Button variant="outline" onClick={clearFilters}>
+                Clear Filters
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
               {filteredRequests.map((request) => {
                 const employee = employees.find(e => e.id === request.employee_id);
                 return (
-                  <Card key={request.id} className="border border-slate-200">
+                  <Card key={request.id} className="border border-slate-200 hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -272,7 +257,7 @@ export default function LeaveHistory({ requests = [], employees = [] }) {
 
                           {request.reason && (
                             <p className="text-sm text-slate-500 mt-2 line-clamp-2">
-                              {request.reason}
+                              <strong>Reason:</strong> {request.reason}
                             </p>
                           )}
 

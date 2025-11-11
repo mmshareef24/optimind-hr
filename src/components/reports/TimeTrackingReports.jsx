@@ -1,13 +1,12 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, Download, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ReportFilters from './ReportFilters';
+import AdvancedSearchFilters from './AdvancedSearchFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import AdvancedSearchFilter from './AdvancedSearchFilter';
-import DateRangeFilter from './DateRangeFilter';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
+import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter.js';
 import { toast } from "sonner";
 
 export default function TimeTrackingReports({ 
@@ -19,29 +18,30 @@ export default function TimeTrackingReports({
     employee: 'all',
     project: 'all',
     status: 'all',
-    month: new Date().toISOString().substring(0, 7)
+    dateFrom: '',
+    dateTo: '',
+    month: new Date().toISOString().substring(0, 7),
+    hoursMin: '',
+    hoursMax: '',
+    overtimeOnly: 'all',
+    searches: []
   });
 
-  const [searchTerms, setSearchTerms] = useState([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [savedPresets, setSavedPresets] = useState([]);
+  const searchConfig = [
+    { key: 'description', label: 'Description' },
+    { key: 'task_name', label: 'Task Name' }
+  ];
 
-  const searchableFields = [
-    { value: 'employee_id', label: 'Employee ID' },
-    { value: 'date', label: 'Date' },
-    { value: 'hours', label: 'Hours' },
-    { value: 'overtime_hours', label: 'Overtime Hours' },
-    { value: 'description', label: 'Description' },
-    { value: 'status', label: 'Status' }
+  const dateRangeConfig = [
+    { key: 'dateFrom', label: 'Date From', type: 'date' },
+    { key: 'dateTo', label: 'Date To', type: 'date', max: new Date().toISOString().split('T')[0] }
   ];
 
   const filterConfig = [
     {
       key: 'month',
       label: 'Month',
-      type: 'month',
-      max: new Date().toISOString().substring(0, 7)
+      type: 'month'
     },
     {
       key: 'employee',
@@ -71,35 +71,37 @@ export default function TimeTrackingReports({
         { value: 'approved', label: 'Approved' },
         { value: 'rejected', label: 'Rejected' }
       ]
+    },
+    {
+      key: 'hoursMin',
+      label: 'Min Hours',
+      type: 'number',
+      placeholder: 'Minimum'
+    },
+    {
+      key: 'hoursMax',
+      label: 'Max Hours',
+      type: 'number',
+      placeholder: 'Maximum'
+    },
+    {
+      key: 'overtimeOnly',
+      label: 'Overtime',
+      type: 'select',
+      options: [
+        { value: 'yes', label: 'With Overtime Only' },
+        { value: 'no', label: 'No Overtime' }
+      ]
     }
   ];
 
-  // Apply advanced search
-  const applyAdvancedSearch = (entry, terms) => {
-    if (terms.length === 0) return true;
-
-    return terms.every(term => {
-      const value = String(entry[term.field] || '').toLowerCase();
-      const searchValue = term.value.toLowerCase();
-
-      switch (term.operator) {
-        case 'contains':
-          return value.includes(searchValue);
-        case 'equals':
-          return value === searchValue;
-        case 'startsWith':
-          return value.startsWith(searchValue);
-        case 'endsWith':
-          return value.endsWith(searchValue);
-        case 'notContains':
-          return !value.includes(searchValue);
-        case 'greaterThan':
-          return parseFloat(value) > parseFloat(searchValue);
-        case 'lessThan':
-          return parseFloat(value) < parseFloat(searchValue);
-        default:
-          return true;
-      }
+  // Apply search filters
+  const applySearchFilters = (entry) => {
+    if (!filters.searches || filters.searches.length === 0) return true;
+    
+    return filters.searches.every(search => {
+      const fieldValue = String(entry[search.field] || '').toLowerCase();
+      return fieldValue.includes(search.value.toLowerCase());
     });
   };
 
@@ -109,12 +111,21 @@ export default function TimeTrackingReports({
       if (filters.project !== 'all' && entry.project_id !== filters.project) return false;
       if (filters.status !== 'all' && entry.status !== filters.status) return false;
       if (filters.month && !entry.date.startsWith(filters.month)) return false;
-      if (dateFrom && entry.date < dateFrom) return false;
-      if (dateTo && entry.date > dateTo) return false;
-      if (!applyAdvancedSearch(entry, searchTerms)) return false;
+      if (filters.dateFrom && entry.date < filters.dateFrom) return false;
+      if (filters.dateTo && entry.date > filters.dateTo) return false;
+      
+      const totalHours = (entry.hours || 0) + (entry.overtime_hours || 0);
+      if (filters.hoursMin && totalHours < Number(filters.hoursMin)) return false;
+      if (filters.hoursMax && totalHours > Number(filters.hoursMax)) return false;
+      
+      if (filters.overtimeOnly === 'yes' && (entry.overtime_hours || 0) === 0) return false;
+      if (filters.overtimeOnly === 'no' && (entry.overtime_hours || 0) > 0) return false;
+      
+      if (!applySearchFilters(entry)) return false;
+      
       return true;
     });
-  }, [timeEntries, filters, searchTerms, dateFrom, dateTo]);
+  }, [timeEntries, filters]);
 
   const employeeHoursData = useMemo(() => {
     const hours = {};
@@ -144,7 +155,7 @@ export default function TimeTrackingReports({
     { 
       key: 'total_hours', 
       label: 'Total Hours',
-      render: (_, row) => ((row.hours || 0) + (row.overtime_hours || 0)).toFixed(2)
+      render: (_, row) => (row.hours + row.overtime_hours).toFixed(2)
     },
     { 
       key: 'project_name', 
@@ -166,7 +177,7 @@ export default function TimeTrackingReports({
       date: entry.date,
       hours: entry.hours,
       overtime_hours: entry.overtime_hours,
-      total_hours: (entry.hours || 0) + (entry.overtime_hours || 0),
+      total_hours: entry.hours + entry.overtime_hours,
       project: proj?.project_name || '',
       description: entry.description,
       status: entry.status
@@ -183,14 +194,14 @@ export default function TimeTrackingReports({
       } else {
         exportToFormattedText(exportData, `time-tracking-report-${Date.now()}`, {
           title: 'Time Tracking Report',
-          subtitle: `Period: ${filters.month || 'All Time'}`,
+          subtitle: `Period: ${filters.month || 'All Time'} | ${filteredData.length} of ${timeEntries.length} entries`,
           summary: {
             'Total Entries': filteredData.length,
             'Total Hours': `${totalHours.toFixed(2)}h`,
             'Total Overtime': `${totalOvertime.toFixed(2)}h`,
             'Approved Entries': filteredData.filter(e => e.status === 'approved').length,
-            'Date Range': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'All Time',
-            'Active Filters': searchTerms.length + (dateFrom || dateTo ? 1 : 0)
+            'Pending Entries': filteredData.filter(e => e.status === 'submitted').length,
+            'Unique Employees': new Set(filteredData.map(e => e.employee_id)).size
           }
         });
       }
@@ -200,8 +211,19 @@ export default function TimeTrackingReports({
     }
   };
 
-  const handleSavePreset = (preset) => {
-    setSavedPresets([...savedPresets, preset]);
+  const clearFilters = () => {
+    setFilters({
+      employee: 'all',
+      project: 'all',
+      status: 'all',
+      dateFrom: '',
+      dateTo: '',
+      month: new Date().toISOString().substring(0, 7),
+      hoursMin: '',
+      hoursMax: '',
+      overtimeOnly: 'all',
+      searches: []
+    });
   };
 
   const totalHours = filteredData.reduce((sum, e) => sum + (e.hours || 0), 0);
@@ -216,6 +238,7 @@ export default function TimeTrackingReports({
               <div>
                 <p className="text-sm text-slate-600 mb-1">Total Hours</p>
                 <p className="text-3xl font-bold text-emerald-600">{totalHours.toFixed(1)}h</p>
+                <p className="text-xs text-slate-500 mt-1">{filteredData.length} entries</p>
               </div>
               <Clock className="w-10 h-10 text-emerald-500 opacity-20" />
             </div>
@@ -240,6 +263,7 @@ export default function TimeTrackingReports({
               <div>
                 <p className="text-sm text-slate-600 mb-1">Entries</p>
                 <p className="text-3xl font-bold text-blue-600">{filteredData.length}</p>
+                <p className="text-xs text-slate-500 mt-1">of {timeEntries.length}</p>
               </div>
               <Clock className="w-10 h-10 text-blue-500 opacity-20" />
             </div>
@@ -261,37 +285,13 @@ export default function TimeTrackingReports({
         </Card>
       </div>
 
-      <AdvancedSearchFilter
-        onSearch={setSearchTerms}
-        searchableFields={searchableFields}
-        onClearSearch={() => setSearchTerms([])}
-        savedPresets={savedPresets}
-        onSavePreset={handleSavePreset}
-        onLoadPreset={(preset) => setSearchTerms(preset.terms)}
-      />
-
-      <DateRangeFilter
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
-        onClear={() => {
-          setDateFrom('');
-          setDateTo('');
-        }}
-        label="Time Entry Date Range"
-      />
-
-      <ReportFilters
+      <AdvancedSearchFilters
         filters={filters}
         onFilterChange={setFilters}
-        onClearFilters={() => setFilters({
-          employee: 'all',
-          project: 'all',
-          status: 'all',
-          month: new Date().toISOString().substring(0, 7)
-        })}
+        onClearFilters={clearFilters}
         filterConfig={filterConfig}
+        searchConfig={searchConfig}
+        dateRangeConfig={dateRangeConfig}
       />
 
       <div className="flex justify-end gap-2">
@@ -308,7 +308,7 @@ export default function TimeTrackingReports({
       <AnalyticsChart
         data={employeeHoursData}
         type="bar"
-        title="Top 10 Employees by Hours"
+        title="Hours by Employee (Top 10)"
         xKey="name"
         yKey="value"
         height={300}
