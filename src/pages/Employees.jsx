@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Users, Plus, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -8,16 +8,67 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
+import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
+import { toast } from "sonner";
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list('-created_date'),
   });
+
+  const createEmployeeMutation = useMutation({
+    mutationFn: async (data) => {
+      // Create employee
+      const employee = await base44.entities.Employee.create(data.employee);
+      
+      // Create dependents
+      if (data.dependents && data.dependents.length > 0) {
+        const dependentsWithEmployeeId = data.dependents.map(dep => ({
+          ...dep,
+          employee_id: employee.id
+        }));
+        await Promise.all(
+          dependentsWithEmployeeId.map(dep => base44.entities.Dependent.create(dep))
+        );
+      }
+      
+      // Create insurance
+      if (data.insurance && data.insurance.length > 0) {
+        const insuranceWithEmployeeId = data.insurance.map(ins => ({
+          ...ins,
+          employee_id: employee.id
+        }));
+        await Promise.all(
+          insuranceWithEmployeeId.map(ins => base44.entities.Insurance.create(ins))
+        );
+      }
+      
+      return employee;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employees']);
+      setShowDialog(false);
+      setEditingEmployee(null);
+      toast.success('Employee created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create employee: ' + error.message);
+    }
+  });
+
+  const handleSubmit = (data) => {
+    createEmployeeMutation.mutate(data);
+  };
 
   const filteredEmployees = employees.filter(e =>
     e.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,7 +84,10 @@ export default function Employees() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Management</h1>
           <p className="text-slate-600">Manage your workforce efficiently</p>
         </div>
-        <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg">
+        <Button 
+          onClick={() => { setEditingEmployee(null); setShowDialog(true); }}
+          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Employee
         </Button>
       </div>
@@ -102,6 +156,25 @@ export default function Employees() {
           )}
         </CardContent>
       </Card>
+
+      {/* Employee Form Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+            </DialogTitle>
+          </DialogHeader>
+          <EmployeeFormTabs
+            employee={editingEmployee}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowDialog(false);
+              setEditingEmployee(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
