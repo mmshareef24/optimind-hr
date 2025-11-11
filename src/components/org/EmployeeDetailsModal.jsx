@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
@@ -8,12 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Mail, Phone, Calendar, Briefcase, User, CreditCard, 
-  MapPin, Flag, Edit, Users, TrendingUp, Building, Hash, Shield
+  MapPin, Flag, Edit, Users, TrendingUp, Building, Hash, Shield, Clock
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function EmployeeDetailsModal({ employee, manager, subordinates, isOpen, onClose, onEdit }) {
+export default function EmployeeDetailsModal({ employee, manager, subordinates, shiftAssignments = [], shifts = [], isOpen, onClose, onEdit }) {
   if (!employee) return null;
+
+  const getShift = (shiftId) => shifts.find(s => s.id === shiftId);
+
+  // Get active shift assignments
+  const activeShiftAssignments = shiftAssignments.filter(sa => 
+    sa.employee_id === employee.id && sa.status === 'active'
+  );
 
   const InfoItem = ({ icon: Icon, label, value, color = "text-slate-600" }) => (
     <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
@@ -143,6 +151,81 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
               </Card>
             )}
           </div>
+
+          {/* Shift Assignments */}
+          {activeShiftAssignments.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
+                <Clock className="w-5 h-5 text-blue-600" />
+                Shift Assignments
+              </h3>
+              <div className="space-y-3">
+                {activeShiftAssignments.map((assignment) => {
+                  const shift = getShift(assignment.shift_id);
+                  if (!shift) return null;
+
+                  return (
+                    <Card key={assignment.id} className="border-l-4" style={{ borderLeftColor: shift.color_code || '#10b981' }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-slate-900">{shift.shift_name}</h4>
+                              <Badge className={
+                                assignment.is_permanent 
+                                  ? 'bg-blue-100 text-blue-700' 
+                                  : 'bg-slate-100 text-slate-700'
+                              }>
+                                {assignment.is_permanent ? 'Permanent' : 'Temporary'}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-slate-600">Shift Time</p>
+                                <p className="font-medium text-slate-900">
+                                  {shift.start_time} - {shift.end_time}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">Working Hours</p>
+                                <p className="font-medium text-slate-900">{shift.working_hours}h</p>
+                              </div>
+                              <div>
+                                <p className="text-slate-600">Start Date</p>
+                                <p className="font-medium text-slate-900">
+                                  {format(new Date(assignment.start_date), 'MMM dd, yyyy')}
+                                </p>
+                              </div>
+                              {assignment.end_date && (
+                                <div>
+                                  <p className="text-slate-600">End Date</p>
+                                  <p className="font-medium text-slate-900">
+                                    {format(new Date(assignment.end_date), 'MMM dd, yyyy')}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            {shift.working_days && shift.working_days.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-slate-600">Working Days:</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {shift.working_days.map(day => (
+                                    <Badge key={day} variant="outline" className="text-xs">
+                                      {day}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Contact Information */}
           <div>

@@ -8,8 +8,9 @@ import IDDetailsTab from './IDDetailsTab';
 import SalaryDetailsTab from './SalaryDetailsTab';
 import BankDetailsTab from './BankDetailsTab';
 import InsuranceDetailsTab from './InsuranceDetailsTab';
+import ShiftAssignmentTab from './ShiftAssignmentTab';
 
-export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
+export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCancel }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     // Employee Details
@@ -59,6 +60,7 @@ export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
 
   const [dependents, setDependents] = useState([]);
   const [insurance, setInsurance] = useState([]);
+  const [shiftAssignments, setShiftAssignments] = useState([]);
 
   const tabs = [
     { value: 'details', label: 'Employee Details', icon: '👤' },
@@ -66,7 +68,8 @@ export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
     { value: 'ids', label: 'ID Documents', icon: '🆔' },
     { value: 'salary', label: 'Salary Details', icon: '💰' },
     { value: 'bank', label: 'Bank Details', icon: '🏦' },
-    { value: 'insurance', label: 'Insurance', icon: '🛡️' }
+    { value: 'insurance', label: 'Insurance', icon: '🛡️' },
+    { value: 'shifts', label: 'Shift Assignments', icon: '🕐' }
   ];
 
   const currentTabIndex = tabs.findIndex(t => t.value === activeTab);
@@ -87,14 +90,15 @@ export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
     onSubmit({
       employee: formData,
       dependents,
-      insurance
+      insurance,
+      shiftAssignments
     });
   };
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-slate-100 p-1">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 bg-slate-100 p-1">
           {tabs.map(tab => (
             <TabsTrigger 
               key={tab.value} 
@@ -147,6 +151,14 @@ export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
             insurance={insurance}
             setInsurance={setInsurance}
             dependents={dependents}
+          />
+        </TabsContent>
+
+        <TabsContent value="shifts" className="mt-6">
+          <ShiftAssignmentTab 
+            shifts={shifts}
+            currentAssignments={shiftAssignments}
+            onAssignmentsChange={setShiftAssignments}
           />
         </TabsContent>
       </Tabs>

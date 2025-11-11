@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -42,6 +43,11 @@ export default function Employees() {
     queryFn: () => base44.entities.Employee.list('-created_date'),
   });
 
+  const { data: shifts = [] } = useQuery({
+    queryKey: ['shifts'],
+    queryFn: () => base44.entities.Shift.list(),
+  });
+
   const createEmployeeMutation = useMutation({
     mutationFn: async (data) => {
       // Create employee
@@ -68,11 +74,23 @@ export default function Employees() {
           insuranceWithEmployeeId.map(ins => base44.entities.Insurance.create(ins))
         );
       }
+
+      // Create shift assignments
+      if (data.shiftAssignments && data.shiftAssignments.length > 0) {
+        const assignmentsWithEmployeeId = data.shiftAssignments.map(shift => ({
+          ...shift,
+          employee_id: employee.id
+        }));
+        await Promise.all(
+          assignmentsWithEmployeeId.map(shift => base44.entities.ShiftAssignment.create(shift))
+        );
+      }
       
       return employee;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
+      queryClient.invalidateQueries(['shift-assignments']);
       setShowDialog(false);
       setEditingEmployee(null);
       toast.success('Employee created successfully');
@@ -411,6 +429,7 @@ export default function Employees() {
           </DialogHeader>
           <EmployeeFormTabs
             employee={editingEmployee}
+            shifts={shifts}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowDialog(false);
