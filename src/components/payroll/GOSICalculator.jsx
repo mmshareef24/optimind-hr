@@ -12,20 +12,32 @@ import React from 'react';
  * - Employer contribution: 2% (Occupational Hazards only)
  * 
  * GOSI Calculation Base: Basic Salary + Housing Allowance (capped at 45,000 SAR)
+ * 
+ * If employee has gosi_salary_basis defined, use that; otherwise calculate from basic + housing
  */
 
 export const calculateGOSI = (employee, salaryComponents) => {
   const { basic_salary = 0, housing_allowance = 0 } = salaryComponents;
+  
+  // Check if employee is Saudi
   const isSaudi = employee?.nationality?.toLowerCase() === 'saudi' || 
                   employee?.nationality?.toLowerCase() === 'saudi arabia' ||
                   employee?.nationality?.toLowerCase() === 'ksa';
 
-  // GOSI base = Basic + Housing (capped at 45,000 SAR)
-  let gosiBase = basic_salary + housing_allowance;
-  const GOSI_CAP = 45000;
+  // Use employee's gosi_salary_basis if available, otherwise calculate
+  let gosiBase = 0;
   
-  if (gosiBase > GOSI_CAP) {
-    gosiBase = GOSI_CAP;
+  if (employee?.gosi_salary_basis && employee.gosi_salary_basis > 0) {
+    // Use the pre-defined GOSI salary basis from employee record
+    gosiBase = employee.gosi_salary_basis;
+  } else {
+    // Calculate GOSI base = Basic + Housing (capped at 45,000 SAR)
+    gosiBase = basic_salary + housing_allowance;
+    const GOSI_CAP = 45000;
+    
+    if (gosiBase > GOSI_CAP) {
+      gosiBase = GOSI_CAP;
+    }
   }
 
   let employeeShare = 0;
@@ -46,7 +58,13 @@ export const calculateGOSI = (employee, salaryComponents) => {
     employeeShare: parseFloat(employeeShare.toFixed(2)),
     employerShare: parseFloat(employerShare.toFixed(2)),
     totalGOSI: parseFloat((employeeShare + employerShare).toFixed(2)),
-    isSaudi
+    isSaudi,
+    breakdown: {
+      annuities_employee: isSaudi ? parseFloat((gosiBase * 0.10).toFixed(2)) : 0,
+      annuities_employer: isSaudi ? parseFloat((gosiBase * 0.09).toFixed(2)) : 0,
+      hazards: parseFloat((gosiBase * 0.02).toFixed(2)),
+      saned: isSaudi ? parseFloat((gosiBase * 0.01).toFixed(2)) : 0
+    }
   };
 };
 
@@ -79,7 +97,36 @@ export default function GOSICalculator({ employee, salaryComponents, onCalculate
           <span className="font-semibold text-slate-900">{gosiDetails.gosiBase.toLocaleString()} SAR</span>
         </div>
         
+        {gosiDetails.isSaudi && (
+          <>
+            <div className="flex justify-between items-center py-2 border-b border-blue-100">
+              <span className="text-xs text-slate-500">• Annuities (Employee 10%)</span>
+              <span className="font-medium text-slate-700">
+                -{gosiDetails.breakdown.annuities_employee.toLocaleString()} SAR
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-blue-100">
+              <span className="text-xs text-slate-500">• Annuities (Employer 9%)</span>
+              <span className="font-medium text-slate-700">
+                {gosiDetails.breakdown.annuities_employer.toLocaleString()} SAR
+              </span>
+            </div>
+          </>
+        )}
+        
         <div className="flex justify-between items-center py-2 border-b border-blue-100">
+          <span className="text-xs text-slate-500">• Occupational Hazards (2%)</span>
+          <span className="font-medium text-slate-700">{gosiDetails.breakdown.hazards.toLocaleString()} SAR</span>
+        </div>
+        
+        {gosiDetails.isSaudi && (
+          <div className="flex justify-between items-center py-2 border-b border-blue-100">
+            <span className="text-xs text-slate-500">• SANED (1%)</span>
+            <span className="font-medium text-slate-700">{gosiDetails.breakdown.saned.toLocaleString()} SAR</span>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center py-2 border-b border-blue-100 mt-2">
           <span className="text-sm text-slate-600">Employee Share ({gosiDetails.isSaudi ? '10%' : '0%'})</span>
           <span className="font-semibold text-red-600">-{gosiDetails.employeeShare.toLocaleString()} SAR</span>
         </div>
@@ -97,8 +144,11 @@ export default function GOSICalculator({ employee, salaryComponents, onCalculate
 
       <div className="mt-4 p-3 bg-white rounded-lg border border-blue-100">
         <p className="text-xs text-slate-500 leading-relaxed">
-          <strong>Note:</strong> GOSI base is calculated on Basic Salary + Housing Allowance, 
-          capped at 45,000 SAR as per Saudi GOSI regulations.
+          <strong>Note:</strong> {employee?.gosi_salary_basis > 0 ? (
+            <>GOSI calculation uses the predefined GOSI Salary Basis from employee record ({employee.gosi_salary_basis.toLocaleString()} SAR).</>
+          ) : (
+            <>GOSI base is calculated on Basic Salary + Housing Allowance, capped at 45,000 SAR as per Saudi GOSI regulations.</>
+          )}
         </p>
       </div>
     </div>

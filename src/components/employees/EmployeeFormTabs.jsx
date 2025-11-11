@@ -51,7 +51,10 @@ export default function EmployeeFormTabs({ employee, onSubmit, onCancel }) {
     emergency_contact_phone: '',
     
     // GOSI
-    gosi_applicable: true
+    gosi_applicable: true,
+    gosi_number: '',
+    gosi_registration_date: '',
+    gosi_salary_basis: 0
   });
 
   const [dependents, setDependents] = useState([]);

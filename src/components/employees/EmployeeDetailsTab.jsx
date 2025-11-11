@@ -2,8 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Briefcase, Calendar, Phone } from "lucide-react";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { User, Briefcase, Phone } from "lucide-react";
 
 export default function EmployeeDetailsTab({ formData, setFormData }) {
   return (
@@ -23,48 +25,52 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
               <Input
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="Enter first name"
+                placeholder="John"
                 required
               />
             </div>
+
             <div>
               <Label>Last Name (English) *</Label>
               <Input
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Enter last name"
+                placeholder="Doe"
                 required
               />
             </div>
+
             <div>
               <Label>First Name (Arabic)</Label>
               <Input
                 value={formData.first_name_ar}
                 onChange={(e) => setFormData({ ...formData, first_name_ar: e.target.value })}
-                placeholder="الاسم الأول"
+                placeholder="محمد"
                 dir="rtl"
               />
             </div>
+
             <div>
               <Label>Last Name (Arabic)</Label>
               <Input
                 value={formData.last_name_ar}
                 onChange={(e) => setFormData({ ...formData, last_name_ar: e.target.value })}
-                placeholder="اسم العائلة"
+                placeholder="أحمد"
                 dir="rtl"
               />
             </div>
+
             <div>
-              <Label>Date of Birth *</Label>
+              <Label>Date of Birth</Label>
               <Input
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                required
               />
             </div>
+
             <div>
-              <Label>Gender *</Label>
+              <Label>Gender</Label>
               <Select
                 value={formData.gender}
                 onValueChange={(val) => setFormData({ ...formData, gender: val })}
@@ -78,15 +84,16 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label>Nationality *</Label>
+              <Label>Nationality</Label>
               <Input
                 value={formData.nationality}
                 onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                placeholder="e.g., Saudi Arabia"
-                required
+                placeholder="Saudi Arabia"
               />
             </div>
+
             <div>
               <Label>Marital Status</Label>
               <Select
@@ -124,47 +131,48 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@example.com"
+                placeholder="john.doe@company.com"
                 required
               />
             </div>
+
             <div>
               <Label>Phone *</Label>
               <Input
-                type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+966 5X XXX XXXX"
+                placeholder="+966 50 123 4567"
                 required
               />
             </div>
+
             <div>
               <Label>Emergency Contact Name</Label>
               <Input
                 value={formData.emergency_contact_name}
                 onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                placeholder="Contact name"
+                placeholder="Emergency contact name"
               />
             </div>
+
             <div>
               <Label>Emergency Contact Phone</Label>
               <Input
-                type="tel"
                 value={formData.emergency_contact_phone}
                 onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                placeholder="Contact phone"
+                placeholder="+966 50 123 4567"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Employment Information */}
+      {/* Employment Details */}
       <Card className="border-purple-200">
         <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b">
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-purple-600" />
-            Employment Information
+            Employment Details
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -178,6 +186,7 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
                 required
               />
             </div>
+
             <div>
               <Label>Hire Date *</Label>
               <Input
@@ -187,24 +196,26 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
                 required
               />
             </div>
+
             <div>
               <Label>Job Title *</Label>
               <Input
                 value={formData.job_title}
                 onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                placeholder="e.g., Senior Developer"
+                placeholder="Software Engineer"
                 required
               />
             </div>
+
             <div>
-              <Label>Department *</Label>
+              <Label>Department</Label>
               <Input
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                placeholder="e.g., IT"
-                required
+                placeholder="IT Department"
               />
             </div>
+
             <div>
               <Label>Employment Type</Label>
               <Select
@@ -222,6 +233,7 @@ export default function EmployeeDetailsTab({ formData, setFormData }) {
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label>Status</Label>
               <Select
