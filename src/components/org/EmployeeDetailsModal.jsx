@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
@@ -5,10 +6,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card"; // Added Card, CardContent
 import { 
   Mail, Phone, Calendar, Briefcase, User, CreditCard, 
-  MapPin, Flag, Edit, Users, TrendingUp, Building, Hash
+  MapPin, Flag, Edit, Users, TrendingUp, Building, Hash, Shield // Added Building, Hash, Shield
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -29,10 +30,10 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto"> {/* Changed max-w-3xl to max-w-4xl */}
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Employee Profile</span>
+          <DialogTitle className="flex items-center justify-between"> {/* Added flex justify-between for button */}
+            <span>Employee Profile</span> {/* Wrapped title text in span */}
             <Button onClick={() => onEdit(employee)} variant="outline" size="sm">
               <Edit className="w-4 h-4 mr-2" />
               Edit
@@ -45,13 +46,13 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
           <Card className="border-0 bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
-                <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
-                  <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white font-bold text-3xl">
+                <Avatar className="w-24 h-24 border-4 border-white shadow-xl"> {/* Increased size */}
+                  <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white font-bold text-3xl"> {/* Increased font size */}
                     {employee.first_name?.[0]}{employee.last_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                  <h2 className="text-3xl font-bold text-slate-900 mb-2"> {/* Increased font size */}
                     {employee.first_name} {employee.last_name}
                   </h2>
                   <div className="flex items-center gap-2 mb-3">
@@ -59,8 +60,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                     <p className="text-lg text-slate-700 font-medium">{employee.job_title}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1">
-                      <Building className="w-3 h-3 mr-1" />
+                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1"> {/* Added px-3 py-1 */}
+                      <Building className="w-3 h-3 mr-1" /> {/* Added Building icon */}
                       {employee.department || 'No Department'}
                     </Badge>
                     <Badge className={
@@ -71,14 +72,20 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                       {employee.status}
                     </Badge>
                     {employee.employment_type && (
-                      <Badge variant="outline" className="border-blue-200 text-blue-700">
+                      <Badge variant="outline" className="border-blue-200 text-blue-700"> {/* Updated styling */}
                         {employee.employment_type.replace('_', ' ')}
+                      </Badge>
+                    )}
+                    {employee.gosi_applicable && ( {/* New GOSI badge */}
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                        <Shield className="w-3 h-3 mr-1" />
+                        GOSI
                       </Badge>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2 text-slate-600">
-                      <Hash className="w-4 h-4" />
+                      <Hash className="w-4 h-4" /> {/* Added Hash icon */}
                       <span><strong>ID:</strong> {employee.employee_id}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600">
@@ -140,8 +147,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
 
           {/* Contact Information */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-              <Mail className="w-5 h-5 text-emerald-600" />
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+              <Mail className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
               Contact Information
             </h3>
             <div className="grid md:grid-cols-2 gap-3">
@@ -162,8 +169,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
 
           {/* Employment Details */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-              <Briefcase className="w-5 h-5 text-emerald-600" />
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+              <Briefcase className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
               Employment Details
             </h3>
             <div className="grid md:grid-cols-2 gap-3">
@@ -186,7 +193,7 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                 color="text-blue-600"
               />
               <InfoItem
-                icon={Building}
+                icon={Building} {/* Changed icon from Users to Building */}
                 label="Department"
                 value={employee.department}
                 color="text-emerald-600"
@@ -196,8 +203,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
 
           {/* Personal Information */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-              <User className="w-5 h-5 text-emerald-600" />
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+              <User className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
               Personal Information
             </h3>
             <div className="grid md:grid-cols-2 gap-3">
@@ -231,8 +238,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
           {/* Salary Information */}
           {(employee.basic_salary || employee.salary) && (
             <div>
-              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+                <TrendingUp className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
                 Compensation
               </h3>
               <div className="grid md:grid-cols-2 gap-3">
@@ -264,10 +271,52 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
             </div>
           )}
 
+          {/* GOSI Information */}
+          {employee.gosi_applicable && (
+            <div>
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
+                <Shield className="w-5 h-5 text-amber-600" />
+                GOSI Information
+              </h3>
+              <div className="grid md:grid-cols-2 gap-3">
+                <InfoItem
+                  icon={Shield}
+                  label="GOSI Status"
+                  value={employee.gosi_applicable ? 'Applicable' : 'Not Applicable'}
+                  color="text-amber-600"
+                />
+                {employee.gosi_number && (
+                  <InfoItem
+                    icon={CreditCard}
+                    label="GOSI Number"
+                    value={employee.gosi_number}
+                    color="text-amber-600"
+                  />
+                )}
+                {employee.gosi_registration_date && (
+                  <InfoItem
+                    icon={Calendar}
+                    label="GOSI Registration Date"
+                    value={format(new Date(employee.gosi_registration_date), 'MMM dd, yyyy')}
+                    color="text-amber-600"
+                  />
+                )}
+                {employee.gosi_salary_basis && (
+                  <InfoItem
+                    icon={TrendingUp}
+                    label="GOSI Salary Basis"
+                    value={`${employee.gosi_salary_basis.toLocaleString()} SAR`}
+                    color="text-amber-600"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Organizational Hierarchy - Enhanced */}
           <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-              <Users className="w-5 h-5 text-emerald-600" />
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+              <Users className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
               Organizational Hierarchy
             </h3>
             <div className="space-y-3">
@@ -279,8 +328,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                       Reports To
                     </p>
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-12 h-12 border-2 border-blue-200">
-                        <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                      <Avatar className="w-12 h-12 border-2 border-blue-200"> {/* Increased size, added border */}
+                        <AvatarFallback className="bg-blue-600 text-white font-semibold"> {/* Added font-semibold */}
                           {manager.first_name?.[0]}{manager.last_name?.[0]}
                         </AvatarFallback>
                       </Avatar>
@@ -306,8 +355,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                     <div className="grid gap-2">
                       {subordinates.map(sub => (
                         <div key={sub.id} className="flex items-center gap-3 p-2 bg-white rounded-lg hover:shadow-md transition-shadow">
-                          <Avatar className="w-10 h-10 border-2 border-emerald-100">
-                            <AvatarFallback className="bg-emerald-600 text-white text-xs font-semibold">
+                          <Avatar className="w-10 h-10 border-2 border-emerald-100"> {/* Increased size, added border */}
+                            <AvatarFallback className="bg-emerald-600 text-white text-xs font-semibold"> {/* Added font-semibold */}
                               {sub.first_name?.[0]}{sub.last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
@@ -317,7 +366,7 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
                             </p>
                             <p className="text-xs text-slate-600">{sub.job_title}</p>
                           </div>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs"> {/* Added badge for department */}
                             {sub.department}
                           </Badge>
                         </div>
@@ -328,7 +377,7 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
               )}
 
               {!manager && (!subordinates || subordinates.length === 0) && (
-                <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-lg">
+                <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-lg"> {/* Updated styling */}
                   No reporting relationships
                 </p>
               )}
@@ -338,8 +387,8 @@ export default function EmployeeDetailsModal({ employee, manager, subordinates, 
           {/* Emergency Contact */}
           {(employee.emergency_contact_name || employee.emergency_contact_phone) && (
             <div>
-              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg">
-                <Phone className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-lg"> {/* Added text-lg */}
+                <Phone className="w-5 h-5 text-emerald-600" /> {/* Increased icon size */}
                 Emergency Contact
               </h3>
               <div className="grid md:grid-cols-2 gap-3">

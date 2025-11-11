@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DollarSign, Calculator, TrendingUp } from "lucide-react";
+import { DollarSign, Calculator, TrendingUp, Shield, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function SalaryDetailsTab({ formData, setFormData }) {
   // Auto-calculate housing and transport allowances
@@ -20,6 +21,20 @@ export default function SalaryDetailsTab({ formData, setFormData }) {
       });
     }
   }, [formData.basic_salary]);
+
+  // Auto-calculate GOSI salary basis (typically basic + housing)
+  useEffect(() => {
+    if (formData.gosi_applicable && formData.basic_salary) {
+      const basicSalary = parseFloat(formData.basic_salary) || 0;
+      const housingAllowance = parseFloat(formData.housing_allowance) || 0;
+      const gosiBasis = basicSalary + housingAllowance;
+      
+      setFormData({
+        ...formData,
+        gosi_salary_basis: parseFloat(gosiBasis.toFixed(2))
+      });
+    }
+  }, [formData.basic_salary, formData.housing_allowance, formData.gosi_applicable]);
 
   const totalSalary = 
     (parseFloat(formData.basic_salary) || 0) +
@@ -92,6 +107,102 @@ export default function SalaryDetailsTab({ formData, setFormData }) {
         </CardContent>
       </Card>
 
+      {/* GOSI Information */}
+      <Card className="border-amber-200">
+        <CardHeader className="bg-gradient-to-r from-amber-50 to-white border-b">
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-amber-600" />
+            GOSI Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start space-x-3 p-4 bg-white rounded-lg border">
+            <Checkbox
+              id="gosi"
+              checked={formData.gosi_applicable}
+              onCheckedChange={(checked) => setFormData({ 
+                ...formData, 
+                gosi_applicable: checked,
+                gosi_salary_basis: checked ? formData.gosi_salary_basis : 0
+              })}
+            />
+            <div className="flex-1">
+              <label htmlFor="gosi" className="text-sm font-medium cursor-pointer">
+                GOSI Applicable
+              </label>
+              <p className="text-xs text-slate-500 mt-1">
+                Check if this employee is eligible for GOSI (General Organization for Social Insurance) contributions
+              </p>
+            </div>
+          </div>
+
+          {formData.gosi_applicable && (
+            <div className="space-y-4 pt-2">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  GOSI contributions are calculated based on the salary basis (Basic + Housing). 
+                  The employee contribution is 10% and employer contribution is 12%.
+                </AlertDescription>
+              </Alert>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>GOSI Number</Label>
+                  <Input
+                    value={formData.gosi_number || ''}
+                    onChange={(e) => setFormData({ ...formData, gosi_number: e.target.value })}
+                    placeholder="Enter GOSI number"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Employee's GOSI registration number
+                  </p>
+                </div>
+
+                <div>
+                  <Label>GOSI Registration Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.gosi_registration_date || ''}
+                    onChange={(e) => setFormData({ ...formData, gosi_registration_date: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Date when registered with GOSI
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <Label className="text-base">GOSI Salary Basis</Label>
+                    <p className="text-xs text-slate-600 mt-1">Basic + Housing Allowance</p>
+                  </div>
+                  <span className="text-2xl font-bold text-amber-600">
+                    {(formData.gosi_salary_basis || 0).toLocaleString()} SAR
+                  </span>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-amber-200 grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-600 mb-1">Employee Share (10%)</p>
+                    <p className="font-semibold text-slate-900">
+                      {((formData.gosi_salary_basis || 0) * 0.10).toLocaleString()} SAR
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600 mb-1">Employer Share (12%)</p>
+                    <p className="font-semibold text-slate-900">
+                      {((formData.gosi_salary_basis || 0) * 0.12).toLocaleString()} SAR
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Total Salary Summary */}
       <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white">
         <CardHeader className="border-b border-purple-100">
@@ -121,27 +232,28 @@ export default function SalaryDetailsTab({ formData, setFormData }) {
               </span>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <span className="font-bold text-lg text-slate-900">Total Monthly Salary</span>
+              <span className="font-bold text-lg text-slate-900">Gross Monthly Salary</span>
               <span className="font-bold text-3xl text-purple-600">
                 {totalSalary.toLocaleString()} SAR
               </span>
             </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-white rounded-lg border">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="gosi"
-                checked={formData.gosi_applicable}
-                onCheckedChange={(checked) => setFormData({ ...formData, gosi_applicable: checked })}
-              />
-              <label htmlFor="gosi" className="text-sm font-medium">
-                GOSI Applicable
-              </label>
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              Check if this employee is eligible for GOSI (General Organization for Social Insurance) contributions
-            </p>
+            
+            {formData.gosi_applicable && formData.gosi_salary_basis > 0 && (
+              <>
+                <div className="flex justify-between text-sm text-red-600 pt-2 border-t">
+                  <span>Less: GOSI Deduction (10%)</span>
+                  <span className="font-semibold">
+                    - {((formData.gosi_salary_basis || 0) * 0.10).toLocaleString()} SAR
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t-2 border-purple-300">
+                  <span className="font-bold text-lg text-slate-900">Net Salary (after GOSI)</span>
+                  <span className="font-bold text-2xl text-emerald-600">
+                    {(totalSalary - ((formData.gosi_salary_basis || 0) * 0.10)).toLocaleString()} SAR
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
