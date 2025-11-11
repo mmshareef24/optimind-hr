@@ -1,137 +1,155 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronDown, ChevronUp, Users, Mail, Phone, Crown } from "lucide-react";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, Users, Mail, Phone, Briefcase } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function OrgChartNode({ 
   employee, 
   subordinates, 
   onNodeClick, 
   onToggle, 
-  isExpanded, 
+  isExpanded,
   level = 0 
 }) {
   const hasSubordinates = subordinates && subordinates.length > 0;
   
-  // Color schemes based on level
-  const levelColors = [
-    { bg: 'from-purple-600 to-purple-700', light: 'from-purple-50 to-purple-100', text: 'text-purple-700' },
-    { bg: 'from-blue-600 to-blue-700', light: 'from-blue-50 to-blue-100', text: 'text-blue-700' },
-    { bg: 'from-emerald-600 to-emerald-700', light: 'from-emerald-50 to-emerald-100', text: 'text-emerald-700' },
-    { bg: 'from-amber-600 to-amber-700', light: 'from-amber-50 to-amber-100', text: 'text-amber-700' },
-  ];
-  
-  const colorScheme = levelColors[Math.min(level, levelColors.length - 1)];
+  // Different styling based on hierarchy level
+  const levelStyles = {
+    0: 'from-purple-600 to-purple-700 shadow-2xl scale-110', // CEO/Top level
+    1: 'from-blue-600 to-blue-700 shadow-xl', // Senior management
+    2: 'from-emerald-600 to-emerald-700 shadow-lg', // Middle management
+    3: 'from-slate-600 to-slate-700 shadow-md' // Staff
+  };
+
+  const cardStyle = level <= 3 ? levelStyles[level] : levelStyles[3];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: -20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative"
-    >
+    <div className="relative">
       <Card 
         className={`
-          w-72 border-2 cursor-pointer transition-all duration-300
-          hover:shadow-2xl hover:scale-105 hover:border-emerald-400
-          ${level === 0 ? 'border-purple-300 shadow-xl' : 'border-slate-200 shadow-lg'}
+          relative overflow-hidden border-0 shadow-xl hover:shadow-2xl 
+          transition-all duration-300 cursor-pointer group
+          ${level === 0 ? 'w-80' : 'w-72'}
         `}
         onClick={() => onNodeClick(employee)}
       >
-        <CardContent className={`p-5 bg-gradient-to-br ${colorScheme.light}`}>
-          {/* Level Indicator */}
-          {level === 0 && (
-            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg">
-                <Crown className="w-3 h-3 mr-1" />
-                Top Level
-              </Badge>
-            </div>
-          )}
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-br opacity-5 pointer-events-none">
+          <div className={`absolute inset-0 bg-gradient-to-br ${cardStyle}`}></div>
+        </div>
 
-          {/* Employee Info */}
-          <div className="flex items-start gap-4 mb-4">
-            <Avatar className="w-16 h-16 border-4 border-white shadow-lg">
-              <AvatarFallback className={`bg-gradient-to-br ${colorScheme.bg} text-white font-bold text-lg`}>
-                {employee.first_name?.[0]}{employee.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            
+        {/* Top colored bar */}
+        <div className={`h-2 bg-gradient-to-r ${cardStyle}`}></div>
+
+        <CardContent className="p-5 relative">
+          <div className="flex items-start gap-4">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              <Avatar className={`${level === 0 ? 'w-20 h-20' : 'w-16 h-16'} border-4 border-white shadow-lg ring-2 ring-slate-100`}>
+                <AvatarImage src={employee.profile_picture} />
+                <AvatarFallback className={`bg-gradient-to-br ${cardStyle} text-white font-bold text-lg`}>
+                  {employee.first_name?.[0]}{employee.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Subordinate count badge */}
+              {hasSubordinates && (
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">
+                  {subordinates.length}
+                </div>
+              )}
+            </div>
+
+            {/* Employee info */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-slate-900 text-base leading-tight mb-1">
+              <h3 className={`font-bold text-slate-900 mb-1 ${level === 0 ? 'text-xl' : 'text-base'} truncate group-hover:text-emerald-600 transition-colors`}>
                 {employee.first_name} {employee.last_name}
               </h3>
-              <p className={`text-sm font-semibold ${colorScheme.text} mb-1`}>
-                {employee.job_title}
-              </p>
-              <Badge variant="outline" className="text-xs">
+              
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <p className="text-sm font-medium text-slate-600 truncate">
+                  {employee.job_title}
+                </p>
+              </div>
+
+              <Badge 
+                variant="outline" 
+                className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700 mb-2"
+              >
                 {employee.department || 'No Department'}
+              </Badge>
+
+              {/* Contact info - shown on hover */}
+              <div className="space-y-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {employee.email && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Mail className="w-3 h-3" />
+                    <span className="truncate">{employee.email}</span>
+                  </div>
+                )}
+                {employee.phone && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Phone className="w-3 h-3" />
+                    <span>{employee.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Employee stats */}
+          <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Users className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                {hasSubordinates ? `${subordinates.length} Report${subordinates.length === 1 ? '' : 's'}` : 'No Reports'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-600">
+              <Badge 
+                className={
+                  employee.status === 'active' ? 'bg-emerald-100 text-emerald-700 text-xs' :
+                  employee.status === 'on_leave' ? 'bg-amber-100 text-amber-700 text-xs' :
+                  'bg-slate-100 text-slate-700 text-xs'
+                }
+              >
+                {employee.status}
               </Badge>
             </div>
           </div>
 
-          {/* Contact Info */}
-          <div className="space-y-2 mb-4">
-            {employee.email && (
-              <div className="flex items-center gap-2 text-xs text-slate-600">
-                <Mail className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{employee.email}</span>
-              </div>
-            )}
-            {employee.phone && (
-              <div className="flex items-center gap-2 text-xs text-slate-600">
-                <Phone className="w-3 h-3 flex-shrink-0" />
-                <span>{employee.phone}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium">ID:</span>
-              <span>{employee.employee_id}</span>
-            </div>
-          </div>
-
-          {/* Subordinates Count & Toggle */}
+          {/* Expand/Collapse button */}
           {hasSubordinates && (
-            <div className="pt-3 border-t border-slate-200">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggle(employee.id);
-                }}
-                className={`
-                  w-full flex items-center justify-between p-2 rounded-lg
-                  transition-all duration-200 hover:bg-white/70
-                  ${isExpanded ? 'bg-white/50' : 'bg-transparent'}
-                `}
-              >
-                <div className="flex items-center gap-2">
-                  <Users className={`w-4 h-4 ${colorScheme.text}`} />
-                  <span className="text-sm font-semibold text-slate-700">
-                    {subordinates.length} Direct Report{subordinates.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                {isExpanded ? (
-                  <ChevronUp className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-            </div>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(employee.id);
+              }}
+              variant="ghost"
+              size="sm"
+              className="w-full mt-3 bg-slate-50 hover:bg-slate-100 border border-slate-200"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-2" />
+                  Hide {subordinates.length} Report{subordinates.length === 1 ? '' : 's'}
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  Show {subordinates.length} Report{subordinates.length === 1 ? '' : 's'}
+                </>
+              )}
+            </Button>
           )}
-
-          {/* Click to view details hint */}
-          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-xs text-slate-400 italic">Click for details</span>
-          </div>
         </CardContent>
-      </Card>
 
-      {/* Connection Indicator */}
-      {level > 0 && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gradient-to-b from-slate-300 to-slate-400" />
-      )}
-    </motion.div>
+        {/* Hover effect overlay */}
+        <div className="absolute inset-0 border-2 border-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none"></div>
+      </Card>
+    </div>
   );
 }

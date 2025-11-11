@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Network, Users, TrendingUp, Layers } from "lucide-react";
@@ -20,6 +20,7 @@ export default function OrgStructure() {
   const [viewMode, setViewMode] = useState('chart');
   const [zoomLevel, setZoomLevel] = useState(1);
   const chartRef = useRef(null);
+  const [allExpanded, setAllExpanded] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -40,12 +41,19 @@ export default function OrgStructure() {
     }
   });
 
+  // Get unique departments
+  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
+
   // Filter employees based on search
-  const filteredEmployees = employees.filter(emp =>
-    `${emp.first_name} ${emp.last_name} ${emp.job_title} ${emp.department}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(emp => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchLower) ||
+      emp.job_title?.toLowerCase().includes(searchLower) ||
+      emp.department?.toLowerCase().includes(searchLower) ||
+      emp.email?.toLowerCase().includes(searchLower)
+    );
+  });
 
   // Get employee's manager
   const getManager = (employee) => {
@@ -61,13 +69,6 @@ export default function OrgStructure() {
   const handleNodeClick = (employee) => {
     setSelectedEmployee(employee);
     setShowDetailsModal(true);
-  };
-
-  // Handle edit employee
-  const handleEditEmployee = (employee) => {
-    setShowDetailsModal(false);
-    // Navigate to employee edit page or show edit modal
-    toast.info('Edit functionality - navigate to employee management');
   };
 
   // Handle manage reporting
@@ -102,51 +103,80 @@ export default function OrgStructure() {
     setZoomLevel(1);
   };
 
+  // Expand/Collapse all
+  const handleExpandAll = () => {
+    setAllExpanded(true);
+    // Trigger re-render of org chart
+    setTimeout(() => setAllExpanded(false), 100);
+  };
+
+  const handleCollapseAll = () => {
+    setAllExpanded(false);
+    // Trigger re-render of org chart
+    refetch();
+  };
+
   // Export org chart
   const handleExport = () => {
-    // Generate a simple text-based org chart
     const generateTextChart = (employee, level = 0) => {
       const indent = '  '.repeat(level);
       const subordinates = getSubordinates(employee.id);
-      let text = `${indent}${employee.first_name} ${employee.last_name} - ${employee.job_title}\n`;
-      subordinates.forEach(sub => {
+      let text = `${indent}├─ ${employee.first_name} ${employee.last_name} - ${employee.job_title} (${employee.department || 'No Dept'})\n`;
+      subordinates.forEach((sub, idx) => {
+        const isLast = idx === subordinates.length - 1;
+        const prefix = isLast ? '└─' : '├─';
         text += generateTextChart(sub, level + 1);
       });
       return text;
     };
 
     const roots = employees.filter(emp => !emp.manager_id || !employees.find(e => e.id === emp.manager_id));
-    let chartText = 'ORGANIZATIONAL CHART\n\n';
+    let chartText = '═══════════════════════════════════════\n';
+    chartText += '     ORGANIZATIONAL STRUCTURE\n';
+    chartText += '═══════════════════════════════════════\n\n';
+    
     roots.forEach(root => {
-      chartText += generateTextChart(root);
+      chartText += `${root.first_name} ${root.last_name} - ${root.job_title}\n`;
+      chartText += `${root.department || 'No Department'}\n`;
+      chartText += '─'.repeat(40) + '\n';
+      const subordinates = getSubordinates(root.id);
+      subordinates.forEach(sub => {
+        chartText += generateTextChart(sub, 0);
+      });
+      chartText += '\n';
     });
 
-    // Download as text file
+    chartText += '\n═══════════════════════════════════════\n';
+    chartText += `Total Employees: ${employees.length}\n`;
+    chartText += `Departments: ${departments.length}\n`;
+    chartText += `Generated: ${new Date().toLocaleString()}\n`;
+    chartText += '═══════════════════════════════════════\n';
+
     const blob = new Blob([chartText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'org-chart.txt';
+    a.download = `org-structure-${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success('Org chart exported successfully');
+    toast.success('Organization structure exported successfully');
   };
 
   // Calculate statistics
   const totalEmployees = employees.length;
   const managers = new Set(employees.map(e => e.manager_id).filter(Boolean)).size;
-  const departments = new Set(employees.map(e => e.department).filter(Boolean)).size;
   const topLevel = employees.filter(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id)).length;
+  const avgTeamSize = managers > 0 ? (totalEmployees / managers).toFixed(1) : 0;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Organization Structure</h1>
-        <p className="text-slate-600">Visualize and manage your company's hierarchy</p>
+        <p className="text-slate-600">Interactive visualization of your company's hierarchy</p>
       </div>
 
       {/* Statistics */}
@@ -165,13 +195,13 @@ export default function OrgStructure() {
         />
         <StatCard
           title="Departments"
-          value={departments}
+          value={departments.length}
           icon={Layers}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Top Level"
-          value={topLevel}
+          title="Avg Team Size"
+          value={avgTeamSize}
           icon={Network}
           bgColor="from-amber-500 to-amber-600"
         />
@@ -188,6 +218,9 @@ export default function OrgStructure() {
         onFitToScreen={handleFitToScreen}
         onRefresh={refetch}
         onExport={handleExport}
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
+        departments={departments}
       />
 
       {/* Main Content */}
