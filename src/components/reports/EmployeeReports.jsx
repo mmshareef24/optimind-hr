@@ -6,7 +6,7 @@ import { Users, Download, TrendingUp } from "lucide-react";
 import ReportFilters from './ReportFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import { exportToCSV, exportToFormattedText } from '../utils/reportExporter';
+import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter'; // Changed import path
 import { toast } from "sonner";
 
 export default function EmployeeReports({ employees = [], departments = [] }) {
@@ -124,7 +124,7 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
             'Total Employees': filteredData.length,
             'Active Employees': filteredData.filter(e => e.status === 'active').length,
             'Departments': new Set(filteredData.map(e => e.department)).size,
-            'Average Salary': `${(filteredData.reduce((sum, e) => sum + (e.basic_salary || 0), 0) / filteredData.length).toLocaleString()} SAR`
+            'Average Salary': `${(filteredData.reduce((sum, e) => sum + (e.basic_salary || 0), 0) / (filteredData.length || 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} SAR`
           }
         });
       }
