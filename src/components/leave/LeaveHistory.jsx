@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Download, Search, Filter } from "lucide-react";
 import { format } from "date-fns";
-import { exportToCSV } from '@/utils/reportExporter';
+import { exportToCSV } from '../../utils/reportExporter';
 import { toast } from "sonner";
 
 export default function LeaveHistory({ requests = [], employees = [] }) {

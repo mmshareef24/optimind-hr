@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FolderKanban, Download, TrendingUp, DollarSign } from "lucide-react";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import ReportFilters from './ReportFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
+import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter';
 import { toast } from "sonner";
 
 export default function ProjectReports({ 

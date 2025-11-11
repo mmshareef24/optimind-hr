@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Users, Download, TrendingUp } from "lucide-react";
 import ReportFilters from './ReportFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
+import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter';
 import { toast } from "sonner";
 
 export default function EmployeeReports({ employees = [], departments = [] }) {
