@@ -17,6 +17,7 @@ import Documents from './pages/Documents';
 import ESS from './pages/ESS';
 import MSS from './pages/MSS';
 import GOSIReporting from './pages/GOSIReporting';
+import PerformanceManagement from './pages/PerformanceManagement';
 import Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "ESS": ESS,
     "MSS": MSS,
     "GOSIReporting": GOSIReporting,
+    "PerformanceManagement": PerformanceManagement,
 }
 
 export const pagesConfig = {
