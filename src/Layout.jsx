@@ -24,6 +24,7 @@ const navigationItems = [
   { title: "Onboarding", url: createPageUrl("Onboarding"), icon: UserPlus },
   { title: "Project Management", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Payroll & GOSI", url: createPageUrl("Payroll"), icon: DollarSign },
+  { title: "GOSI Reporting", url: createPageUrl("GOSIReporting"), icon: Shield },
   { title: "Benefits & Rewards", url: createPageUrl("Benefits"), icon: Gift },
   { title: "Travel & Expense", url: createPageUrl("TravelExpense"), icon: Plane },
   { title: "Employee Relations", url: createPageUrl("EmployeeRelations"), icon: MessageSquare },

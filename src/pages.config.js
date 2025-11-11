@@ -16,6 +16,7 @@ import HealthSafety from './pages/HealthSafety';
 import Documents from './pages/Documents';
 import ESS from './pages/ESS';
 import MSS from './pages/MSS';
+import GOSIReporting from './pages/GOSIReporting';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "Documents": Documents,
     "ESS": ESS,
     "MSS": MSS,
+    "GOSIReporting": GOSIReporting,
 }
 
 export const pagesConfig = {
