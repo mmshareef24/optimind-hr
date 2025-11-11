@@ -2,11 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Download, TrendingUp } from "lucide-react";
-import ReportFilters from './ReportFilters';
+import AdvancedSearchFilters from './AdvancedSearchFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import AdvancedSearchFilter from './AdvancedSearchFilter';
-import DateRangeFilter from './DateRangeFilter';
 import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
 import { toast } from "sonner";
 
@@ -16,25 +14,25 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     status: 'all',
     employmentType: 'all',
     nationality: 'all',
-    gosiApplicable: 'all'
+    gosiApplicable: 'all',
+    hireDateFrom: '',
+    hireDateTo: '',
+    salaryMin: '',
+    salaryMax: '',
+    searches: []
   });
 
-  const [searchTerms, setSearchTerms] = useState([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [savedPresets, setSavedPresets] = useState([]);
+  const searchConfig = [
+    { key: 'name', label: 'Name' },
+    { key: 'employee_id', label: 'Employee ID' },
+    { key: 'email', label: 'Email' },
+    { key: 'job_title', label: 'Job Title' },
+    { key: 'national_id', label: 'National ID' }
+  ];
 
-  const searchableFields = [
-    { value: 'employee_id', label: 'Employee ID' },
-    { value: 'first_name', label: 'First Name' },
-    { value: 'last_name', label: 'Last Name' },
-    { value: 'email', label: 'Email' },
-    { value: 'phone', label: 'Phone' },
-    { value: 'job_title', label: 'Job Title' },
-    { value: 'department', label: 'Department' },
-    { value: 'nationality', label: 'Nationality' },
-    { value: 'national_id', label: 'National ID' },
-    { value: 'basic_salary', label: 'Basic Salary' }
+  const dateRangeConfig = [
+    { key: 'hireDateFrom', label: 'Hire Date From', type: 'date' },
+    { key: 'hireDateTo', label: 'Hire Date To', type: 'date', max: new Date().toISOString().split('T')[0] }
   ];
 
   const filterConfig = [
@@ -74,58 +72,59 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
         { value: 'yes', label: 'Applicable' },
         { value: 'no', label: 'Not Applicable' }
       ]
+    },
+    {
+      key: 'salaryMin',
+      label: 'Min Salary (SAR)',
+      type: 'number',
+      placeholder: 'Minimum'
+    },
+    {
+      key: 'salaryMax',
+      label: 'Max Salary (SAR)',
+      type: 'number',
+      placeholder: 'Maximum'
     }
   ];
 
-  // Apply advanced search
-  const applyAdvancedSearch = (emp, terms) => {
-    if (terms.length === 0) return true;
-
-    return terms.every(term => {
-      const value = String(emp[term.field] || '').toLowerCase();
-      const searchValue = term.value.toLowerCase();
-
-      switch (term.operator) {
-        case 'contains':
-          return value.includes(searchValue);
-        case 'equals':
-          return value === searchValue;
-        case 'startsWith':
-          return value.startsWith(searchValue);
-        case 'endsWith':
-          return value.endsWith(searchValue);
-        case 'notContains':
-          return !value.includes(searchValue);
-        case 'greaterThan':
-          return parseFloat(value) > parseFloat(searchValue);
-        case 'lessThan':
-          return parseFloat(value) < parseFloat(searchValue);
-        default:
-          return true;
-      }
+  // Apply search filters
+  const applySearchFilters = (emp) => {
+    if (!filters.searches || filters.searches.length === 0) return true;
+    
+    return filters.searches.every(search => {
+      const fieldValue = String(
+        search.field === 'name' 
+          ? `${emp.first_name} ${emp.last_name}` 
+          : emp[search.field] || ''
+      ).toLowerCase();
+      return fieldValue.includes(search.value.toLowerCase());
     });
   };
 
-  // Filter data
+  // Filter data with all conditions
   const filteredData = useMemo(() => {
     return employees.filter(emp => {
-      // Basic filters
+      // Standard filters
       if (filters.department !== 'all' && emp.department !== filters.department) return false;
       if (filters.status !== 'all' && emp.status !== filters.status) return false;
       if (filters.employmentType !== 'all' && emp.employment_type !== filters.employmentType) return false;
       if (filters.gosiApplicable === 'yes' && !emp.gosi_applicable) return false;
       if (filters.gosiApplicable === 'no' && emp.gosi_applicable) return false;
-
-      // Date range filter
-      if (dateFrom && emp.hire_date < dateFrom) return false;
-      if (dateTo && emp.hire_date > dateTo) return false;
-
-      // Advanced search
-      if (!applyAdvancedSearch(emp, searchTerms)) return false;
-
+      
+      // Date range filters
+      if (filters.hireDateFrom && emp.hire_date < filters.hireDateFrom) return false;
+      if (filters.hireDateTo && emp.hire_date > filters.hireDateTo) return false;
+      
+      // Salary range filters
+      if (filters.salaryMin && (emp.basic_salary || 0) < Number(filters.salaryMin)) return false;
+      if (filters.salaryMax && (emp.basic_salary || 0) > Number(filters.salaryMax)) return false;
+      
+      // Search filters
+      if (!applySearchFilters(emp)) return false;
+      
       return true;
     });
-  }, [employees, filters, searchTerms, dateFrom, dateTo]);
+  }, [employees, filters]);
 
   // Analytics data
   const departmentData = useMemo(() => {
@@ -166,7 +165,7 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     employment_type: emp.employment_type,
     hire_date: emp.hire_date,
     basic_salary: emp.basic_salary,
-    gosi_applicable: emp.gosi_applicable
+    gosi_applicable: emp.gosi_applicable ? 'Yes' : 'No'
   }));
 
   const handleExport = (format) => {
@@ -176,14 +175,13 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
       } else {
         exportToFormattedText(exportData, `employee-report-${Date.now()}`, {
           title: 'Employee Report',
-          subtitle: `Generated on ${new Date().toLocaleDateString()}`,
+          subtitle: `Generated on ${new Date().toLocaleDateString()} | ${filteredData.length} of ${employees.length} employees`,
           summary: {
             'Total Employees': filteredData.length,
             'Active Employees': filteredData.filter(e => e.status === 'active').length,
             'Departments': new Set(filteredData.map(e => e.department)).size,
             'Average Salary': `${(filteredData.reduce((sum, e) => sum + (e.basic_salary || 0), 0) / (filteredData.length || 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} SAR`,
-            'Date Range': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'All Time',
-            'Active Filters': searchTerms.length + (dateFrom || dateTo ? 1 : 0)
+            'GOSI Applicable': filteredData.filter(e => e.gosi_applicable).length
           }
         });
       }
@@ -193,8 +191,19 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     }
   };
 
-  const handleSavePreset = (preset) => {
-    setSavedPresets([...savedPresets, preset]);
+  const clearFilters = () => {
+    setFilters({
+      department: 'all',
+      status: 'all',
+      employmentType: 'all',
+      nationality: 'all',
+      gosiApplicable: 'all',
+      hireDateFrom: '',
+      hireDateTo: '',
+      salaryMin: '',
+      salaryMax: '',
+      searches: []
+    });
   };
 
   return (
@@ -207,6 +216,7 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
               <div>
                 <p className="text-sm text-slate-600 mb-1">Total Employees</p>
                 <p className="text-3xl font-bold text-emerald-600">{filteredData.length}</p>
+                <p className="text-xs text-slate-500 mt-1">of {employees.length}</p>
               </div>
               <Users className="w-10 h-10 text-emerald-500 opacity-20" />
             </div>
@@ -256,41 +266,14 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
         </Card>
       </div>
 
-      {/* Advanced Search */}
-      <AdvancedSearchFilter
-        onSearch={setSearchTerms}
-        searchableFields={searchableFields}
-        onClearSearch={() => setSearchTerms([])}
-        savedPresets={savedPresets}
-        onSavePreset={handleSavePreset}
-        onLoadPreset={(preset) => setSearchTerms(preset.terms)}
-      />
-
-      {/* Date Range Filter */}
-      <DateRangeFilter
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
-        onClear={() => {
-          setDateFrom('');
-          setDateTo('');
-        }}
-        label="Hire Date Range"
-      />
-
-      {/* Standard Filters */}
-      <ReportFilters
+      {/* Advanced Filters */}
+      <AdvancedSearchFilters
         filters={filters}
         onFilterChange={setFilters}
-        onClearFilters={() => setFilters({
-          department: 'all',
-          status: 'all',
-          employmentType: 'all',
-          nationality: 'all',
-          gosiApplicable: 'all'
-        })}
+        onClearFilters={clearFilters}
         filterConfig={filterConfig}
+        searchConfig={searchConfig}
+        dateRangeConfig={dateRangeConfig}
       />
 
       {/* Export Buttons */}
