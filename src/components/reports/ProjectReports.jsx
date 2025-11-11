@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FolderKanban, Download, TrendingUp, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AdvancedSearchFilters from './AdvancedSearchFilters';
+import ReportFilters from './ReportFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
+import AdvancedSearchFilter from './AdvancedSearchFilter';
+import DateRangeFilter from './DateRangeFilter';
 import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
 import { toast } from "sonner";
 
@@ -18,26 +20,25 @@ export default function ProjectReports({
     status: 'all',
     priority: 'all',
     department: 'all',
-    riskLevel: 'all',
-    dateFrom: '',
-    dateTo: '',
-    budgetMin: '',
-    budgetMax: '',
-    progressMin: '',
-    progressMax: '',
-    searches: []
+    riskLevel: 'all'
   });
 
-  const searchConfig = [
-    { key: 'project_name', label: 'Project Name' },
-    { key: 'project_code', label: 'Project Code' },
-    { key: 'client_name', label: 'Client Name' },
-    { key: 'description', label: 'Description' }
-  ];
+  const [searchTerms, setSearchTerms] = useState([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [savedPresets, setSavedPresets] = useState([]);
 
-  const dateRangeConfig = [
-    { key: 'dateFrom', label: 'Start Date From', type: 'date' },
-    { key: 'dateTo', label: 'Start Date To', type: 'date' }
+  const searchableFields = [
+    { value: 'project_code', label: 'Project Code' },
+    { value: 'project_name', label: 'Project Name' },
+    { value: 'client_name', label: 'Client Name' },
+    { value: 'department', label: 'Department' },
+    { value: 'status', label: 'Status' },
+    { value: 'priority', label: 'Priority' },
+    { value: 'budget', label: 'Budget' },
+    { value: 'actual_cost', label: 'Actual Cost' },
+    { value: 'progress', label: 'Progress %' },
+    { value: 'team_size', label: 'Team Size' }
   ];
 
   const filterConfig = [
@@ -79,40 +80,35 @@ export default function ProjectReports({
         { value: 'medium', label: 'Medium' },
         { value: 'high', label: 'High' }
       ]
-    },
-    {
-      key: 'budgetMin',
-      label: 'Min Budget (SAR)',
-      type: 'number',
-      placeholder: 'Minimum'
-    },
-    {
-      key: 'budgetMax',
-      label: 'Max Budget (SAR)',
-      type: 'number',
-      placeholder: 'Maximum'
-    },
-    {
-      key: 'progressMin',
-      label: 'Min Progress (%)',
-      type: 'number',
-      placeholder: '0-100'
-    },
-    {
-      key: 'progressMax',
-      label: 'Max Progress (%)',
-      type: 'number',
-      placeholder: '0-100'
     }
   ];
 
-  // Apply search filters
-  const applySearchFilters = (proj) => {
-    if (!filters.searches || filters.searches.length === 0) return true;
-    
-    return filters.searches.every(search => {
-      const fieldValue = String(proj[search.field] || '').toLowerCase();
-      return fieldValue.includes(search.value.toLowerCase());
+  // Apply advanced search
+  const applyAdvancedSearch = (proj, terms) => {
+    if (terms.length === 0) return true;
+
+    return terms.every(term => {
+      const value = String(proj[term.field] || '').toLowerCase();
+      const searchValue = term.value.toLowerCase();
+
+      switch (term.operator) {
+        case 'contains':
+          return value.includes(searchValue);
+        case 'equals':
+          return value === searchValue;
+        case 'startsWith':
+          return value.startsWith(searchValue);
+        case 'endsWith':
+          return value.endsWith(searchValue);
+        case 'notContains':
+          return !value.includes(searchValue);
+        case 'greaterThan':
+          return parseFloat(value) > parseFloat(searchValue);
+        case 'lessThan':
+          return parseFloat(value) < parseFloat(searchValue);
+        default:
+          return true;
+      }
     });
   };
 
@@ -122,16 +118,12 @@ export default function ProjectReports({
       if (filters.priority !== 'all' && proj.priority !== filters.priority) return false;
       if (filters.department !== 'all' && proj.department !== filters.department) return false;
       if (filters.riskLevel !== 'all' && proj.risk_level !== filters.riskLevel) return false;
-      if (filters.dateFrom && proj.start_date < filters.dateFrom) return false;
-      if (filters.dateTo && proj.start_date > filters.dateTo) return false;
-      if (filters.budgetMin && (proj.budget || 0) < Number(filters.budgetMin)) return false;
-      if (filters.budgetMax && (proj.budget || 0) > Number(filters.budgetMax)) return false;
-      if (filters.progressMin && (proj.progress || 0) < Number(filters.progressMin)) return false;
-      if (filters.progressMax && (proj.progress || 0) > Number(filters.progressMax)) return false;
-      if (!applySearchFilters(proj)) return false;
+      if (dateFrom && proj.start_date < dateFrom) return false;
+      if (dateTo && proj.start_date > dateTo) return false;
+      if (!applyAdvancedSearch(proj, searchTerms)) return false;
       return true;
     });
-  }, [projects, filters]);
+  }, [projects, filters, searchTerms, dateFrom, dateTo]);
 
   const statusData = useMemo(() => {
     const counts = {};
@@ -169,14 +161,15 @@ export default function ProjectReports({
       } else {
         exportToFormattedText(exportData, `project-report-${Date.now()}`, {
           title: 'Project Report',
-          subtitle: `Generated on ${new Date().toLocaleDateString()} | ${filteredData.length} of ${projects.length} projects`,
+          subtitle: `Generated on ${new Date().toLocaleDateString()}`,
           summary: {
             'Total Projects': filteredData.length,
             'In Progress': filteredData.filter(p => p.status === 'in_progress').length,
             'Completed': filteredData.filter(p => p.status === 'completed').length,
             'Total Budget': `${filteredData.reduce((sum, p) => sum + (p.budget || 0), 0).toLocaleString()} SAR`,
-            'Total Actual Cost': `${filteredData.reduce((sum, p) => sum + (p.actual_cost || 0), 0).toLocaleString()} SAR`,
-            'Average Progress': `${(filteredData.reduce((sum, p) => sum + (p.progress || 0), 0) / (filteredData.length || 1)).toFixed(1)}%`
+            'Average Progress': `${(filteredData.reduce((sum, p) => sum + (p.progress || 0), 0) / (filteredData.length || 1)).toFixed(1)}%`,
+            'Date Range': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'All Time',
+            'Active Filters': searchTerms.length + (dateFrom || dateTo ? 1 : 0)
           }
         });
       }
@@ -186,24 +179,11 @@ export default function ProjectReports({
     }
   };
 
-  const clearFilters = () => {
-    setFilters({
-      status: 'all',
-      priority: 'all',
-      department: 'all',
-      riskLevel: 'all',
-      dateFrom: '',
-      dateTo: '',
-      budgetMin: '',
-      budgetMax: '',
-      progressMin: '',
-      progressMax: '',
-      searches: []
-    });
+  const handleSavePreset = (preset) => {
+    setSavedPresets([...savedPresets, preset]);
   };
 
   const totalBudget = filteredData.reduce((sum, p) => sum + (p.budget || 0), 0);
-  const totalActual = filteredData.reduce((sum, p) => sum + (p.actual_cost || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -214,7 +194,6 @@ export default function ProjectReports({
               <div>
                 <p className="text-sm text-slate-600 mb-1">Total Projects</p>
                 <p className="text-3xl font-bold text-blue-600">{filteredData.length}</p>
-                <p className="text-xs text-slate-500 mt-1">of {projects.length}</p>
               </div>
               <FolderKanban className="w-10 h-10 text-blue-500 opacity-20" />
             </div>
@@ -264,13 +243,37 @@ export default function ProjectReports({
         </Card>
       </div>
 
-      <AdvancedSearchFilters
+      <AdvancedSearchFilter
+        onSearch={setSearchTerms}
+        searchableFields={searchableFields}
+        onClearSearch={() => setSearchTerms([])}
+        savedPresets={savedPresets}
+        onSavePreset={handleSavePreset}
+        onLoadPreset={(preset) => setSearchTerms(preset.terms)}
+      />
+
+      <DateRangeFilter
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onClear={() => {
+          setDateFrom('');
+          setDateTo('');
+        }}
+        label="Project Start Date Range"
+      />
+
+      <ReportFilters
         filters={filters}
         onFilterChange={setFilters}
-        onClearFilters={clearFilters}
+        onClearFilters={() => setFilters({
+          status: 'all',
+          priority: 'all',
+          department: 'all',
+          riskLevel: 'all'
+        })}
         filterConfig={filterConfig}
-        searchConfig={searchConfig}
-        dateRangeConfig={dateRangeConfig}
       />
 
       <div className="flex justify-end gap-2">
