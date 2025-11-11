@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -20,6 +21,7 @@ import ProjectCard from "../components/projects/ProjectCard";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetailsModal from "../components/projects/ProjectDetailsModal";
 import AssignTeamMemberModal from "../components/projects/AssignTeamMemberModal";
+import BulkAssignTeamMembersModal from "../components/projects/BulkAssignTeamMembersModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -28,6 +30,7 @@ export default function Projects() {
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -96,6 +99,7 @@ export default function Projects() {
       // Update project team size
       const project = projects.find(p => p.id === data.project_id);
       if (project) {
+        // Fetch current assignments again to ensure accuracy or use the queryClient cache
         const currentAssignments = assignments.filter(a => a.project_id === data.project_id);
         await base44.entities.Project.update(project.id, {
           ...project,
@@ -107,12 +111,47 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['project-assignments']);
-      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['projects']); // Invalidate projects to update team_size
       setShowAssignModal(false);
       toast.success('Team member assigned successfully');
     },
     onError: () => {
       toast.error('Failed to assign team member');
+    }
+  });
+
+  const bulkCreateAssignmentsMutation = useMutation({
+    mutationFn: async (assignmentsData) => {
+      // Create all assignments in parallel
+      const createdAssignments = await Promise.all(
+        assignmentsData.map(data => base44.entities.ProjectAssignment.create(data))
+      );
+
+      // Update project team size
+      if (assignmentsData.length > 0) {
+        const projectId = assignmentsData[0].project_id;
+        const project = projects.find(p => p.id === projectId);
+        
+        if (project) {
+          // Fetch current assignments again to ensure accuracy or use the queryClient cache
+          const currentAssignments = assignments.filter(a => a.project_id === projectId);
+          await base44.entities.Project.update(project.id, {
+            ...project,
+            team_size: currentAssignments.length + assignmentsData.length
+          });
+        }
+      }
+
+      return createdAssignments;
+    },
+    onSuccess: (_, assignmentsData) => {
+      queryClient.invalidateQueries(['project-assignments']);
+      queryClient.invalidateQueries(['projects']); // Invalidate projects to update team_size
+      setShowBulkAssignModal(false);
+      toast.success(`Successfully assigned ${assignmentsData.length} team member${assignmentsData.length === 1 ? '' : 's'}`);
+    },
+    onError: () => {
+      toast.error('Failed to assign team members');
     }
   });
 
@@ -139,8 +178,17 @@ export default function Projects() {
     setShowAssignModal(true);
   };
 
+  const handleBulkAddTeamMembers = () => {
+    setShowDetailsModal(false);
+    setShowBulkAssignModal(true);
+  };
+
   const handleAssignTeamMember = (data) => {
     createAssignmentMutation.mutate(data);
+  };
+
+  const handleBulkAssignTeamMembers = (assignmentsData) => {
+    bulkCreateAssignmentsMutation.mutate(assignmentsData);
   };
 
   // Get unique values for filters
@@ -486,9 +534,10 @@ export default function Projects() {
         onClose={() => setShowDetailsModal(false)}
         onEdit={handleEditProject}
         onAddTeamMember={handleAddTeamMember}
+        onBulkAddTeamMembers={handleBulkAddTeamMembers}
       />
 
-      {/* Assign Team Member Modal */}
+      {/* Assign Single Team Member Modal */}
       <AssignTeamMemberModal
         project={selectedProject}
         employees={employees}
@@ -499,6 +548,19 @@ export default function Projects() {
           setShowDetailsModal(true);
         }}
         onAssign={handleAssignTeamMember}
+      />
+
+      {/* Bulk Assign Team Members Modal */}
+      <BulkAssignTeamMembersModal
+        project={selectedProject}
+        employees={employees}
+        existingAssignments={selectedProject ? getProjectAssignments(selectedProject.id) : []}
+        isOpen={showBulkAssignModal}
+        onClose={() => {
+          setShowBulkAssignModal(false);
+          setShowDetailsModal(true);
+        }}
+        onBulkAssign={handleBulkAssignTeamMembers}
       />
     </div>
   );

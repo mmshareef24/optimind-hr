@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Calendar, DollarSign, Users, Target, AlertTriangle, Info,
-  CheckCircle2, Clock, TrendingUp, Edit, UserPlus
+  CheckCircle2, Clock, TrendingUp, Edit, UserPlus, UsersRound
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -24,7 +24,8 @@ export default function ProjectDetailsModal({
   isOpen, 
   onClose,
   onEdit,
-  onAddTeamMember
+  onAddTeamMember,
+  onBulkAddTeamMembers
 }) {
   if (!project) return null;
 
@@ -210,16 +211,32 @@ export default function ProjectDetailsModal({
                 <CardContent className="p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-slate-900">Team Members</h3>
-                    <Button size="sm" onClick={onAddTeamMember}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add Member
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={onBulkAddTeamMembers}>
+                        <UsersRound className="w-4 h-4 mr-2" />
+                        Add Multiple
+                      </Button>
+                      <Button size="sm" onClick={onAddTeamMember}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Member
+                      </Button>
+                    </div>
                   </div>
 
                   {assignments.length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                      <p className="text-slate-500">No team members assigned yet</p>
+                      <p className="text-slate-500 mb-4">No team members assigned yet</p>
+                      <div className="flex gap-2 justify-center">
+                        <Button size="sm" variant="outline" onClick={onBulkAddTeamMembers}>
+                          <UsersRound className="w-4 h-4 mr-2" />
+                          Add Multiple Members
+                        </Button>
+                        <Button size="sm" onClick={onAddTeamMember}>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add Single Member
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
