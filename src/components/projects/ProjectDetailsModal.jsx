@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
@@ -10,9 +11,15 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Calendar, DollarSign, Users, Target, AlertTriangle, Info,
-  CheckCircle2, Clock, TrendingUp, Edit, UserPlus, UsersRound
+  CheckCircle2, Clock, TrendingUp, Edit, UserPlus, UsersRound,
+  ListTodo, Flag, GanttChartSquare
 } from "lucide-react";
 import { format } from "date-fns";
+import TaskManagement from './TaskManagement';
+import TaskForm from './TaskForm';
+import MilestoneTracker from './MilestoneTracker';
+import MilestoneForm from './MilestoneForm';
+import GanttChart from './GanttChart';
 
 export default function ProjectDetailsModal({ 
   project, 
@@ -25,8 +32,18 @@ export default function ProjectDetailsModal({
   onClose,
   onEdit,
   onAddTeamMember,
-  onBulkAddTeamMembers
+  onBulkAddTeamMembers,
+  onTaskCreate,
+  onTaskUpdate,
+  onTaskDelete,
+  onMilestoneCreate,
+  onMilestoneUpdate
 }) {
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+
   if (!project) return null;
 
   const statusColors = {
@@ -40,6 +57,55 @@ export default function ProjectDetailsModal({
   const isOverBudget = project.actual_cost > project.budget;
   const budgetUsed = project.budget > 0 ? (project.actual_cost / project.budget) * 100 : 0;
   const isOverdue = new Date(project.end_date) < new Date() && project.status !== 'completed';
+
+  // Filter project tasks and milestones
+  const projectTasks = tasks.filter(t => t.project_id === project.id);
+  const projectMilestones = milestones.filter(m => m.project_id === project.id);
+
+  // Get team members assigned to this project
+  const projectAssignments = assignments.filter(a => a.project_id === project.id);
+  const assignedEmployeeIds = projectAssignments.map(a => a.employee_id);
+  const teamMembers = employees.filter(e => assignedEmployeeIds.includes(e.id));
+
+  const handleAddTask = () => {
+    setEditingTask(null);
+    setShowTaskForm(true);
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  };
+
+  const handleSubmitTask = (taskData) => {
+    if (editingTask) {
+      onTaskUpdate(editingTask.id, taskData);
+    } else {
+      onTaskCreate(taskData);
+    }
+    setShowTaskForm(false);
+    setEditingTask(null);
+  };
+
+  const handleAddMilestone = () => {
+    setEditingMilestone(null);
+    setShowMilestoneForm(true);
+  };
+
+  const handleEditMilestone = (milestone) => {
+    setEditingMilestone(milestone);
+    setShowMilestoneForm(true);
+  };
+
+  const handleSubmitMilestone = (milestoneData) => {
+    if (editingMilestone) {
+      onMilestoneUpdate(editingMilestone.id, milestoneData);
+    } else {
+      onMilestoneCreate(milestoneData);
+    }
+    setShowMilestoneForm(false);
+    setEditingMilestone(null);
+  };
 
   const InfoItem = ({ icon: Icon, label, value, color = "text-slate-600" }) => (
     <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
@@ -55,7 +121,7 @@ export default function ProjectDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Project Details</span>
@@ -133,14 +199,26 @@ export default function ProjectDetailsModal({
 
           {/* Tabs */}
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList>
+            <TabsList className="grid grid-cols-3 lg:grid-cols-7 w-full">
               <TabsTrigger value="overview">
                 <Info className="w-4 h-4 mr-2" />
                 Overview
               </TabsTrigger>
               <TabsTrigger value="team">
                 <Users className="w-4 h-4 mr-2" />
-                Team ({assignments.length})
+                Team
+              </TabsTrigger>
+              <TabsTrigger value="tasks">
+                <ListTodo className="w-4 h-4 mr-2" />
+                Tasks
+              </TabsTrigger>
+              <TabsTrigger value="milestones">
+                <Flag className="w-4 h-4 mr-2" />
+                Milestones
+              </TabsTrigger>
+              <TabsTrigger value="gantt">
+                <GanttChartSquare className="w-4 h-4 mr-2" />
+                Gantt
               </TabsTrigger>
               <TabsTrigger value="timeline">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -184,7 +262,7 @@ export default function ProjectDetailsModal({
                     <InfoItem
                       icon={Users}
                       label="Team Size"
-                      value={`${assignments.length} members`}
+                      value={`${projectAssignments.length} members`}
                       color="text-indigo-600"
                     />
                     <InfoItem
@@ -223,7 +301,7 @@ export default function ProjectDetailsModal({
                     </div>
                   </div>
 
-                  {assignments.length === 0 ? (
+                  {projectAssignments.length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                       <p className="text-slate-500 mb-4">No team members assigned yet</p>
@@ -240,7 +318,7 @@ export default function ProjectDetailsModal({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {assignments.map((assignment) => {
+                      {projectAssignments.map((assignment) => {
                         const employee = employees.find(e => e.id === assignment.employee_id);
                         if (!employee) return null;
 
@@ -277,6 +355,51 @@ export default function ProjectDetailsModal({
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* NEW: Tasks Tab */}
+            <TabsContent value="tasks">
+              <Card>
+                <CardContent className="p-6">
+                  <TaskManagement
+                    tasks={projectTasks}
+                    employees={teamMembers}
+                    onAddTask={handleAddTask}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={onTaskDelete}
+                    onUpdateTaskStatus={(task) => {
+                      // Cycle through statuses
+                      const statuses = ['todo', 'in_progress', 'review', 'completed'];
+                      const currentIndex = statuses.indexOf(task.status);
+                      const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+                      onTaskUpdate(task.id, { ...task, status: nextStatus });
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* NEW: Milestones Tab */}
+            <TabsContent value="milestones">
+              <Card>
+                <CardContent className="p-6">
+                  <MilestoneTracker
+                    milestones={projectMilestones}
+                    onAddMilestone={handleAddMilestone}
+                    onEditMilestone={handleEditMilestone}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* NEW: Gantt Chart Tab */}
+            <TabsContent value="gantt">
+              <GanttChart
+                project={project}
+                tasks={projectTasks}
+                milestones={projectMilestones}
+                employees={employees} // Use all employees as tasks can be assigned to anyone, not just project team members
+              />
             </TabsContent>
 
             {/* Timeline Tab */}
@@ -391,6 +514,45 @@ export default function ProjectDetailsModal({
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Task Form Dialog */}
+        <Dialog open={showTaskForm} onOpenChange={setShowTaskForm}>
+          <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+            </DialogHeader>
+            <TaskForm
+              task={editingTask}
+              projectId={project.id}
+              employees={teamMembers}
+              allTasks={projectTasks}
+              onSubmit={handleSubmitTask}
+              onCancel={() => {
+                setShowTaskForm(false);
+                setEditingTask(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Milestone Form Dialog */}
+        <Dialog open={showMilestoneForm} onOpenChange={setShowMilestoneForm}>
+          <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingMilestone ? 'Edit Milestone' : 'Create New Milestone'}</DialogTitle>
+            </DialogHeader>
+            <MilestoneForm
+              milestone={editingMilestone}
+              projectId={project.id}
+              existingMilestones={projectMilestones}
+              onSubmit={handleSubmitMilestone}
+              onCancel={() => {
+                setShowMilestoneForm(false);
+                setEditingMilestone(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

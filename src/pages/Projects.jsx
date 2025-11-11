@@ -56,7 +56,7 @@ export default function Projects() {
     queryFn: () => base44.entities.Employee.list(),
   });
 
-  const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
+  const { data: assignments = [] } = useQuery({
     queryKey: ['project-assignments'],
     queryFn: () => base44.entities.ProjectAssignment.list(),
   });
@@ -64,6 +64,11 @@ export default function Projects() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['project-tasks'],
     queryFn: () => base44.entities.ProjectTask.list(),
+  });
+
+  const { data: milestones = [] } = useQuery({
+    queryKey: ['project-milestones'],
+    queryFn: () => base44.entities.ProjectMilestone.list(),
   });
 
   const createProjectMutation = useMutation({
@@ -95,23 +100,19 @@ export default function Projects() {
   const createAssignmentMutation = useMutation({
     mutationFn: async (data) => {
       const assignment = await base44.entities.ProjectAssignment.create(data);
-      
-      // Update project team size
       const project = projects.find(p => p.id === data.project_id);
       if (project) {
-        // Fetch current assignments again to ensure accuracy or use the queryClient cache
         const currentAssignments = assignments.filter(a => a.project_id === data.project_id);
         await base44.entities.Project.update(project.id, {
           ...project,
           team_size: currentAssignments.length + 1
         });
       }
-      
       return assignment;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['project-assignments']);
-      queryClient.invalidateQueries(['projects']); // Invalidate projects to update team_size
+      queryClient.invalidateQueries(['projects']);
       setShowAssignModal(false);
       toast.success('Team member assigned successfully');
     },
@@ -122,18 +123,14 @@ export default function Projects() {
 
   const bulkCreateAssignmentsMutation = useMutation({
     mutationFn: async (assignmentsData) => {
-      // Create all assignments in parallel
       const createdAssignments = await Promise.all(
         assignmentsData.map(data => base44.entities.ProjectAssignment.create(data))
       );
 
-      // Update project team size
       if (assignmentsData.length > 0) {
         const projectId = assignmentsData[0].project_id;
         const project = projects.find(p => p.id === projectId);
-        
         if (project) {
-          // Fetch current assignments again to ensure accuracy or use the queryClient cache
           const currentAssignments = assignments.filter(a => a.project_id === projectId);
           await base44.entities.Project.update(project.id, {
             ...project,
@@ -146,12 +143,69 @@ export default function Projects() {
     },
     onSuccess: (_, assignmentsData) => {
       queryClient.invalidateQueries(['project-assignments']);
-      queryClient.invalidateQueries(['projects']); // Invalidate projects to update team_size
+      queryClient.invalidateQueries(['projects']);
       setShowBulkAssignModal(false);
       toast.success(`Successfully assigned ${assignmentsData.length} team member${assignmentsData.length === 1 ? '' : 's'}`);
     },
     onError: () => {
       toast.error('Failed to assign team members');
+    }
+  });
+
+  // NEW: Task mutations
+  const createTaskMutation = useMutation({
+    mutationFn: (data) => base44.entities.ProjectTask.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project-tasks']);
+      toast.success('Task created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create task');
+    }
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ProjectTask.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project-tasks']);
+      toast.success('Task updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update task');
+    }
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.ProjectTask.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project-tasks']);
+      toast.success('Task deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete task');
+    }
+  });
+
+  // NEW: Milestone mutations
+  const createMilestoneMutation = useMutation({
+    mutationFn: (data) => base44.entities.ProjectMilestone.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project-milestones']);
+      toast.success('Milestone created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create milestone');
+    }
+  });
+
+  const updateMilestoneMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ProjectMilestone.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['project-milestones']);
+      toast.success('Milestone updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update milestone');
     }
   });
 
@@ -205,7 +259,7 @@ export default function Projects() {
     const clientName = project.client_name?.toLowerCase() || '';
     const managerName = projectManager ? `${projectManager.first_name} ${projectManager.last_name}`.toLowerCase() : '';
 
-    const matchesSearch = 
+    const matchesSearch =
       projectName.includes(searchTerm.toLowerCase()) ||
       projectCode.includes(searchTerm.toLowerCase()) ||
       clientName.includes(searchTerm.toLowerCase()) ||
@@ -220,7 +274,6 @@ export default function Projects() {
     return matchesSearch && matchesStatus && matchesPriority && matchesDepartment && matchesManager && matchesRisk;
   });
 
-  // Clear filters
   const clearFilters = () => {
     setFilters({
       status: 'all',
@@ -233,18 +286,15 @@ export default function Projects() {
 
   const hasActiveFilters = Object.values(filters).some(f => f !== 'all');
 
-  // Calculate statistics
   const activeProjects = projects.filter(p => p.status === 'in_progress').length;
   const completedProjects = projects.filter(p => p.status === 'completed').length;
   const totalBudget = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
   const totalTeamMembers = assignments.filter(a => a.status === 'active').length;
 
-  // Get team size for each project
   const getTeamSize = (projectId) => {
     return assignments.filter(a => a.project_id === projectId && a.status === 'active').length;
   };
 
-  // Get project assignments
   const getProjectAssignments = (projectId) => {
     return assignments.filter(a => a.project_id === projectId);
   };
@@ -522,22 +572,27 @@ export default function Projects() {
         </DialogContent>
       </Dialog>
 
-      {/* Project Details Modal */}
+      {/* Project Details Modal with NEW task/milestone handlers */}
       <ProjectDetailsModal
         project={selectedProject}
         projectManager={selectedProject ? employees.find(e => e.id === selectedProject.project_manager_id) : null}
         assignments={selectedProject ? getProjectAssignments(selectedProject.id) : []}
         employees={employees}
         tasks={tasks}
-        milestones={[]}
+        milestones={milestones}
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         onEdit={handleEditProject}
         onAddTeamMember={handleAddTeamMember}
         onBulkAddTeamMembers={handleBulkAddTeamMembers}
+        onTaskCreate={(data) => createTaskMutation.mutate(data)}
+        onTaskUpdate={(id, data) => updateTaskMutation.mutate({ id, data })}
+        onTaskDelete={(id) => deleteTaskMutation.mutate(id)}
+        onMilestoneCreate={(data) => createMilestoneMutation.mutate(data)}
+        onMilestoneUpdate={(id, data) => updateMilestoneMutation.mutate({ id, data })}
       />
 
-      {/* Assign Single Team Member Modal */}
+      {/* Team Assignment Modals */}
       <AssignTeamMemberModal
         project={selectedProject}
         employees={employees}
@@ -550,7 +605,6 @@ export default function Projects() {
         onAssign={handleAssignTeamMember}
       />
 
-      {/* Bulk Assign Team Members Modal */}
       <BulkAssignTeamMembersModal
         project={selectedProject}
         employees={employees}
