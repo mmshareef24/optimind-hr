@@ -19,6 +19,7 @@ import MSS from './pages/MSS';
 import GOSIReporting from './pages/GOSIReporting';
 import PerformanceManagement from './pages/PerformanceManagement';
 import AIAssistant from './pages/AIAssistant';
+import TimeTracking from './pages/TimeTracking';
 import Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "GOSIReporting": GOSIReporting,
     "PerformanceManagement": PerformanceManagement,
     "AIAssistant": AIAssistant,
+    "TimeTracking": TimeTracking,
 }
 
 export const pagesConfig = {
