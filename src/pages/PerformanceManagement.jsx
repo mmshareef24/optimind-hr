@@ -1,14 +1,22 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Target, Star, TrendingUp, CheckCircle, FileText, Plus } from "lucide-react";
+import { Target, Star, TrendingUp, CheckCircle, FileText, Plus, Filter, X, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
 import StatCard from "../components/hrms/StatCard";
 import GoalCard from "../components/performance/GoalCard";
 import GoalForm from "../components/performance/GoalForm";
@@ -25,6 +33,24 @@ export default function PerformanceManagement() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState('user');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter states for goals
+  const [goalFilters, setGoalFilters] = useState({
+    status: 'all',
+    employee: 'all',
+    priority: 'all',
+    category: 'all'
+  });
+
+  // Filter states for reviews
+  const [reviewFilters, setReviewFilters] = useState({
+    status: 'all',
+    employee: 'all',
+    reviewPeriod: 'all',
+    reviewType: 'all'
+  });
 
   const queryClient = useQueryClient();
 
@@ -137,11 +163,73 @@ export default function PerformanceManagement() {
     });
   };
 
+  // Get unique values for filters
+  const reviewPeriods = [...new Set(reviews.map(r => r.review_period).filter(Boolean))];
+
+  // Apply goal filters
+  const filteredGoals = goals.filter(goal => {
+    const employee = employees.find(e => e.id === goal.employee_id);
+    const employeeName = employee ? `${employee.first_name} ${employee.last_name}`.toLowerCase() : '';
+    
+    const matchesSearch = 
+      goal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      goal.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employeeName.includes(searchTerm.toLowerCase());
+
+    const matchesStatus = goalFilters.status === 'all' || goal.status === goalFilters.status;
+    const matchesEmployee = goalFilters.employee === 'all' || goal.employee_id === goalFilters.employee;
+    const matchesPriority = goalFilters.priority === 'all' || goal.priority === goalFilters.priority;
+    const matchesCategory = goalFilters.category === 'all' || goal.category === goalFilters.category;
+
+    return matchesSearch && matchesStatus && matchesEmployee && matchesPriority && matchesCategory;
+  });
+
+  // Apply review filters
+  const filteredReviews = reviews.filter(review => {
+    const employee = employees.find(e => e.id === review.employee_id);
+    const employeeName = employee ? `${employee.first_name} ${employee.last_name}`.toLowerCase() : '';
+    
+    const matchesSearch = 
+      employeeName.includes(searchTerm.toLowerCase()) ||
+      review.review_period?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = reviewFilters.status === 'all' || review.status === reviewFilters.status;
+    const matchesEmployee = reviewFilters.employee === 'all' || review.employee_id === reviewFilters.employee;
+    const matchesPeriod = reviewFilters.reviewPeriod === 'all' || review.review_period === reviewFilters.reviewPeriod;
+    const matchesType = reviewFilters.reviewType === 'all' || review.review_type === reviewFilters.reviewType;
+
+    return matchesSearch && matchesStatus && matchesEmployee && matchesPeriod && matchesType;
+  });
+
+  // Clear filters
+  const clearGoalFilters = () => {
+    setGoalFilters({
+      status: 'all',
+      employee: 'all',
+      priority: 'all',
+      category: 'all'
+    });
+    setSearchTerm(''); // Clear search when clearing filters
+  };
+
+  const clearReviewFilters = () => {
+    setReviewFilters({
+      status: 'all',
+      employee: 'all',
+      reviewPeriod: 'all',
+      reviewType: 'all'
+    });
+    setSearchTerm(''); // Clear search when clearing filters
+  };
+
+  const hasActiveGoalFilters = Object.values(goalFilters).some(f => f !== 'all') || searchTerm !== '';
+  const hasActiveReviewFilters = Object.values(reviewFilters).some(f => f !== 'all') || searchTerm !== '';
+
   // Filter data based on role
-  const myGoals = currentUser ? goals.filter(g => g.employee_id === currentUser.id) : [];
-  const myReviews = currentUser ? reviews.filter(r => r.employee_id === currentUser.id) : [];
-  const allGoals = userRole === 'admin' ? goals : myGoals;
-  const allReviews = userRole === 'admin' ? reviews : myReviews;
+  const myGoals = currentUser ? filteredGoals.filter(g => g.employee_id === currentUser.id) : [];
+  const myReviews = currentUser ? filteredReviews.filter(r => r.employee_id === currentUser.id) : [];
+  const allGoals = userRole === 'admin' ? filteredGoals : myGoals;
+  const allReviews = userRole === 'admin' ? filteredReviews : myReviews;
 
   // Calculate statistics
   const totalGoals = myGoals.length;
@@ -298,27 +386,182 @@ export default function PerformanceManagement() {
           </Card>
         </TabsContent>
 
-        {/* All Goals Tab (Admin) */}
+        {/* All Goals Tab (Admin) - WITH FILTERS */}
         {userRole === 'admin' && (
           <TabsContent value="all-goals">
             <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
+              <CardContent className="p-6 space-y-4">
+                {/* Search and Filters */}
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input
+                      placeholder="Search goals by title, description, or employee..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Popover open={showFilters} onOpenChange={setShowFilters}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="relative">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Filters
+                        {Object.values(goalFilters).some(f => f !== 'all') && ( // Only show badge if actual filters are applied, not just search term
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-slate-900">Filter Goals</h3>
+                          {hasActiveGoalFilters && (
+                            <Button variant="ghost" size="sm" onClick={clearGoalFilters}>
+                              <X className="w-4 h-4 mr-1" />
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                            <Select
+                              value={goalFilters.status}
+                              onValueChange={(val) => setGoalFilters({ ...goalFilters, status: val })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="not_started">Not Started</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="overdue">Overdue</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">Employee</label>
+                            <Select
+                              value={goalFilters.employee}
+                              onValueChange={(val) => setGoalFilters({ ...goalFilters, employee: val })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Employees</SelectItem>
+                                {employees.map(emp => (
+                                  <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.first_name} {emp.last_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">Priority</label>
+                            <Select
+                              value={goalFilters.priority}
+                              onValueChange={(val) => setGoalFilters({ ...goalFilters, priority: val })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Priorities</SelectItem>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="critical">Critical</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">Category</label>
+                            <Select
+                              value={goalFilters.category}
+                              onValueChange={(val) => setGoalFilters({ ...goalFilters, category: val })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                <SelectItem value="individual">Individual</SelectItem>
+                                <SelectItem value="team">Team</SelectItem>
+                                <SelectItem value="organizational">Organizational</SelectItem>
+                                <SelectItem value="development">Development</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Active Filters Display */}
+                {hasActiveGoalFilters && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {searchTerm && (
+                      <Badge variant="secondary" className="gap-1">
+                        Search: {searchTerm}
+                        <X
+                          className="w-3 h-3 cursor-pointer"
+                          onClick={() => setSearchTerm('')}
+                        />
+                      </Badge>
+                    )}
+                    {Object.entries(goalFilters).map(([key, value]) => {
+                      if (value === 'all') return null;
+                      const employee = key === 'employee' ? employees.find(e => e.id === value) : null;
+                      const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : value.replace(/_/g, ' ');
+                      return (
+                        <Badge key={key} variant="secondary" className="gap-1 capitalize">
+                          {key}: {displayValue}
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                            onClick={() => setGoalFilters({ ...goalFilters, [key]: 'all' })}
+                          />
+                        </Badge>
+                      );
+                    })}
+                    {(Object.values(goalFilters).some(f => f !== 'all') || searchTerm !== '') && (
+                      <Button variant="ghost" size="sm" onClick={clearGoalFilters} className="h-auto px-2 py-1 text-xs">
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-sm text-slate-600">
+                  Showing <strong>{filteredGoals.length}</strong> of <strong>{goals.length}</strong> goals
+                </p>
+
                 {loadingGoals ? (
                   <div className="grid md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64" />)}
                   </div>
-                ) : goals.length === 0 ? (
+                ) : filteredGoals.length === 0 ? (
                   <div className="text-center py-12">
                     <Target className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <p className="text-slate-500 mb-4">No goals set yet</p>
-                    <Button onClick={() => setShowGoalForm(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Set First Goal
-                    </Button>
+                    <p className="text-slate-500 mb-4">
+                      {hasActiveGoalFilters ? 'No goals match the selected filters or search term' : 'No goals set yet'}
+                    </p>
+                    {hasActiveGoalFilters ? (
+                      <Button variant="outline" onClick={clearGoalFilters}>
+                        Clear All Filters
+                      </Button>
+                    ) : (
+                      <Button onClick={() => setShowGoalForm(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Set First Goal
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
-                    {goals.map((goal) => {
+                    {filteredGoals.map((goal) => {
                       const employee = employees.find(e => e.id === goal.employee_id);
                       return (
                         <div key={goal.id}>
@@ -343,22 +586,178 @@ export default function PerformanceManagement() {
           </TabsContent>
         )}
 
-        {/* Reviews Tab */}
+        {/* Reviews Tab - WITH FILTERS */}
         <TabsContent value="reviews">
           <Card className="border-0 shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-6 space-y-4">
+              {/* Search and Filters */}
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Search reviews by employee or period..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="relative">
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filters
+                      {Object.values(reviewFilters).some(f => f !== 'all') && ( // Only show badge if actual filters are applied, not just search term
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-slate-900">Filter Reviews</h3>
+                        {hasActiveReviewFilters && (
+                          <Button variant="ghost" size="sm" onClick={clearReviewFilters}>
+                            <X className="w-4 h-4 mr-1" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                          <Select
+                            value={reviewFilters.status}
+                            onValueChange={(val) => setReviewFilters({ ...reviewFilters, status: val })}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Status</SelectItem>
+                              <SelectItem value="draft">Draft</SelectItem>
+                              <SelectItem value="self_assessment_pending">Self Assessment Pending</SelectItem>
+                              <SelectItem value="manager_review_pending">Manager Review Pending</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {userRole === 'admin' && (
+                          <div>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">Employee</label>
+                            <Select
+                              value={reviewFilters.employee}
+                              onValueChange={(val) => setReviewFilters({ ...reviewFilters, employee: val })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Employees</SelectItem>
+                                {employees.map(emp => (
+                                  <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.first_name} {emp.last_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">Review Period</label>
+                          <Select
+                            value={reviewFilters.reviewPeriod}
+                            onValueChange={(val) => setReviewFilters({ ...reviewFilters, reviewPeriod: val })}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Periods</SelectItem>
+                              {reviewPeriods.map(period => (
+                                <SelectItem key={period} value={period}>{period}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">Review Type</label>
+                          <Select
+                            value={reviewFilters.reviewType}
+                            onValueChange={(val) => setReviewFilters({ ...reviewFilters, reviewType: val })}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Types</SelectItem>
+                              <SelectItem value="quarterly">Quarterly</SelectItem>
+                              <SelectItem value="mid_year">Mid Year</SelectItem>
+                              <SelectItem value="annual">Annual</SelectItem>
+                              <SelectItem value="probation">Probation</SelectItem>
+                              <SelectItem value="project_based">Project Based</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Active Filters Display */}
+              {hasActiveReviewFilters && (
+                <div className="flex flex-wrap gap-2 items-center">
+                  {searchTerm && (
+                    <Badge variant="secondary" className="gap-1">
+                      Search: {searchTerm}
+                      <X
+                        className="w-3 h-3 cursor-pointer"
+                        onClick={() => setSearchTerm('')}
+                      />
+                    </Badge>
+                  )}
+                  {Object.entries(reviewFilters).map(([key, value]) => {
+                    if (value === 'all') return null;
+                    const employee = key === 'employee' ? employees.find(e => e.id === value) : null;
+                    const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : value.replace(/_/g, ' ');
+                    return (
+                      <Badge key={key} variant="secondary" className="gap-1 capitalize">
+                        {key}: {displayValue}
+                        <X
+                          className="w-3 h-3 cursor-pointer"
+                          onClick={() => setReviewFilters({ ...reviewFilters, [key]: 'all' })}
+                        />
+                      </Badge>
+                    );
+                  })}
+                  {(Object.values(reviewFilters).some(f => f !== 'all') || searchTerm !== '') && (
+                    <Button variant="ghost" size="sm" onClick={clearReviewFilters} className="h-auto px-2 py-1 text-xs">
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <p className="text-sm text-slate-600">
+                Showing <strong>{filteredReviews.length}</strong> of <strong>{reviews.length}</strong> reviews
+              </p>
+
               {loadingReviews ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
                 </div>
-              ) : allReviews.length === 0 ? (
+              ) : filteredReviews.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">No performance reviews yet</p>
+                  <p className="text-slate-500 mb-4">
+                    {hasActiveReviewFilters ? 'No reviews match the selected filters or search term' : 'No performance reviews yet'}
+                  </p>
+                  {hasActiveReviewFilters && (
+                    <Button variant="outline" onClick={clearReviewFilters}>
+                      Clear All Filters
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {allReviews.map((review) => {
+                  {filteredReviews.map((review) => {
                     const employee = employees.find(e => e.id === review.employee_id);
                     const reviewer = employees.find(e => e.id === review.reviewer_id);
                     return (
@@ -375,12 +774,12 @@ export default function PerformanceManagement() {
                                   review.status === 'manager_review_pending' ? 'bg-amber-100 text-amber-700' :
                                   'bg-blue-100 text-blue-700'
                                 }>
-                                  {review.status.replace('_', ' ')}
+                                  {review.status.replace(/_/g, ' ')}
                                 </Badge>
                               </div>
                               <div className="grid md:grid-cols-4 gap-3 text-sm text-slate-600">
                                 <p><strong>Period:</strong> {review.review_period}</p>
-                                <p><strong>Type:</strong> {review.review_type.replace('_', ' ')}</p>
+                                <p><strong>Type:</strong> {review.review_type.replace(/_/g, ' ')}</p>
                                 <p><strong>Date:</strong> {format(new Date(review.review_date), 'MMM dd, yyyy')}</p>
                                 <p><strong>Rating:</strong> {review.overall_rating}/5.0</p>
                               </div>
