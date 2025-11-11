@@ -20,6 +20,7 @@ import GOSIReporting from './pages/GOSIReporting';
 import PerformanceManagement from './pages/PerformanceManagement';
 import AIAssistant from './pages/AIAssistant';
 import TimeTracking from './pages/TimeTracking';
+import Reports from './pages/Reports';
 import Layout from './Layout.jsx';
 
 
@@ -46,6 +47,7 @@ export const PAGES = {
     "PerformanceManagement": PerformanceManagement,
     "AIAssistant": AIAssistant,
     "TimeTracking": TimeTracking,
+    "Reports": Reports,
 }
 
 export const pagesConfig = {
