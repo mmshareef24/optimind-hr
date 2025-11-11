@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
-  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown
+  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 const navigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: Sparkles },
   { title: "Org Structure", url: createPageUrl("OrgStructure"), icon: Network },
   { title: "Companies", url: createPageUrl("Companies"), icon: Building2 },
   { title: "Employee Management", url: createPageUrl("Employees"), icon: Users },
@@ -25,6 +26,7 @@ const navigationItems = [
   { title: "Project Management", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Payroll & GOSI", url: createPageUrl("Payroll"), icon: DollarSign },
   { title: "GOSI Reporting", url: createPageUrl("GOSIReporting"), icon: Shield },
+  { title: "Performance Management", url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
   { title: "Benefits & Rewards", url: createPageUrl("Benefits"), icon: Gift },
   { title: "Travel & Expense", url: createPageUrl("TravelExpense"), icon: Plane },
   { title: "Employee Relations", url: createPageUrl("EmployeeRelations"), icon: MessageSquare },

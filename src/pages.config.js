@@ -18,6 +18,7 @@ import ESS from './pages/ESS';
 import MSS from './pages/MSS';
 import GOSIReporting from './pages/GOSIReporting';
 import PerformanceManagement from './pages/PerformanceManagement';
+import AIAssistant from './pages/AIAssistant';
 import Layout from './Layout.jsx';
 
 
@@ -42,6 +43,7 @@ export const PAGES = {
     "MSS": MSS,
     "GOSIReporting": GOSIReporting,
     "PerformanceManagement": PerformanceManagement,
+    "AIAssistant": AIAssistant,
 }
 
 export const pagesConfig = {
