@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Plus, Search, Filter } from "lucide-react";
+import { Users, Plus, Search, Filter, X } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
 import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
 import { toast } from "sonner";
 
@@ -18,6 +24,16 @@ export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    department: 'all',
+    jobTitle: 'all',
+    status: 'all',
+    gosiApplicable: 'all',
+    reportingManager: 'all'
+  });
 
   const queryClient = useQueryClient();
 
@@ -70,12 +86,49 @@ export default function Employees() {
     createEmployeeMutation.mutate(data);
   };
 
-  const filteredEmployees = employees.filter(e =>
-    e.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.employee_id?.includes(searchTerm) ||
-    e.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Get unique values for filters
+  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
+  const jobTitles = [...new Set(employees.map(e => e.job_title).filter(Boolean))];
+  const managers = employees.filter(e => 
+    employees.some(emp => emp.manager_id === e.id)
   );
+
+  // Apply filters
+  const filteredEmployees = employees.filter(e => {
+    const matchesSearch = 
+      e.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.employee_id?.includes(searchTerm) ||
+      e.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.job_title?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDepartment = filters.department === 'all' || e.department === filters.department;
+    const matchesJobTitle = filters.jobTitle === 'all' || e.job_title === filters.jobTitle;
+    const matchesStatus = filters.status === 'all' || e.status === filters.status;
+    const matchesGOSI = 
+      filters.gosiApplicable === 'all' || 
+      (filters.gosiApplicable === 'yes' && e.gosi_applicable === true) ||
+      (filters.gosiApplicable === 'no' && e.gosi_applicable === false);
+    const matchesManager = 
+      filters.reportingManager === 'all' || e.manager_id === filters.reportingManager;
+
+    return matchesSearch && matchesDepartment && matchesJobTitle && matchesStatus && matchesGOSI && matchesManager;
+  });
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      department: 'all',
+      jobTitle: 'all',
+      status: 'all',
+      gosiApplicable: 'all',
+      reportingManager: 'all'
+    });
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = Object.values(filters).some(f => f !== 'all');
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -94,19 +147,198 @@ export default function Employees() {
 
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-slate-100">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4">
+            {/* Search and Filter Button */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search by name, ID, email, department, or job title..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Popover open={showFilters} onOpenChange={setShowFilters}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="relative">
+                    <Filter className="w-4 h-4 mr-2" /> 
+                    Advanced Filters
+                    {hasActiveFilters && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-slate-900">Filter Employees</h3>
+                      {hasActiveFilters && (
+                        <Button variant="ghost" size="sm" onClick={clearFilters}>
+                          <X className="w-4 h-4 mr-1" />
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Department Filter */}
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">Department</label>
+                        <Select
+                          value={filters.department}
+                          onValueChange={(val) => setFilters({ ...filters, department: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Departments</SelectItem>
+                            {departments.map(dept => (
+                              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Job Title Filter */}
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">Job Title</label>
+                        <Select
+                          value={filters.jobTitle}
+                          onValueChange={(val) => setFilters({ ...filters, jobTitle: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Job Titles</SelectItem>
+                            {jobTitles.map(title => (
+                              <SelectItem key={title} value={title}>{title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Status Filter */}
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                        <Select
+                          value={filters.status}
+                          onValueChange={(val) => setFilters({ ...filters, status: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="on_leave">On Leave</SelectItem>
+                            <SelectItem value="terminated">Terminated</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* GOSI Applicable Filter */}
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">GOSI Applicable</label>
+                        <Select
+                          value={filters.gosiApplicable}
+                          onValueChange={(val) => setFilters({ ...filters, gosiApplicable: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Reporting Manager Filter */}
+                      <div>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">Reporting Manager</label>
+                        <Select
+                          value={filters.reportingManager}
+                          onValueChange={(val) => setFilters({ ...filters, reportingManager: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Managers</SelectItem>
+                            {managers.map(mgr => (
+                              <SelectItem key={mgr.id} value={mgr.id}>
+                                {mgr.first_name} {mgr.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
-            <Button variant="outline">
-              <Filter className="w-4 h-4 mr-2" /> Filters
-            </Button>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2">
+                {filters.department !== 'all' && (
+                  <Badge variant="secondary" className="gap-1">
+                    Department: {filters.department}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => setFilters({ ...filters, department: 'all' })}
+                    />
+                  </Badge>
+                )}
+                {filters.jobTitle !== 'all' && (
+                  <Badge variant="secondary" className="gap-1">
+                    Job Title: {filters.jobTitle}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => setFilters({ ...filters, jobTitle: 'all' })}
+                    />
+                  </Badge>
+                )}
+                {filters.status !== 'all' && (
+                  <Badge variant="secondary" className="gap-1">
+                    Status: {filters.status}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => setFilters({ ...filters, status: 'all' })}
+                    />
+                  </Badge>
+                )}
+                {filters.gosiApplicable !== 'all' && (
+                  <Badge variant="secondary" className="gap-1">
+                    GOSI: {filters.gosiApplicable === 'yes' ? 'Applicable' : 'Not Applicable'}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => setFilters({ ...filters, gosiApplicable: 'all' })}
+                    />
+                  </Badge>
+                )}
+                {filters.reportingManager !== 'all' && (
+                  <Badge variant="secondary" className="gap-1">
+                    Manager: {managers.find(m => m.id === filters.reportingManager)?.first_name} {managers.find(m => m.id === filters.reportingManager)?.last_name}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => setFilters({ ...filters, reportingManager: 'all' })}
+                    />
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {/* Results Count */}
+            <div className="flex items-center justify-between text-sm text-slate-600">
+              <p>Showing <strong>{filteredEmployees.length}</strong> of <strong>{employees.length}</strong> employees</p>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
@@ -117,7 +349,14 @@ export default function Employees() {
           ) : filteredEmployees.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">No employees found</p>
+              <p className="text-slate-500 mb-2">
+                {hasActiveFilters ? 'No employees match the selected filters' : 'No employees found'}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid gap-4">
@@ -133,7 +372,12 @@ export default function Employees() {
                       <div className="flex-1">
                         <h3 className="font-bold text-slate-900">{employee.first_name} {employee.last_name}</h3>
                         <p className="text-sm text-slate-500">{employee.job_title} • {employee.department}</p>
-                        <p className="text-xs text-slate-400 mt-1">ID: {employee.employee_id}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-slate-400">ID: {employee.employee_id}</p>
+                          {employee.gosi_applicable && (
+                            <Badge className="text-xs bg-amber-100 text-amber-700">GOSI</Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right hidden md:block">
