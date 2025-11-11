@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,9 @@ import { Users, Download, TrendingUp } from "lucide-react";
 import ReportFilters from './ReportFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter'; // Changed import path
+import AdvancedSearchFilter from './AdvancedSearchFilter';
+import DateRangeFilter from './DateRangeFilter';
+import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
 import { toast } from "sonner";
 
 export default function EmployeeReports({ employees = [], departments = [] }) {
@@ -17,6 +18,24 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     nationality: 'all',
     gosiApplicable: 'all'
   });
+
+  const [searchTerms, setSearchTerms] = useState([]);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [savedPresets, setSavedPresets] = useState([]);
+
+  const searchableFields = [
+    { value: 'employee_id', label: 'Employee ID' },
+    { value: 'first_name', label: 'First Name' },
+    { value: 'last_name', label: 'Last Name' },
+    { value: 'email', label: 'Email' },
+    { value: 'phone', label: 'Phone' },
+    { value: 'job_title', label: 'Job Title' },
+    { value: 'department', label: 'Department' },
+    { value: 'nationality', label: 'Nationality' },
+    { value: 'national_id', label: 'National ID' },
+    { value: 'basic_salary', label: 'Basic Salary' }
+  ];
 
   const filterConfig = [
     {
@@ -58,17 +77,55 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     }
   ];
 
+  // Apply advanced search
+  const applyAdvancedSearch = (emp, terms) => {
+    if (terms.length === 0) return true;
+
+    return terms.every(term => {
+      const value = String(emp[term.field] || '').toLowerCase();
+      const searchValue = term.value.toLowerCase();
+
+      switch (term.operator) {
+        case 'contains':
+          return value.includes(searchValue);
+        case 'equals':
+          return value === searchValue;
+        case 'startsWith':
+          return value.startsWith(searchValue);
+        case 'endsWith':
+          return value.endsWith(searchValue);
+        case 'notContains':
+          return !value.includes(searchValue);
+        case 'greaterThan':
+          return parseFloat(value) > parseFloat(searchValue);
+        case 'lessThan':
+          return parseFloat(value) < parseFloat(searchValue);
+        default:
+          return true;
+      }
+    });
+  };
+
   // Filter data
   const filteredData = useMemo(() => {
     return employees.filter(emp => {
+      // Basic filters
       if (filters.department !== 'all' && emp.department !== filters.department) return false;
       if (filters.status !== 'all' && emp.status !== filters.status) return false;
       if (filters.employmentType !== 'all' && emp.employment_type !== filters.employmentType) return false;
       if (filters.gosiApplicable === 'yes' && !emp.gosi_applicable) return false;
       if (filters.gosiApplicable === 'no' && emp.gosi_applicable) return false;
+
+      // Date range filter
+      if (dateFrom && emp.hire_date < dateFrom) return false;
+      if (dateTo && emp.hire_date > dateTo) return false;
+
+      // Advanced search
+      if (!applyAdvancedSearch(emp, searchTerms)) return false;
+
       return true;
     });
-  }, [employees, filters]);
+  }, [employees, filters, searchTerms, dateFrom, dateTo]);
 
   // Analytics data
   const departmentData = useMemo(() => {
@@ -124,7 +181,9 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
             'Total Employees': filteredData.length,
             'Active Employees': filteredData.filter(e => e.status === 'active').length,
             'Departments': new Set(filteredData.map(e => e.department)).size,
-            'Average Salary': `${(filteredData.reduce((sum, e) => sum + (e.basic_salary || 0), 0) / (filteredData.length || 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} SAR`
+            'Average Salary': `${(filteredData.reduce((sum, e) => sum + (e.basic_salary || 0), 0) / (filteredData.length || 1)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} SAR`,
+            'Date Range': dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : 'All Time',
+            'Active Filters': searchTerms.length + (dateFrom || dateTo ? 1 : 0)
           }
         });
       }
@@ -132,6 +191,10 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
     } catch (error) {
       toast.error('Failed to export report');
     }
+  };
+
+  const handleSavePreset = (preset) => {
+    setSavedPresets([...savedPresets, preset]);
   };
 
   return (
@@ -193,7 +256,30 @@ export default function EmployeeReports({ employees = [], departments = [] }) {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Advanced Search */}
+      <AdvancedSearchFilter
+        onSearch={setSearchTerms}
+        searchableFields={searchableFields}
+        onClearSearch={() => setSearchTerms([])}
+        savedPresets={savedPresets}
+        onSavePreset={handleSavePreset}
+        onLoadPreset={(preset) => setSearchTerms(preset.terms)}
+      />
+
+      {/* Date Range Filter */}
+      <DateRangeFilter
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onClear={() => {
+          setDateFrom('');
+          setDateTo('');
+        }}
+        label="Hire Date Range"
+      />
+
+      {/* Standard Filters */}
       <ReportFilters
         filters={filters}
         onFilterChange={setFilters}
