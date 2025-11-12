@@ -1,59 +1,53 @@
 import React, { useState } from 'react';
+import { useMutation } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, Eye, Calendar } from "lucide-react";
+import { Download, FileText, Eye, Calendar, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function PayslipViewer({ employee, payrolls, isLoading }) {
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
 
+  const downloadPayslipMutation = useMutation({
+    mutationFn: async ({ payroll_id, send_email = false }) => {
+      const response = await base44.functions.invoke('generatePDFPayslip', {
+        payroll_id,
+        send_email
+      });
+      return { data: response.data, send_email };
+    },
+    onSuccess: (result) => {
+      if (result.send_email) {
+        toast.success('Payslip sent to your email');
+      } else {
+        const blob = new Blob([result.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payslip-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        toast.success('Payslip downloaded');
+      }
+    },
+    onError: () => {
+      toast.error('Failed to generate payslip');
+    }
+  });
+
   const handleViewDetails = (payroll) => {
     setSelectedPayroll(payroll);
     setShowDetails(true);
-  };
-
-  const handleDownloadPayslip = (payroll) => {
-    // Generate PDF payslip
-    const content = `
-PAYSLIP - ${payroll.month}
-Employee: ${employee.first_name} ${employee.last_name}
-Employee ID: ${employee.employee_id}
-
-EARNINGS:
-Basic Salary: ${payroll.basic_salary?.toLocaleString()} SAR
-Housing Allowance: ${payroll.housing_allowance?.toLocaleString()} SAR
-Transport Allowance: ${payroll.transport_allowance?.toLocaleString()} SAR
-Other Allowances: ${payroll.other_fixed_allowances?.toLocaleString()} SAR
-Overtime: ${payroll.overtime_pay?.toLocaleString()} SAR
-Bonus: ${payroll.bonus?.toLocaleString()} SAR
-Gross Salary: ${payroll.gross_salary?.toLocaleString()} SAR
-
-DEDUCTIONS:
-GOSI (Employee): ${payroll.gosi_employee?.toLocaleString()} SAR
-Loan Deduction: ${payroll.loan_deduction?.toLocaleString()} SAR
-Other Deductions: ${payroll.other_deductions?.toLocaleString()} SAR
-Total Deductions: ${payroll.total_deductions?.toLocaleString()} SAR
-
-NET SALARY: ${payroll.net_salary?.toLocaleString()} SAR
-
-Payment Date: ${payroll.payment_date || 'Pending'}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Payslip_${payroll.month}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -117,24 +111,29 @@ Payment Date: ${payroll.payment_date || 'Pending'}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleViewDetails(payroll)}
-                    className="flex-1"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDownloadPayslip(payroll)}
-                    className="flex-1"
+                    onClick={() => downloadPayslipMutation.mutate({ payroll_id: payroll.id, send_email: false })}
+                    disabled={downloadPayslipMutation.isPending}
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
+                    <Download className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadPayslipMutation.mutate({ payroll_id: payroll.id, send_email: true })}
+                    disabled={downloadPayslipMutation.isPending}
+                  >
+                    <Mail className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
