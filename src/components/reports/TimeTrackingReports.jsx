@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Download, FileText, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { exportToCSV, exportToPDF } from '@/utils/exportUtils';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 export default function TimeTrackingReports({ timeEntries = [], employees = [], projects = [] }) {
   const [reportType, setReportType] = useState('all_entries');
