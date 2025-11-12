@@ -147,7 +147,7 @@ export default function ESS() {
 
   // Clock Out Mutation
   const clockOutMutation = useMutation({
-    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    mutationFn: (data) => base44.entities.Attendance.update(data.id, data),
     onSuccess: () => {
       refetchAttendance();
       toast.success('Clocked out successfully!');
@@ -157,7 +157,7 @@ export default function ESS() {
 
   // Break Mutations
   const breakStartMutation = useMutation({
-    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    mutationFn: (data) => base44.entities.Attendance.update(data.id, data),
     onSuccess: () => {
       refetchAttendance();
       toast.success('Break started');
@@ -166,7 +166,7 @@ export default function ESS() {
   });
 
   const breakEndMutation = useMutation({
-    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    mutationFn: (data) => base44.entities.Attendance.update(data.id, data),
     onSuccess: () => {
       refetchAttendance();
       toast.success('Break ended');

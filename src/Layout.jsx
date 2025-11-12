@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/components/TranslationContext';
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
