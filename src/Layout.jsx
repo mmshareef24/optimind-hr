@@ -94,16 +94,16 @@ export default function Layout({ children }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-slate-100/30 to-slate-50">
-        <Sidebar className="border-r border-slate-200 bg-white/80 backdrop-blur-xl">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
+        <Sidebar className="border-r border-emerald-100/50 bg-white/80 backdrop-blur-xl">
           <SidebarHeader className="border-b border-emerald-100/50 p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: '#32373c' }}>
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h2 className="font-bold text-lg text-slate-900">OptiMindHR</h2>
-                <p className="text-xs font-medium" style={{ color: '#32373c' }}>Connecting Minds Through Smart Intelligence</p>
+                <p className="text-xs text-emerald-700 font-medium">Connecting Minds Through Smart Intelligence</p>
               </div>
             </div>
           </SidebarHeader>
@@ -115,7 +115,7 @@ export default function Layout({ children }) {
                 defaultOpen={sectionIndex === 0 || sectionIndex === 1}
                 className="mb-2"
               >
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider transition-colors group" style={{ hover: { color: '#32373c' } }}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group">
                   <span>{section.title}</span>
                   <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
                 </CollapsibleTrigger>
@@ -130,11 +130,10 @@ export default function Layout({ children }) {
                               className={`
                                 transition-all duration-200 rounded-xl px-4 py-2.5
                                 ${location.pathname === item.url 
-                                  ? 'text-white shadow-lg font-medium' 
-                                  : 'text-slate-700 hover:bg-slate-100'
+                                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/30 font-medium' 
+                                  : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-700'
                                 }
                               `}
-                              style={location.pathname === item.url ? { background: '#32373c' } : {}}
                             >
                               <Link to={item.url} className="flex items-center gap-3">
                                 <item.icon className="w-4 h-4" />
@@ -151,9 +150,9 @@ export default function Layout({ children }) {
             ))}
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-slate-200 p-4">
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-50">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-md" style={{ background: '#32373c' }}>
+          <SidebarFooter className="border-t border-emerald-100/50 p-4">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent">
+              <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white font-semibold text-sm">HR</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -165,16 +164,16 @@ export default function Layout({ children }) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col min-w-0">
-          <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 px-6 py-4 lg:hidden sticky top-0 z-10">
+          <header className="bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 px-6 py-4 lg:hidden sticky top-0 z-10">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors" />
+              <SidebarTrigger className="hover:bg-emerald-50 p-2 rounded-lg transition-colors" />
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#32373c' }}>
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-slate-900">OptiMindHR</h1>
-                  <p className="text-xs" style={{ color: '#32373c' }}>Smart Intelligence</p>
+                  <p className="text-xs text-emerald-700">Smart Intelligence</p>
                 </div>
               </div>
             </div>
