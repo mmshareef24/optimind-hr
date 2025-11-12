@@ -9,7 +9,7 @@ export default function MaintenanceSchedule({ assets, maintenanceRecords, onSche
     .filter(m => m.status === 'scheduled' && new Date(m.maintenance_date) > new Date())
     .sort((a, b) => new Date(a.maintenance_date) - new Date(b.maintenance_date));
 
-  const overdueMainten ance = maintenanceRecords
+  const overdueMaintenance = maintenanceRecords
     .filter(m => m.status === 'scheduled' && new Date(m.maintenance_date) < new Date());
 
   const completedMaintenance = maintenanceRecords
