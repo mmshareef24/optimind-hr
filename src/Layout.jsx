@@ -13,28 +13,69 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const navigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: Sparkles },
-  { title: "Org Structure", url: createPageUrl("OrgStructure"), icon: Network },
-  { title: "Companies", url: createPageUrl("Companies"), icon: Building2 },
-  { title: "Employee Management", url: createPageUrl("Employees"), icon: Users },
-  { title: "Shift Management", url: createPageUrl("Shifts"), icon: Clock3 },
-  { title: "Time Management", url: createPageUrl("TimeManagement"), icon: Clock },
-  { title: "Leave Management", url: createPageUrl("LeaveManagement"), icon: Calendar },
-  { title: "Onboarding", url: createPageUrl("Onboarding"), icon: UserPlus },
-  { title: "Project Management", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Payroll & GOSI", url: createPageUrl("Payroll"), icon: DollarSign },
-  { title: "GOSI Reporting", url: createPageUrl("GOSIReporting"), icon: Shield },
-  { title: "Performance Management", url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
-  { title: "Benefits & Rewards", url: createPageUrl("Benefits"), icon: Gift },
-  { title: "Travel & Expense", url: createPageUrl("TravelExpense"), icon: Plane },
-  { title: "Employee Relations", url: createPageUrl("EmployeeRelations"), icon: MessageSquare },
-  { title: "Assets & Facilities", url: createPageUrl("Assets"), icon: Package },
-  { title: "Health & Safety", url: createPageUrl("HealthSafety"), icon: Shield },
-  { title: "Documents", url: createPageUrl("Documents"), icon: FileText },
-  { title: "ESS", url: createPageUrl("ESS"), icon: User },
-  { title: "MSS", url: createPageUrl("MSS"), icon: UserCheck }
+const navigationSections = [
+  {
+    title: "Main",
+    items: [
+      { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+      { title: "AI Assistant", url: createPageUrl("AIAssistant"), icon: Sparkles }
+    ]
+  },
+  {
+    title: "Organization",
+    items: [
+      { title: "Companies", url: createPageUrl("Companies"), icon: Building2 },
+      { title: "Org Structure", url: createPageUrl("OrgStructure"), icon: Network },
+      { title: "Departments", url: createPageUrl("Employees"), icon: Users }
+    ]
+  },
+  {
+    title: "Employee Lifecycle",
+    items: [
+      { title: "Employee Management", url: createPageUrl("Employees"), icon: Users },
+      { title: "Onboarding", url: createPageUrl("Onboarding"), icon: UserPlus },
+      { title: "Documents", url: createPageUrl("Documents"), icon: FileText }
+    ]
+  },
+  {
+    title: "Time & Attendance",
+    items: [
+      { title: "Time Management", url: createPageUrl("TimeManagement"), icon: Clock },
+      { title: "Shift Management", url: createPageUrl("Shifts"), icon: Clock3 },
+      { title: "Leave Management", url: createPageUrl("LeaveManagement"), icon: Calendar }
+    ]
+  },
+  {
+    title: "Compensation",
+    items: [
+      { title: "Payroll & GOSI", url: createPageUrl("Payroll"), icon: DollarSign },
+      { title: "GOSI Reporting", url: createPageUrl("GOSIReporting"), icon: Shield },
+      { title: "Benefits & Rewards", url: createPageUrl("Benefits"), icon: Gift }
+    ]
+  },
+  {
+    title: "Performance & Projects",
+    items: [
+      { title: "Performance", url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
+      { title: "Project Management", url: createPageUrl("Projects"), icon: FolderKanban }
+    ]
+  },
+  {
+    title: "Employee Services",
+    items: [
+      { title: "ESS Portal", url: createPageUrl("ESS"), icon: User },
+      { title: "Manager Portal", url: createPageUrl("MSS"), icon: UserCheck },
+      { title: "Travel & Expense", url: createPageUrl("TravelExpense"), icon: Plane }
+    ]
+  },
+  {
+    title: "Resources",
+    items: [
+      { title: "Assets & Facilities", url: createPageUrl("Assets"), icon: Package },
+      { title: "Health & Safety", url: createPageUrl("HealthSafety"), icon: Shield },
+      { title: "Employee Relations", url: createPageUrl("EmployeeRelations"), icon: MessageSquare }
+    ]
+  }
 ];
 
 export default function Layout({ children }) {
@@ -58,31 +99,45 @@ export default function Layout({ children }) {
           </SidebarHeader>
           
           <SidebarContent className="p-3 overflow-y-auto">
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        className={`
-                          transition-all duration-200 rounded-xl px-4 py-3
-                          ${location.pathname === item.url 
-                            ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/30 font-medium' 
-                            : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-700'
-                          }
-                        `}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3">
-                          <item.icon className="w-5 h-5" />
-                          <span className="text-sm">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {navigationSections.map((section, sectionIndex) => (
+              <Collapsible
+                key={section.title}
+                defaultOpen={sectionIndex === 0 || sectionIndex === 1}
+                className="mb-2"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group">
+                  <span>{section.title}</span>
+                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarGroup>
+                    <SidebarGroupContent>
+                      <SidebarMenu className="space-y-1 mt-1">
+                        {section.items.map((item) => (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton 
+                              asChild 
+                              className={`
+                                transition-all duration-200 rounded-xl px-4 py-2.5
+                                ${location.pathname === item.url 
+                                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/30 font-medium' 
+                                  : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-700'
+                                }
+                              `}
+                            >
+                              <Link to={item.url} className="flex items-center gap-3">
+                                <item.icon className="w-4 h-4" />
+                                <span className="text-sm">{item.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
           </SidebarContent>
 
           <SidebarFooter className="border-t border-emerald-100/50 p-4">
