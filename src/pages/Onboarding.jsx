@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { UserPlus, CheckSquare, FileText, Users, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { UserPlus, CheckSquare, FileText, Users, TrendingUp, Clock, AlertCircle, Send, Bell, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import StatCard from "../components/hrms/StatCard";
 import NewHiresList from "../components/onboarding/NewHiresList";
@@ -15,6 +19,7 @@ import ChecklistManager from "../components/onboarding/ChecklistManager";
 import TaskBoard from "../components/onboarding/TaskBoard";
 import DocumentCenter from "../components/onboarding/DocumentCenter";
 import OnboardingProgress from "../components/onboarding/OnboardingProgress";
+import OnboardingDashboard from "../components/onboarding/OnboardingDashboard";
 import ChecklistForm from "../components/onboarding/ChecklistForm";
 import AssignChecklistModal from "../components/onboarding/AssignChecklistModal";
 import { toast } from "sonner";
@@ -22,8 +27,12 @@ import { toast } from "sonner";
 export default function Onboarding() {
   const [showChecklistForm, setShowChecklistForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showRemindersDialog, setShowRemindersDialog] = useState(false);
   const [editingChecklist, setEditingChecklist] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState(null);
+  const [selectedChecklistId, setSelectedChecklistId] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState('user');
   const [selectedCompany, setSelectedCompany] = useState('all');
@@ -141,6 +150,43 @@ export default function Onboarding() {
     onError: () => toast.error('Failed to upload document')
   });
 
+  // Auto-assign onboarding mutation
+  const autoAssignMutation = useMutation({
+    mutationFn: async ({ employee_id, checklist_id }) => {
+      const response = await base44.functions.invoke('autoAssignOnboardingTasks', {
+        employee_id,
+        checklist_id
+      });
+      return response.data;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries(['onboarding-tasks']);
+      queryClient.invalidateQueries(['employees']);
+      setShowAssignDialog(false);
+      setSelectedEmployeeForAssign(null);
+      setSelectedChecklistId(null);
+      toast.success(`Onboarding assigned: ${result.data.total_tasks} tasks created`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to assign onboarding');
+    }
+  });
+
+  // Send reminders mutation
+  const sendRemindersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('sendOnboardingReminders', {});
+      return response.data;
+    },
+    onSuccess: (result) => {
+      setShowRemindersDialog(false);
+      toast.success(`Sent ${result.data.reminders_sent} reminder${result.data.reminders_sent !== 1 ? 's' : ''}`);
+    },
+    onError: () => {
+      toast.error('Failed to send reminders');
+    }
+  });
+
   // Filter new hires (hired in last 90 days)
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -176,6 +222,22 @@ export default function Onboarding() {
   const handleAssignChecklist = (employeeId) => {
     setSelectedEmployee(employeeId);
     setShowAssignModal(true);
+  };
+
+  const handleQuickAssignOnboarding = (employee) => {
+    setSelectedEmployeeForAssign(employee);
+    setShowAssignDialog(true);
+  };
+
+  const handleConfirmQuickAssign = () => {
+    if (!selectedEmployeeForAssign) {
+      toast.error('Please select an employee');
+      return;
+    }
+    autoAssignMutation.mutate({
+      employee_id: selectedEmployeeForAssign.id,
+      checklist_id: selectedChecklistId || null
+    });
   };
 
   const handleCompleteTask = (taskId) => {
@@ -224,9 +286,17 @@ export default function Onboarding() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Onboarding</h1>
           <p className="text-slate-600">Streamline the new hire experience</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {userRole === 'admin' && (
             <>
+              <Button
+                onClick={() => setShowRemindersDialog(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Bell className="w-4 h-4" />
+                Send Reminders
+              </Button>
               <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                 <SelectTrigger className="w-[180px] bg-white">
                   <SelectValue placeholder="All Companies" />
@@ -298,10 +368,17 @@ export default function Onboarding() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue={userRole === 'admin' ? 'new-hires' : 'my-tasks'} className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1">
+      <Tabs defaultValue={userRole === 'admin' ? 'dashboard' : 'my-tasks'} className="space-y-6">
+        <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
           {userRole === 'admin' && (
             <>
+              <TabsTrigger
+                value="dashboard"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Dashboard
+              </TabsTrigger>
               <TabsTrigger
                 value="new-hires"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -339,6 +416,17 @@ export default function Onboarding() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Dashboard Tab */}
+        {userRole === 'admin' && (
+          <TabsContent value="dashboard">
+            <OnboardingDashboard
+              employees={employees}
+              tasks={tasks}
+              checklists={checklists}
+            />
+          </TabsContent>
+        )}
+
         {/* New Hires Tab */}
         {userRole === 'admin' && (
           <TabsContent value="new-hires">
@@ -346,7 +434,7 @@ export default function Onboarding() {
               newHires={newHires}
               tasks={tasks}
               checklists={checklists}
-              onAssignChecklist={handleAssignChecklist}
+              onAssignChecklist={handleQuickAssignOnboarding}
             />
           </TabsContent>
         )}
@@ -472,6 +560,108 @@ export default function Onboarding() {
           }}
         />
       )}
+
+      {/* Quick Assign Onboarding Dialog */}
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Automated Onboarding</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Assign onboarding checklist and tasks to{' '}
+              <strong>{selectedEmployeeForAssign?.first_name} {selectedEmployeeForAssign?.last_name}</strong>
+            </p>
+
+            <div>
+              <Label>Select Checklist (Optional)</Label>
+              <Select value={selectedChecklistId || ''} onValueChange={setSelectedChecklistId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Auto-select based on role/department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Auto-select</SelectItem>
+                  {checklists.filter(c => c.is_active).map((checklist) => (
+                    <SelectItem key={checklist.id} value={checklist.id}>
+                      {checklist.checklist_name}
+                      {checklist.department && ` (${checklist.department})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                Leave empty to automatically select checklist based on department or job role
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900 font-medium mb-1">What will happen:</p>
+              <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
+                <li>10 default onboarding tasks will be created</li>
+                <li>Tasks will be assigned based on role (new hire, manager, HR, IT)</li>
+                <li>Due dates will be calculated from hire date</li>
+                <li>Welcome email will be sent to the employee</li>
+                <li>Notification email will be sent to HR</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmQuickAssign}
+              disabled={autoAssignMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {autoAssignMutation.isPending ? 'Assigning...' : 'Assign Onboarding'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Reminders Dialog */}
+      <Dialog open={showRemindersDialog} onOpenChange={setShowRemindersDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Onboarding Reminders</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              This will send email reminders for onboarding tasks to:
+            </p>
+            <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
+              <li>New hires with overdue tasks</li>
+              <li>New hires with tasks due today</li>
+              <li>New hires with tasks due tomorrow</li>
+              <li>Managers and HR staff with assigned tasks</li>
+            </ul>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-800">
+                <strong>Tip:</strong> You can schedule this function to run automatically daily for proactive follow-ups.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRemindersDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => sendRemindersMutation.mutate()}
+              disabled={sendRemindersMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              {sendRemindersMutation.isPending ? 'Sending...' : 'Send Reminders Now'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Calendar, Briefcase, CheckSquare } from "lucide-react";
+import { UserPlus, Calendar, Briefcase, CheckSquare, Send } from "lucide-react";
 
-export default function NewHiresList({ newHires, tasks, checklists, onAssignChecklist }) {
+export default function NewHiresList({ newHires, tasks, checklists, onAssignChecklist = null }) {
   const getEmployeeProgress = (employeeId) => {
     const employeeTasks = tasks.filter(t => t.employee_id === employeeId);
     if (employeeTasks.length === 0) return { total: 0, completed: 0, progress: 0 };
