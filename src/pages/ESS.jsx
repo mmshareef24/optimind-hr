@@ -15,6 +15,7 @@ import LetterRequestsESS from "../components/ess/LetterRequestsESS";
 import TravelRequestsESS from "../components/ess/TravelRequestsESS";
 import MyProfile from "../components/ess/MyProfile";
 import MyBenefits from "../components/ess/MyBenefits";
+import NewHirePortal from "../components/onboarding/NewHirePortal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -92,6 +93,16 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
+  // Fetch onboarding tasks
+  const { data: onboardingTasks = [] } = useQuery({
+    queryKey: ['my-onboarding-tasks', currentUser?.id],
+    queryFn: () => base44.entities.OnboardingTask.filter({ 
+      employee_id: currentUser.id,
+      assigned_to: 'new_hire'
+    }, '-day_number'),
+    enabled: !!currentUser?.id
+  });
+
   // Calculate statistics
   const totalLeaveBalance = leaveBalances.reduce((sum, lb) => sum + (lb.remaining || 0), 0);
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
@@ -103,6 +114,16 @@ export default function ESS() {
   ).length;
   const totalPendingRequests = pendingLeaves + pendingLoans + pendingTravel + pendingLetters;
   const lastPayroll = payrolls[0];
+  
+  // Check if employee is newly hired (within 90 days)
+  const isNewHire = currentUser && (() => {
+    const hireDate = new Date(currentUser.hire_date);
+    const now = new Date();
+    const daysSinceHire = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24));
+    return daysSinceHire <= 90;
+  })();
+  
+  const pendingOnboardingTasks = onboardingTasks.filter(t => t.status !== 'completed').length;
 
   if (loadingUser) {
     return (
@@ -240,8 +261,17 @@ export default function ESS() {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="dashboard" className="space-y-6">
+      <Tabs defaultValue={isNewHire && onboardingTasks.length > 0 ? "onboarding" : "dashboard"} className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
+          {isNewHire && onboardingTasks.length > 0 && (
+            <TabsTrigger value="onboarding" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <UserPlus className="w-4 h-4 mr-2" />
+              My Onboarding
+              {pendingOnboardingTasks > 0 && (
+                <Badge className="ml-2 bg-amber-500 text-white text-xs">{pendingOnboardingTasks}</Badge>
+              )}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <TrendingUp className="w-4 h-4 mr-2" />
             Dashboard
@@ -283,6 +313,16 @@ export default function ESS() {
             Policies
           </TabsTrigger>
         </TabsList>
+
+        {/* Onboarding Tab (for new hires) */}
+        {isNewHire && onboardingTasks.length > 0 && (
+          <TabsContent value="onboarding">
+            <NewHirePortal
+              employee={currentUser}
+              tasks={onboardingTasks}
+            />
+          </TabsContent>
+        )}
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard">
