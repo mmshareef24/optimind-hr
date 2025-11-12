@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter } from "lucide-react";
+import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
+import ReportExporter from "../components/reports/ReportExporter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +53,11 @@ export default function Dashboard() {
           <p className="text-slate-600">Welcome back, here's your HR overview</p>
         </div>
         <div className="flex items-center gap-3">
+          <ReportExporter
+            reportType="employees"
+            filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
+            buttonText="Export Report"
+          />
           <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
             <span className="text-slate-500">Today: </span>
             <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
