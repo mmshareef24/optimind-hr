@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Calendar, Plus, TrendingUp, Clock, CheckCircle, XCircle, History } from "lucide-react";
+import { Calendar, Plus, TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +13,6 @@ import LeaveBalanceCard from "../components/leave/LeaveBalanceCard";
 import LeaveRequestForm from "../components/leave/LeaveRequestForm";
 import LeaveApprovalPanel from "../components/leave/LeaveApprovalPanel";
 import LeaveCalendar from "../components/leave/LeaveCalendar";
-import LeaveHistory from "../components/leave/LeaveHistory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -51,7 +50,7 @@ export default function LeaveManagement() {
 
   const { data: leaveBalances = [], isLoading: loadingBalances } = useQuery({
     queryKey: ['leave-balances', currentUser?.id],
-    queryFn: () => currentUser ? base44.entities.LeaveBalance.filter({ employee_id: currentUser.id }) : [],
+    queryFn: () => base44.entities.LeaveBalance.filter({ employee_id: currentUser.id }),
     enabled: !!currentUser?.id
   });
 
@@ -62,8 +61,7 @@ export default function LeaveManagement() {
       const defaultBalances = [
         { employee_id: currentUser.id, leave_type: 'annual', year: currentYear, total_entitled: 21, used: 0, pending: 0, remaining: 21 },
         { employee_id: currentUser.id, leave_type: 'sick', year: currentYear, total_entitled: 30, used: 0, pending: 0, remaining: 30 },
-        { employee_id: currentUser.id, leave_type: 'hajj', year: currentYear, total_entitled: 10, used: 0, pending: 0, remaining: 10 },
-        { employee_id: currentUser.id, leave_type: 'unpaid', year: currentYear, total_entitled: 0, used: 0, pending: 0, remaining: 0 }
+        { employee_id: currentUser.id, leave_type: 'hajj', year: currentYear, total_entitled: 10, used: 0, pending: 0, remaining: 10 }
       ];
       
       defaultBalances.forEach(balance => {
@@ -126,7 +124,7 @@ export default function LeaveManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
       queryClient.invalidateQueries(['leave-balances']);
-      toast.success('Leave request approved - Will be deducted from payroll for unpaid leaves');
+      toast.success('Leave request approved');
     },
     onError: () => {
       toast.error('Failed to approve leave request');
@@ -189,21 +187,13 @@ export default function LeaveManagement() {
   const totalDaysUsed = leaveBalances.reduce((sum, b) => sum + b.used, 0);
   const totalDaysRemaining = leaveBalances.reduce((sum, b) => sum + b.remaining, 0);
 
-  // Calculate unpaid leaves for current year
-  const currentYear = new Date().getFullYear();
-  const unpaidLeaves = myRequests.filter(r => 
-    r.leave_type === 'unpaid' && 
-    r.status === 'approved' &&
-    new Date(r.start_date).getFullYear() === currentYear
-  ).reduce((sum, r) => sum + r.total_days, 0);
-
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Leave Management</h1>
-          <p className="text-slate-600">Manage leave requests and track balances with payroll integration</p>
+          <p className="text-slate-600">Manage leave requests and balances</p>
         </div>
         <Button
           onClick={() => setShowRequestForm(true)}
@@ -234,10 +224,10 @@ export default function LeaveManagement() {
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Unpaid Leaves (YTD)"
-          value={unpaidLeaves}
-          icon={XCircle}
-          bgColor="from-red-500 to-red-600"
+          title="Approved Requests"
+          value={approvedCount}
+          icon={CheckCircle}
+          bgColor="from-purple-500 to-purple-600"
         />
       </div>
 
@@ -245,8 +235,8 @@ export default function LeaveManagement() {
       <div>
         <h3 className="text-lg font-semibold text-slate-900 mb-4">My Leave Balances</h3>
         {loadingBalances ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-48" />)}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
           </div>
         ) : leaveBalances.length === 0 ? (
           <Card className="border-dashed border-2 border-slate-200">
@@ -256,7 +246,7 @@ export default function LeaveManagement() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {leaveBalances.map((balance) => (
               <LeaveBalanceCard key={balance.id} balance={balance} />
             ))}
@@ -289,13 +279,6 @@ export default function LeaveManagement() {
           >
             <Calendar className="w-4 h-4 mr-2" />
             Calendar
-          </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-          >
-            <History className="w-4 h-4 mr-2" />
-            History
           </TabsTrigger>
         </TabsList>
 
@@ -333,12 +316,6 @@ export default function LeaveManagement() {
                               }>
                                 {request.status}
                               </Badge>
-                              {request.leave_type === 'unpaid' && request.status === 'approved' && (
-                                <Badge className="bg-red-100 text-red-700">
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                  Payroll Deduction
-                                </Badge>
-                              )}
                             </div>
                             <div className="grid md:grid-cols-3 gap-2 text-sm text-slate-600">
                               <p><strong>From:</strong> {format(new Date(request.start_date), 'MMM dd, yyyy')}</p>
@@ -380,15 +357,6 @@ export default function LeaveManagement() {
         <TabsContent value="calendar">
           <LeaveCalendar
             leaveRequests={userRole === 'admin' ? teamRequests : myRequests}
-            employees={employees}
-          />
-        </TabsContent>
-
-        {/* History Tab */}
-        <TabsContent value="history">
-          <LeaveHistory
-            requests={userRole === 'admin' ? teamRequests : myRequests}
-            employees={employees}
           />
         </TabsContent>
       </Tabs>

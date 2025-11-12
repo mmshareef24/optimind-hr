@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -211,7 +210,7 @@ export default function TaskManagement({
                         if (!depTask) return null;
                         return (
                           <div key={depId} className="flex items-center gap-2 text-xs">
-                            <Badge className={`${statusConfig[depTask.status]?.badgeColor} text-xs`}>
+                            <Badge className={statusConfig[depTask.status]?.badgeColor} className="text-xs">
                               {statusConfig[depTask.status]?.label}
                             </Badge>
                             <span className="text-slate-700">{depTask.task_name}</span>
