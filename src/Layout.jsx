@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
-  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp
+  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -65,6 +65,7 @@ const navigationSections = [
     items: [
       { title: "ESS Portal", url: createPageUrl("ESS"), icon: User },
       { title: "Manager Portal", url: createPageUrl("MSS"), icon: UserCheck },
+      { title: "Approvals", url: createPageUrl("Approvals"), icon: CheckCircle2 },
       { title: "Travel & Expense", url: createPageUrl("TravelExpense"), icon: Plane }
     ]
   },
