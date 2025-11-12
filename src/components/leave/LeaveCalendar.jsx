@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,15 @@ import {
 export default function LeaveCalendar({ leaveRequests, currentMonth = new Date() }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [showDayDetails, setShowDayDetails] = useState(false);
+
+  // Fetch public holidays for the current month's year
+  const { data: holidays = [] } = useQuery({
+    queryKey: ['public-holidays-calendar', currentMonth.getFullYear()],
+    queryFn: () => base44.entities.PublicHoliday.filter({ 
+      year: currentMonth.getFullYear(),
+      is_active: true 
+    }),
+  });
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -28,6 +39,11 @@ export default function LeaveCalendar({ leaveRequests, currentMonth = new Date()
       const current = new Date(dayStr);
       return current >= start && current <= end;
     });
+  };
+
+  const getHolidayForDay = (day) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return holidays.find(h => h.date === dayStr);
   };
 
   const leaveTypeColors = {
@@ -87,6 +103,7 @@ export default function LeaveCalendar({ leaveRequests, currentMonth = new Date()
             {/* All calendar days including previous/next month */}
             {allCalendarDays.map((day) => {
               const leavesOnDay = getLeaveForDay(day);
+              const holiday = getHolidayForDay(day);
               const isWeekendDay = isWeekend(day);
               const isTodayDay = isToday(day);
               const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -100,7 +117,7 @@ export default function LeaveCalendar({ leaveRequests, currentMonth = new Date()
                     aspect-square p-3 rounded-xl border-2 transition-all
                     ${!isCurrentMonth ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}
                     ${isTodayDay ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-200' : 'border-slate-200'}
-                    ${isWeekendDay ? 'bg-slate-50' : 'bg-white'}
+                    ${holiday ? 'bg-gradient-to-br from-emerald-50 to-green-50 ring-2 ring-emerald-300' : isWeekendDay ? 'bg-slate-50' : 'bg-white'}
                     ${leavesOnDay.length > 0 ? 'ring-2 ring-blue-300 bg-blue-50' : ''}
                     hover:scale-105
                   `}
@@ -109,26 +126,35 @@ export default function LeaveCalendar({ leaveRequests, currentMonth = new Date()
                     <div className="flex justify-between items-start mb-1">
                       <span className={`text-lg font-bold ${
                         isTodayDay ? 'text-emerald-600' : 
+                        holiday ? 'text-emerald-700' :
                         isCurrentMonth ? 'text-slate-900' : 'text-slate-400'
                       }`}>
                         {format(day, 'd')}
                       </span>
-                      {leavesOnDay.length > 0 && (
-                        <Badge className="text-xs px-1.5 py-0.5 bg-blue-600 text-white">
-                          {leavesOnDay.length}
-                        </Badge>
-                      )}
+                      <div className="flex gap-1">
+                        {holiday && <span className="text-sm">🎉</span>}
+                        {leavesOnDay.length > 0 && (
+                          <Badge className="text-xs px-1.5 py-0.5 bg-blue-600 text-white">
+                            {leavesOnDay.length}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    {holiday && (
+                      <p className="text-xs font-semibold text-emerald-700 truncate mb-1">
+                        {holiday.holiday_name}
+                      </p>
+                    )}
                     <div className="flex-1 space-y-1">
-                      {leavesOnDay.slice(0, 3).map((leave, idx) => (
+                      {leavesOnDay.slice(0, 2).map((leave, idx) => (
                         <div
                           key={idx}
                           className={`h-2 rounded-full ${leaveTypeColors[leave.leave_type] || 'bg-slate-400'} shadow-sm`}
                           title={`${leave.leave_type} leave`}
                         />
                       ))}
-                      {leavesOnDay.length > 3 && (
-                        <p className="text-xs font-semibold text-blue-600">+{leavesOnDay.length - 3}</p>
+                      {leavesOnDay.length > 2 && (
+                        <p className="text-xs font-semibold text-blue-600">+{leavesOnDay.length - 2}</p>
                       )}
                     </div>
                   </div>
@@ -189,45 +215,73 @@ export default function LeaveCalendar({ leaveRequests, currentMonth = new Date()
 
           {selectedDay && (() => {
             const leavesOnDay = getLeaveForDay(selectedDay);
+            const holiday = getHolidayForDay(selectedDay);
             
-            if (leavesOnDay.length === 0) {
+            if (leavesOnDay.length === 0 && !holiday) {
               return (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
                     <CalendarIcon className="w-8 h-8 text-slate-400" />
                   </div>
-                  <p className="text-slate-500">No leave requests for this day</p>
+                  <p className="text-slate-500">No leave requests or holidays for this day</p>
                 </div>
               );
             }
 
             return (
               <div className="space-y-3">
-                <p className="text-sm text-slate-600 mb-4">
-                  <Users className="w-4 h-4 inline mr-2" />
-                  {leavesOnDay.length} employee{leavesOnDay.length > 1 ? 's' : ''} on leave
-                </p>
-                {leavesOnDay.map((leave, idx) => (
-                  <Card key={idx} className="border-2 border-slate-200">
+                {/* Show holiday if exists */}
+                {holiday && (
+                  <Card className="border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-green-50">
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${leaveTypeColors[leave.leave_type]}`} />
-                          <h4 className="font-semibold text-slate-900 capitalize">
-                            {leave.leave_type.replace('_', ' ')} Leave
-                          </h4>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">🎉</span>
+                        <div>
+                          <Badge className="bg-emerald-600 text-white mb-1">Public Holiday</Badge>
+                          <h3 className="font-bold text-slate-900">{holiday.holiday_name}</h3>
+                          {holiday.holiday_name_ar && (
+                            <p className="text-sm text-slate-600" dir="rtl">{holiday.holiday_name_ar}</p>
+                          )}
                         </div>
-                        <Badge className="bg-emerald-100 text-emerald-700">
-                          {leave.total_days} days
-                        </Badge>
                       </div>
-                      <div className="text-sm text-slate-600 space-y-1">
-                        <p><strong>Period:</strong> {format(new Date(leave.start_date), 'MMM dd')} - {format(new Date(leave.end_date), 'MMM dd, yyyy')}</p>
-                        {leave.reason && <p><strong>Reason:</strong> {leave.reason}</p>}
-                      </div>
+                      {holiday.description && (
+                        <p className="text-xs text-slate-600 mt-2 p-2 bg-white rounded">
+                          {holiday.description}
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                )}
+
+                {leavesOnDay.length > 0 && (
+                  <>
+                    <p className="text-sm text-slate-600 mb-4">
+                      <Users className="w-4 h-4 inline mr-2" />
+                      {leavesOnDay.length} employee{leavesOnDay.length > 1 ? 's' : ''} on leave
+                    </p>
+                    {leavesOnDay.map((leave, idx) => (
+                      <Card key={idx} className="border-2 border-slate-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${leaveTypeColors[leave.leave_type]}`} />
+                              <h4 className="font-semibold text-slate-900 capitalize">
+                                {leave.leave_type.replace('_', ' ')} Leave
+                              </h4>
+                            </div>
+                            <Badge className="bg-emerald-100 text-emerald-700">
+                              {leave.total_days} days
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-slate-600 space-y-1">
+                            <p><strong>Period:</strong> {format(new Date(leave.start_date), 'MMM dd')} - {format(new Date(leave.end_date), 'MMM dd, yyyy')}</p>
+                            {leave.reason && <p><strong>Reason:</strong> {leave.reason}</p>}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                )}
               </div>
             );
           })()}
