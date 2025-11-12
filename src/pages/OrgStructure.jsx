@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Network, Users, TrendingUp, Layers } from "lucide-react";
+import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrgChart from "../components/org/OrgChart";
 import OrgListView from "../components/org/OrgListView";
 import OrgChartControls from "../components/org/OrgChartControls";
@@ -21,12 +22,19 @@ export default function OrgStructure() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const chartRef = useRef(null);
   const [allExpanded, setAllExpanded] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState('all');
+  const [viewType, setViewType] = useState('unified'); // 'unified' or 'by-company'
 
   const queryClient = useQueryClient();
 
   const { data: employees = [], isLoading, refetch } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list(),
+  });
+
+  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list(),
   });
 
   const updateEmployeeMutation = useMutation({
@@ -41,11 +49,16 @@ export default function OrgStructure() {
     }
   });
 
+  // Filter employees by company
+  const companyFilteredEmployees = selectedCompany === 'all' 
+    ? employees 
+    : employees.filter(e => e.company_id === selectedCompany);
+
   // Get unique departments
-  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
+  const departments = [...new Set(companyFilteredEmployees.map(e => e.department).filter(Boolean))];
 
   // Filter employees based on search
-  const filteredEmployees = employees.filter(emp => {
+  const filteredEmployees = companyFilteredEmployees.filter(emp => {
     const searchLower = searchTerm.toLowerCase();
     return (
       `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchLower) ||
@@ -54,6 +67,16 @@ export default function OrgStructure() {
       emp.email?.toLowerCase().includes(searchLower)
     );
   });
+
+  // Get CEO (employee with no manager)
+  const ceo = employees.find(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id));
+  
+  // Get company structure
+  const getCompanyStructure = (companyId) => {
+    const companyEmployees = employees.filter(e => e.company_id === companyId);
+    const companyHead = companyEmployees.find(e => e.manager_id === ceo?.id);
+    return { companyHead, employeeCount: companyEmployees.length };
+  };
 
   // Get employee's manager
   const getManager = (employee) => {
@@ -166,17 +189,72 @@ export default function OrgStructure() {
   };
 
   // Calculate statistics
-  const totalEmployees = employees.length;
-  const managers = new Set(employees.map(e => e.manager_id).filter(Boolean)).size;
-  const topLevel = employees.filter(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id)).length;
+  const totalEmployees = companyFilteredEmployees.length;
+  const managers = new Set(companyFilteredEmployees.map(e => e.manager_id).filter(Boolean)).size;
+  const topLevel = companyFilteredEmployees.filter(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id)).length;
   const avgTeamSize = managers > 0 ? (totalEmployees / managers).toFixed(1) : 0;
+  
+  // Count by hierarchy level
+  const countByLevel = () => {
+    const levels = { executives: 0, seniorManagers: 0, managers: 0, staff: 0 };
+    companyFilteredEmployees.forEach(emp => {
+      const subordinates = getSubordinates(emp.id);
+      if (!emp.manager_id || !employees.find(e => e.id === emp.manager_id)) {
+        levels.executives++;
+      } else if (subordinates.length > 5) {
+        levels.seniorManagers++;
+      } else if (subordinates.length > 0) {
+        levels.managers++;
+      } else {
+        levels.staff++;
+      }
+    });
+    return levels;
+  };
+  
+  const hierarchyLevels = countByLevel();
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Organization Structure</h1>
-        <p className="text-slate-600">Interactive visualization of your company's hierarchy</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Organization Structure</h1>
+          <p className="text-slate-600">
+            {selectedCompany === 'all' 
+              ? `Multi-company hierarchy visualization • ${companies.length} companies, ${employees.length} employees`
+              : `${companies.find(c => c.id === selectedCompany)?.name_en || 'Company'} organizational structure`
+            }
+          </p>
+        </div>
+        
+        {/* View Type Toggle */}
+        <div className="flex items-center gap-3">
+          <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+            <button
+              onClick={() => setViewType('unified')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                viewType === 'unified' 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Crown className="w-4 h-4 inline mr-2" />
+              Unified View
+            </button>
+            <button
+              onClick={() => setViewType('by-company')}
+              className={`px-4 py-2 text-sm font-medium border-l transition-colors ${
+                viewType === 'by-company' 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Building2 className="w-4 h-4 inline mr-2" />
+              By Company
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -200,12 +278,41 @@ export default function OrgStructure() {
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Avg Team Size"
-          value={avgTeamSize}
-          icon={Network}
+          title="Companies"
+          value={selectedCompany === 'all' ? companies.length : 1}
+          icon={Building2}
           bgColor="from-amber-500 to-amber-600"
         />
       </div>
+
+      {/* Hierarchy Level Stats */}
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-white">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Hierarchy Distribution</h3>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
+              <Crown className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+              <p className="text-2xl font-bold text-purple-900">{hierarchyLevels.executives}</p>
+              <p className="text-sm text-purple-700">Executive Level</p>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+              <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+              <p className="text-2xl font-bold text-blue-900">{hierarchyLevels.seniorManagers}</p>
+              <p className="text-sm text-blue-700">Senior Managers</p>
+            </div>
+            <div className="text-center p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200">
+              <Briefcase className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
+              <p className="text-2xl font-bold text-emerald-900">{hierarchyLevels.managers}</p>
+              <p className="text-sm text-emerald-700">Managers</p>
+            </div>
+            <div className="text-center p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
+              <Users className="w-6 h-6 mx-auto mb-2 text-slate-600" />
+              <p className="text-2xl font-bold text-slate-900">{hierarchyLevels.staff}</p>
+              <p className="text-sm text-slate-700">Staff</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Controls */}
       <OrgChartControls
@@ -221,52 +328,115 @@ export default function OrgStructure() {
         onExpandAll={handleExpandAll}
         onCollapseAll={handleCollapseAll}
         departments={departments}
+        companies={companies}
+        selectedCompany={selectedCompany}
+        onCompanyChange={setSelectedCompany}
       />
 
       {/* Main Content */}
-      <Card className="border-0 shadow-xl overflow-hidden">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-12 space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <div className="flex gap-4 justify-center">
-                <Skeleton className="h-32 w-64" />
-                <Skeleton className="h-32 w-64" />
-                <Skeleton className="h-32 w-64" />
+      {viewType === 'unified' ? (
+        <Card className="border-0 shadow-xl overflow-hidden">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-12 space-y-4">
+                <Skeleton className="h-32 w-full" />
+                <div className="flex gap-4 justify-center">
+                  <Skeleton className="h-32 w-64" />
+                  <Skeleton className="h-32 w-64" />
+                  <Skeleton className="h-32 w-64" />
+                </div>
               </div>
-            </div>
-          ) : filteredEmployees.length === 0 ? (
-            <div className="text-center py-12">
-              <Network className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">
-                {searchTerm ? 'No employees found matching your search' : 'No employees to display'}
-              </p>
-            </div>
-          ) : viewMode === 'chart' ? (
-            <div
-              ref={chartRef}
-              style={{
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: 'top center',
-                transition: 'transform 0.3s ease'
-              }}
-            >
-              <OrgChart
-                employees={filteredEmployees}
-                onNodeClick={handleNodeClick}
-              />
-            </div>
-          ) : (
-            <div className="p-6">
-              <OrgListView
-                employees={filteredEmployees}
-                onEmployeeClick={handleNodeClick}
-                onManageReporting={handleManageReporting}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="text-center py-12">
+                <Network className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">
+                  {searchTerm ? 'No employees found matching your search' : 'No employees to display'}
+                </p>
+              </div>
+            ) : viewMode === 'chart' ? (
+              <div
+                ref={chartRef}
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top center',
+                  transition: 'transform 0.3s ease'
+                }}
+              >
+                <OrgChart
+                  employees={filteredEmployees}
+                  onNodeClick={handleNodeClick}
+                  companies={companies}
+                />
+              </div>
+            ) : (
+              <div className="p-6">
+                <OrgListView
+                  employees={filteredEmployees}
+                  onEmployeeClick={handleNodeClick}
+                  onManageReporting={handleManageReporting}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue={companies[0]?.id || 'all'} className="space-y-6">
+          <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
+            {companies.map((company) => {
+              const structure = getCompanyStructure(company.id);
+              return (
+                <TabsTrigger
+                  key={company.id}
+                  value={company.id}
+                  className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  {company.name_en}
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                    {structure.employeeCount}
+                  </span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {companies.map((company) => {
+            const companyEmployees = employees.filter(e => e.company_id === company.id);
+            return (
+              <TabsContent key={company.id} value={company.id}>
+                <Card className="border-0 shadow-xl overflow-hidden">
+                  <CardContent className="p-0">
+                    {viewMode === 'chart' ? (
+                      <div
+                        style={{
+                          transform: `scale(${zoomLevel})`,
+                          transformOrigin: 'top center',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      >
+                        <OrgChart
+                          employees={companyEmployees}
+                          onNodeClick={handleNodeClick}
+                          companyName={company.name_en}
+                          companies={companies}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <OrgListView
+                          employees={companyEmployees}
+                          onEmployeeClick={handleNodeClick}
+                          onManageReporting={handleManageReporting}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      )}
 
       {/* Employee Details Modal */}
       <EmployeeDetailsModal
