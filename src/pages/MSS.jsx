@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Calendar, TrendingUp, Clock, Plane, Receipt, CheckCircle, Award, BarChart3 } from "lucide-react";
+import { Users, Calendar, TrendingUp, Clock, Plane, Receipt, CheckCircle, Award, BarChart3, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,7 @@ import LeaveApprovals from "../components/mss/LeaveApprovals";
 import PerformanceManagement from "../components/mss/PerformanceManagement";
 import AttendanceMonitor from "../components/mss/AttendanceMonitor";
 import TravelExpenseApprovals from "../components/mss/TravelExpenseApprovals";
+import ProfileChangeApprovals from "../components/mss/ProfileChangeApprovals";
 import TeamAnalytics from "../components/mss/TeamAnalytics";
 import { toast } from "sonner";
 
@@ -48,6 +49,13 @@ export default function MSS() {
   const { data: leaveRequests = [], isLoading: loadingLeaves } = useQuery({
     queryKey: ['leave-requests'],
     queryFn: () => base44.entities.LeaveRequest.list('-created_date'),
+    enabled: !!currentEmployee
+  });
+
+  // Fetch profile change requests
+  const { data: profileChangeRequests = [] } = useQuery({
+    queryKey: ['profile-change-requests-mss'],
+    queryFn: () => base44.entities.ProfileChangeRequest.list('-created_date'),
     enabled: !!currentEmployee
   });
 
@@ -199,9 +207,51 @@ export default function MSS() {
     onError: () => toast.error('Failed to reject expense claim')
   });
 
+  // Mutations for Profile Change Approvals
+  const approveProfileChange = useMutation({
+    mutationFn: async ({ id, notes }) => {
+      const request = profileChangeRequests.find(r => r.id === id);
+      // Update the employee record with the new data
+      await base44.entities.Employee.update(request.employee_id, request.requested_data);
+      // Mark the request as approved
+      return base44.entities.ProfileChangeRequest.update(id, {
+        ...request,
+        status: 'approved',
+        reviewed_by: currentEmployee.id,
+        review_date: new Date().toISOString().split('T')[0],
+        review_notes: notes
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['profile-change-requests-mss']);
+      queryClient.invalidateQueries(['employees']);
+      toast.success('Profile change approved and applied');
+    },
+    onError: () => toast.error('Failed to approve profile change')
+  });
+
+  const rejectProfileChange = useMutation({
+    mutationFn: async ({ id, notes }) => {
+      const request = profileChangeRequests.find(r => r.id === id);
+      return base44.entities.ProfileChangeRequest.update(id, {
+        ...request,
+        status: 'rejected',
+        reviewed_by: currentEmployee.id,
+        review_date: new Date().toISOString().split('T')[0],
+        review_notes: notes
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['profile-change-requests-mss']);
+      toast.success('Profile change rejected');
+    },
+    onError: () => toast.error('Failed to reject profile change')
+  });
+
   // Filter data for team
   const teamMemberIds = teamMembers.map(m => m.id);
   const teamLeaveRequests = leaveRequests.filter(l => teamMemberIds.includes(l.employee_id));
+  const teamProfileChangeRequests = profileChangeRequests.filter(r => teamMemberIds.includes(r.employee_id));
   const teamAttendance = attendance.filter(a => teamMemberIds.includes(a.employee_id));
   const teamPerformanceReviews = performanceReviews.filter(r => teamMemberIds.includes(r.employee_id));
   const teamPerformanceGoals = performanceGoals.filter(g => teamMemberIds.includes(g.employee_id));
@@ -210,6 +260,7 @@ export default function MSS() {
 
   // Calculate statistics
   const pendingLeaves = teamLeaveRequests.filter(l => l.status === 'pending').length;
+  const pendingProfileChanges = teamProfileChangeRequests.filter(r => r.status === 'pending').length;
   const pendingTravel = teamTravelRequests.filter(t => t.status === 'pending').length;
   const pendingExpenses = teamExpenseClaims.filter(e => e.status === 'submitted' || e.status === 'under_review').length;
   const teamSize = teamMembers.length;
@@ -286,7 +337,7 @@ export default function MSS() {
         />
         <StatCard
           title="Pending Approvals"
-          value={pendingLeaves + pendingTravel + pendingExpenses}
+          value={pendingLeaves + pendingTravel + pendingExpenses + pendingProfileChanges}
           icon={CheckCircle}
           bgColor="from-amber-500 to-amber-600"
         />
@@ -306,51 +357,42 @@ export default function MSS() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1">
-          <TabsTrigger
-            value="overview"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
+        <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <BarChart3 className="w-4 h-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger
-            value="team"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="team" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Users className="w-4 h-4 mr-2" />
             Team Members
           </TabsTrigger>
-          <TabsTrigger
-            value="leave-approvals"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="leave-approvals" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Calendar className="w-4 h-4 mr-2" />
-            Leave Approvals
+            Leave
             {pendingLeaves > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
                 {pendingLeaves}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger
-            value="performance"
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="profile-approvals" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <User className="w-4 h-4 mr-2" />
+            Profile Changes
+            {pendingProfileChanges > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
+                {pendingProfileChanges}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <TrendingUp className="w-4 h-4 mr-2" />
             Performance
           </TabsTrigger>
-          <TabsTrigger
-            value="attendance"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="attendance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Clock className="w-4 h-4 mr-2" />
             Attendance
           </TabsTrigger>
-          <TabsTrigger
-            value="travel-expense"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="travel-expense" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Plane className="w-4 h-4 mr-2" />
             Travel & Expense
             {(pendingTravel + pendingExpenses) > 0 && (
@@ -389,6 +431,16 @@ export default function MSS() {
             employees={teamMembers}
             onApprove={(id, notes) => approveLeave.mutate({ id, notes })}
             onReject={(id, notes) => rejectLeave.mutate({ id, notes })}
+          />
+        </TabsContent>
+
+        {/* Profile Change Approvals Tab */}
+        <TabsContent value="profile-approvals">
+          <ProfileChangeApprovals
+            requests={teamProfileChangeRequests}
+            employees={teamMembers}
+            onApprove={(id, notes) => approveProfileChange.mutate({ id, notes })}
+            onReject={(id, notes) => rejectProfileChange.mutate({ id, notes })}
           />
         </TabsContent>
 
