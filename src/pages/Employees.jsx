@@ -49,6 +49,12 @@ export default function EmployeesPage() {
   const employees = employeesData?.employees || [];
   const accessLevel = employeesData?.access_level || 'employee';
 
+  // Fetch shifts for the form
+  const { data: shifts = [] } = useQuery({
+    queryKey: ['shifts'],
+    queryFn: () => base44.entities.Shift.list(),
+  });
+
   const createEmployeeMutation = useMutation({
     mutationFn: (data) => base44.entities.Employee.create(data),
     onSuccess: () => {
@@ -258,6 +264,7 @@ export default function EmployeesPage() {
           </DialogHeader>
           <EmployeeFormTabs
             employee={editingEmployee}
+            shifts={shifts}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);
