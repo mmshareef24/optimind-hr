@@ -377,56 +377,154 @@ export default function LeaveManagement() {
         {/* My Requests Tab */}
         <TabsContent value="my-requests">
           <Card className="border-0 shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-emerald-600" />
+                  My Leave History ({myRequests.length})
+                </CardTitle>
+                
+                {/* Filters */}
+                <div className="flex gap-3">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterLeaveType} onValueChange={setFilterLeaveType}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                      <SelectItem value="sick">Sick</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
             <CardContent className="p-6">
               {loadingRequests ? (
                 <div className="space-y-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
                 </div>
               ) : myRequests.length === 0 ? (
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500 mb-4">No leave requests yet</p>
-                  <Button onClick={() => setShowRequestForm(true)} variant="outline">
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="w-10 h-10 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No Leave Requests Yet</h3>
+                  <p className="text-slate-500 mb-6">Start by submitting your first leave request</p>
+                  <Button onClick={() => setShowRequestForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="w-4 h-4 mr-2" />
                     Submit Your First Request
                   </Button>
                 </div>
+              ) : filteredMyRequests.length === 0 ? (
+                <div className="text-center py-12">
+                  <Filter className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                  <p className="text-slate-500">No requests match your filters</p>
+                </div>
               ) : (
-                <div className="space-y-3">
-                  {myRequests.map((request) => (
-                    <Card key={request.id} className="border border-slate-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-semibold text-slate-900 capitalize">
-                                {request.leave_type.replace('_', ' ')} Leave
-                              </h4>
-                              <Badge className={
-                                request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                                request.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                'bg-amber-100 text-amber-700'
-                              }>
-                                {request.status}
-                              </Badge>
+                <div className="space-y-4">
+                  {filteredMyRequests.map((request) => {
+                    const leaveTypeIcons = {
+                      annual: '🏖️',
+                      sick: '🏥',
+                      emergency: '🚨',
+                      unpaid: '💼',
+                      maternity: '👶',
+                      paternity: '👨‍👧',
+                      hajj: '🕋',
+                      marriage: '💍',
+                      bereavement: '🕊️'
+                    };
+
+                    return (
+                      <Card key={request.id} className="border-2 border-slate-200 hover:shadow-md transition-all">
+                        <CardContent className="p-5">
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <span className="text-2xl">{leaveTypeIcons[request.leave_type] || '📅'}</span>
+                                <div>
+                                  <h4 className="font-bold text-slate-900 capitalize text-lg">
+                                    {request.leave_type.replace('_', ' ')} Leave
+                                  </h4>
+                                  <p className="text-sm text-slate-500">
+                                    Submitted on {format(new Date(request.created_date), 'MMM dd, yyyy')}
+                                  </p>
+                                </div>
+                                <Badge className={`ml-auto ${
+                                  request.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                  request.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' :
+                                  'bg-amber-100 text-amber-700 border-amber-200'
+                                }`}>
+                                  {request.status === 'approved' && '✓ '}
+                                  {request.status === 'rejected' && '✗ '}
+                                  {request.status === 'pending' && '⏱ '}
+                                  {request.status.toUpperCase()}
+                                </Badge>
+                              </div>
+
+                              <div className="grid md:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg mb-3">
+                                <div>
+                                  <p className="text-xs text-slate-500 mb-1">Start Date</p>
+                                  <p className="font-semibold text-slate-900">
+                                    {format(new Date(request.start_date), 'MMM dd, yyyy')}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 mb-1">End Date</p>
+                                  <p className="font-semibold text-slate-900">
+                                    {format(new Date(request.end_date), 'MMM dd, yyyy')}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-500 mb-1">Duration</p>
+                                  <p className="font-semibold text-emerald-600 text-lg">
+                                    {request.total_days} days
+                                  </p>
+                                </div>
+                              </div>
+
+                              {request.reason && (
+                                <div className="text-sm bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 mb-2">
+                                  <p className="text-blue-900">
+                                    <strong>Reason:</strong> {request.reason}
+                                  </p>
+                                </div>
+                              )}
+
+                              {request.rejection_reason && (
+                                <div className="text-sm bg-red-50 p-3 rounded-lg border-l-4 border-red-400">
+                                  <p className="text-red-900">
+                                    <strong>❌ Rejection Reason:</strong> {request.rejection_reason}
+                                  </p>
+                                </div>
+                              )}
+
+                              {request.approval_date && request.status === 'approved' && (
+                                <p className="text-xs text-emerald-600 mt-2">
+                                  ✓ Approved on {format(new Date(request.approval_date), 'MMM dd, yyyy')}
+                                </p>
+                              )}
                             </div>
-                            <div className="grid md:grid-cols-3 gap-2 text-sm text-slate-600">
-                              <p><strong>From:</strong> {format(new Date(request.start_date), 'MMM dd, yyyy')}</p>
-                              <p><strong>To:</strong> {format(new Date(request.end_date), 'MMM dd, yyyy')}</p>
-                              <p><strong>Duration:</strong> {request.total_days} days</p>
-                            </div>
-                            {request.reason && (
-                              <p className="text-sm text-slate-500 mt-2">{request.reason}</p>
-                            )}
-                            {request.rejection_reason && (
-                              <p className="text-sm text-red-600 mt-2">
-                                <strong>Rejection reason:</strong> {request.rejection_reason}
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -447,9 +545,35 @@ export default function LeaveManagement() {
 
         {/* Calendar Tab */}
         <TabsContent value="calendar">
-          <LeaveCalendar
-            leaveRequests={userRole === 'admin' ? teamRequests : myRequests}
-          />
+          <div className="space-y-4">
+            {/* Month Navigation */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
+                  >
+                    ← Previous
+                  </Button>
+                  <h3 className="text-lg font-semibold">
+                    {format(selectedMonth, 'MMMM yyyy')}
+                  </h3>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+                  >
+                    Next →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <LeaveCalendar
+              leaveRequests={userRole === 'admin' ? teamRequests : myRequests}
+              currentMonth={selectedMonth}
+            />
+          </div>
         </TabsContent>
       </Tabs>
 
