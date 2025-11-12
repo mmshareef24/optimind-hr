@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useTranslation } from '@/components/TranslationContext';
+import { TranslationProvider, useTranslation } from '@/components/TranslationContext';
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export default function Layout({ children }) {
+function LayoutContent({ children }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
@@ -194,5 +194,13 @@ const navigationSections = [
         </main>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function Layout({ children }) {
+  return (
+    <TranslationProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </TranslationProvider>
   );
 }
