@@ -98,16 +98,18 @@ export default function NewHiresList({ newHires, tasks, checklists, onAssignChec
                             </div>
                             <Progress value={progress.progress} className="h-2" />
                           </div>
-                        ) : (
+                        ) : onAssignChecklist ? (
                           <Button
-                            onClick={() => onAssignChecklist(employee.id)}
+                            onClick={() => onAssignChecklist(employee)}
                             variant="outline"
                             size="sm"
-                            className="w-full"
+                            className="w-full gap-2"
                           >
-                            <CheckSquare className="w-4 h-4 mr-2" />
-                            Assign Checklist
+                            <Send className="w-4 h-4" />
+                            Auto-Assign Onboarding
                           </Button>
+                        ) : (
+                          <p className="text-sm text-slate-500 text-center py-2">No checklist assigned</p>
                         )}
                       </div>
                     </div>
