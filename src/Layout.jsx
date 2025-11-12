@@ -102,8 +102,8 @@ export default function Layout({ children }) {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-lg text-slate-900">HRMS</h2>
-                <p className="text-xs text-emerald-700 font-medium">Saudi Arabia</p>
+                <h2 className="font-bold text-lg text-slate-900">OptiMindHR</h2>
+                <p className="text-xs text-emerald-700 font-medium">Connecting Minds Through Smart Intelligence</p>
               </div>
             </div>
           </SidebarHeader>
@@ -171,7 +171,10 @@ export default function Layout({ children }) {
                 <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-lg font-bold text-slate-900">HRMS</h1>
+                <div>
+                  <h1 className="text-lg font-bold text-slate-900">OptiMindHR</h1>
+                  <p className="text-xs text-emerald-700">Smart Intelligence</p>
+                </div>
               </div>
             </div>
           </header>
