@@ -23,6 +23,7 @@ import TimeTracking from './pages/TimeTracking';
 import Reports from './pages/Reports';
 import Approvals from './pages/Approvals';
 import UserManagement from './pages/UserManagement';
+import PayrollManagement from './pages/PayrollManagement';
 import Layout from './Layout.jsx';
 
 
@@ -52,6 +53,7 @@ export const PAGES = {
     "Reports": Reports,
     "Approvals": Approvals,
     "UserManagement": UserManagement,
+    "PayrollManagement": PayrollManagement,
 }
 
 export const pagesConfig = {

@@ -48,7 +48,7 @@ const navigationSections = [
   {
     title: "Compensation",
     items: [
-      { title: "Payroll & GOSI", url: createPageUrl("Payroll"), icon: DollarSign },
+      { title: "Payroll Management", url: createPageUrl("PayrollManagement"), icon: DollarSign },
       { title: "GOSI Reporting", url: createPageUrl("GOSIReporting"), icon: Shield },
       { title: "Benefits & Rewards", url: createPageUrl("Benefits"), icon: Gift }
     ]
