@@ -666,10 +666,10 @@ export default function LeaveManagement() {
           <DialogHeader>
             <DialogTitle>Submit Leave Request</DialogTitle>
           </DialogHeader>
-          {currentUser && (
+          {currentUser && leaveBalances && (
             <LeaveRequestForm
               employee={currentUser}
-              balances={leaveBalances}
+              leaveBalances={leaveBalances}
               onSubmit={handleSubmitRequest}
               onCancel={() => setShowRequestForm(false)}
             />
