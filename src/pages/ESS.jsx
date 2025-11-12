@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp } from "lucide-react";
+import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import StatCard from "../components/hrms/StatCard";
 import PayslipViewer from "../components/ess/PayslipViewer";
 import PersonalInfoUpdate from "../components/ess/PersonalInfoUpdate";
 import CompanyPolicies from "../components/ess/CompanyPolicies";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function ESS() {
@@ -28,8 +29,8 @@ export default function ESS() {
   const queryClient = useQueryClient();
 
   // Fetch current user
-  const { data: user } = useQuery({
-    queryKey: ['current-user'],
+  const { data: user, isLoading: loadingUser } = useQuery({
+    queryKey: ['current-user-ess'],
     queryFn: async () => {
       const userData = await base44.auth.me();
       // Find employee record
@@ -48,16 +49,26 @@ export default function ESS() {
   });
 
   // Fetch employee's leave balance
+  const { data: leaveBalances = [] } = useQuery({
+    queryKey: ['my-leave-balances', currentUser?.id],
+    queryFn: () => base44.entities.LeaveBalance.filter({ 
+      employee_id: currentUser.id,
+      year: new Date().getFullYear()
+    }),
+    enabled: !!currentUser?.id
+  });
+
+  // Fetch employee's leave requests
   const { data: leaveRequests = [] } = useQuery({
     queryKey: ['my-leaves', currentUser?.id],
-    queryFn: () => base44.entities.LeaveRequest.filter({ employee_id: currentUser.id }),
+    queryFn: () => base44.entities.LeaveRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
   // Fetch company policies
   const { data: policies = [], isLoading: loadingPolicies } = useQuery({
     queryKey: ['company-policies'],
-    queryFn: () => base44.entities.CompanyPolicy.list('-created_date')
+    queryFn: () => base44.entities.CompanyPolicy.filter({ is_active: true }, '-created_date')
   });
 
   // Fetch ESS requests
@@ -71,11 +82,12 @@ export default function ESS() {
   const updateEmployeeMutation = useMutation({
     mutationFn: (data) => base44.entities.Employee.update(currentUser.id, { ...currentUser, ...data }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['current-user']);
+      queryClient.invalidateQueries(['current-user-ess']);
       toast.success('Personal information updated successfully');
     },
-    onError: () => {
+    onError: (error) => {
       toast.error('Failed to update personal information');
+      console.error(error);
     }
   });
 
@@ -86,10 +98,12 @@ export default function ESS() {
       queryClient.invalidateQueries(['my-ess-requests']);
       setShowRequestDialog(false);
       setRequestDetails('');
+      setRequestType('payslip');
       toast.success('Request submitted successfully');
     },
-    onError: () => {
+    onError: (error) => {
       toast.error('Failed to submit request');
+      console.error(error);
     }
   });
 
@@ -105,26 +119,53 @@ export default function ESS() {
   const handleSubmitRequest = () => {
     if (!currentUser) return;
 
-    createRequestMutation.mutate({
+    const requestData = {
       employee_id: currentUser.id,
       request_type: requestType,
       request_details: requestDetails,
-      month: requestType === 'payslip' ? requestMonth : null
-    });
+      status: 'pending'
+    };
+
+    if (requestType === 'payslip' && requestMonth) {
+      requestData.month = requestMonth;
+    }
+
+    createRequestMutation.mutate(requestData);
   };
 
   // Calculate statistics
-  const approvedLeaves = leaveRequests.filter(l => l.status === 'approved').length;
+  const totalLeaveBalance = leaveBalances.reduce((sum, lb) => sum + (lb.remaining || 0), 0);
   const pendingRequests = essRequests.filter(r => r.status === 'pending').length;
   const lastPayroll = payrolls[0];
+  const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
+
+  if (loadingUser) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <div className="grid md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your profile...</p>
-        </div>
+      <div className="p-6 lg:p-8">
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-amber-600" />
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Employee Record Found</h2>
+            <p className="text-slate-600 mb-4">
+              Your account is not linked to an employee record.
+            </p>
+            <p className="text-sm text-slate-500">
+              Please contact HR department to set up your employee profile.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -144,7 +185,7 @@ export default function ESS() {
             <p className="text-sm text-slate-500">Employee ID</p>
             <p className="font-semibold text-slate-900">{currentUser.employee_id}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg">
             <User className="w-6 h-6 text-white" />
           </div>
         </div>
@@ -160,29 +201,29 @@ export default function ESS() {
         />
         <StatCard
           title="Leave Balance"
-          value={`${approvedLeaves} Days`}
+          value={`${totalLeaveBalance} Days`}
           icon={Calendar}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
           title="Pending Requests"
-          value={pendingRequests}
+          value={pendingRequests + pendingLeaves}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
           title="Available Policies"
-          value={policies.filter(p => p.is_active).length}
+          value={policies.length}
           icon={BookOpen}
           bgColor="from-purple-500 to-purple-600"
         />
       </div>
 
       {/* Profile Summary */}
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-white">
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 via-blue-50 to-white">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg">
               <User className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
@@ -192,15 +233,20 @@ export default function ESS() {
               <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-slate-500">Position:</span>
-                  <span className="ml-2 font-semibold text-slate-900">{currentUser.job_title}</span>
+                  <span className="ml-2 font-semibold text-slate-900">{currentUser.job_title || 'N/A'}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Department:</span>
-                  <span className="ml-2 font-semibold text-slate-900">{currentUser.department}</span>
+                  <span className="ml-2 font-semibold text-slate-900">{currentUser.department || 'N/A'}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Status:</span>
-                  <Badge className="ml-2 bg-emerald-100 text-emerald-700">{currentUser.status}</Badge>
+                  <Badge className={
+                    currentUser.status === 'active' ? 'ml-2 bg-emerald-100 text-emerald-700 border-emerald-200' :
+                    'ml-2 bg-slate-100 text-slate-700 border-slate-200'
+                  }>
+                    {currentUser.status}
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -230,7 +276,7 @@ export default function ESS() {
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <BookOpen className="w-4 h-4 mr-2" />
-            Policies
+            Company Policies
           </TabsTrigger>
         </TabsList>
 
@@ -247,6 +293,7 @@ export default function ESS() {
           <PersonalInfoUpdate
             employee={currentUser}
             onUpdate={handlePersonalInfoUpdate}
+            isUpdating={updateEmployeeMutation.isPending}
           />
         </TabsContent>
 
@@ -275,6 +322,8 @@ export default function ESS() {
                   <SelectItem value="payslip">Payslip</SelectItem>
                   <SelectItem value="salary_certificate">Salary Certificate</SelectItem>
                   <SelectItem value="employment_letter">Employment Letter</SelectItem>
+                  <SelectItem value="info_update">Information Update</SelectItem>
+                  <SelectItem value="document_access">Document Access</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -287,28 +336,39 @@ export default function ESS() {
                   type="month"
                   value={requestMonth}
                   onChange={(e) => setRequestMonth(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 />
               </div>
             )}
 
             <div>
-              <Label>Additional Details (Optional)</Label>
+              <Label>Additional Details {requestType === 'other' ? '*' : '(Optional)'}</Label>
               <Textarea
                 value={requestDetails}
                 onChange={(e) => setRequestDetails(e.target.value)}
                 placeholder="Provide any additional information..."
                 rows={3}
+                required={requestType === 'other'}
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowRequestDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowRequestDialog(false);
+                setRequestDetails('');
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmitRequest} className="bg-emerald-600 hover:bg-emerald-700">
-              Submit Request
+            <Button 
+              onClick={handleSubmitRequest} 
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={createRequestMutation.isPending || (requestType === 'other' && !requestDetails.trim())}
+            >
+              {createRequestMutation.isPending ? 'Submitting...' : 'Submit Request'}
             </Button>
           </div>
         </DialogContent>
