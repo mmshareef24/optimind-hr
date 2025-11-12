@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
 import AdvancedSearchFilters from '../reports/AdvancedSearchFilters';
-import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter.js';
+import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
 import { toast } from "sonner";
 
 export default function LeaveHistory({ requests = [], employees = [] }) {

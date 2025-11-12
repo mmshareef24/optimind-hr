@@ -5,7 +5,7 @@ import { Users, Download, TrendingUp } from "lucide-react";
 import AdvancedSearchFilters from './AdvancedSearchFilters';
 import ReportTable from './ReportTable';
 import AnalyticsChart from './AnalyticsChart';
-import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter.js';
+import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
 import { toast } from "sonner";
 
 export default function EmployeeReports({ employees = [], departments = [] }) {
