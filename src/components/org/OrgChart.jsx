@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import OrgChartNode from './OrgChartNode';
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronRight, Building2, Crown } from "lucide-react";
 
-export default function OrgChart({ employees, onNodeClick }) {
+export default function OrgChart({ employees, onNodeClick, companyName = null, companies = [] }) {
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [organizationTree, setOrganizationTree] = useState([]);
   const [hoveredConnection, setHoveredConnection] = useState(null);
@@ -143,28 +144,82 @@ export default function OrgChart({ employees, onNodeClick }) {
 
   return (
     <div className="w-full overflow-auto p-8 bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Company Header (if viewing single company) */}
+      {companyName && (
+        <div className="mb-8 text-center">
+          <Card className="inline-block border-2 border-emerald-200 shadow-xl bg-gradient-to-r from-emerald-50 to-blue-50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-2xl font-bold text-slate-900">{companyName}</h2>
+                  <p className="text-sm text-slate-600">{employees.length} employees across {[...new Set(employees.map(e => e.department))].filter(Boolean).length} departments</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Organizational Hierarchy Info */}
-      <div className="mb-8 flex items-center justify-center gap-6 p-4 bg-white rounded-xl shadow-md border border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-br from-purple-600 to-purple-700"></div>
-          <span className="text-sm text-slate-600">Executive Level</span>
+      <div className="mb-8 flex items-center justify-center gap-6 p-5 bg-white rounded-xl shadow-md border-2 border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-md">
+            <Crown className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-xs text-slate-500 font-medium">LEVEL 1</p>
+            <p className="text-sm font-bold text-slate-700">Executive</p>
+          </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-400" />
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-br from-blue-600 to-blue-700"></div>
-          <span className="text-sm text-slate-600">Senior Management</span>
+        <ChevronRight className="w-5 h-5 text-slate-400" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-sm">L2</span>
+          </div>
+          <div className="text-left">
+            <p className="text-xs text-slate-500 font-medium">LEVEL 2</p>
+            <p className="text-sm font-bold text-slate-700">Senior Management</p>
+          </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-400" />
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-br from-emerald-600 to-emerald-700"></div>
-          <span className="text-sm text-slate-600">Middle Management</span>
+        <ChevronRight className="w-5 h-5 text-slate-400" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-sm">L3</span>
+          </div>
+          <div className="text-left">
+            <p className="text-xs text-slate-500 font-medium">LEVEL 3</p>
+            <p className="text-sm font-bold text-slate-700">Middle Management</p>
+          </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-400" />
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-br from-slate-600 to-slate-700"></div>
-          <span className="text-sm text-slate-600">Staff</span>
+        <ChevronRight className="w-5 h-5 text-slate-400" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-sm">L4</span>
+          </div>
+          <div className="text-left">
+            <p className="text-xs text-slate-500 font-medium">LEVEL 4</p>
+            <p className="text-sm font-bold text-slate-700">Staff</p>
+          </div>
         </div>
       </div>
+
+      {/* Multi-company indicator */}
+      {!companyName && companies.length > 0 && organizationTree.length > 0 && (
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border-2 border-purple-200">
+            <Crown className="w-6 h-6 text-purple-600" />
+            <div className="text-left">
+              <p className="font-bold text-slate-900">Multi-Company Structure</p>
+              <p className="text-sm text-slate-600">
+                CEO overseeing {companies.length} companies with {employees.length} total employees
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Org Chart */}
       <div className="inline-flex flex-col items-center gap-8 min-w-max">
@@ -172,10 +227,11 @@ export default function OrgChart({ employees, onNodeClick }) {
       </div>
 
       {/* Helper text */}
-      <div className="mt-12 text-center p-6 bg-blue-50 rounded-xl border border-blue-200">
-        <p className="text-sm text-blue-700">
-          💡 <strong>Tip:</strong> Click on any employee card to view detailed information. 
-          Use the expand/collapse buttons to navigate through different levels of the organization.
+      <div className="mt-12 text-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200">
+        <p className="text-sm text-slate-700">
+          <strong>💡 Pro Tip:</strong> Click on any employee card to view detailed information. 
+          Use the expand/collapse buttons (📊) to navigate through different levels of the organization.
+          Hover over connecting lines to highlight reporting relationships.
         </p>
       </div>
     </div>
