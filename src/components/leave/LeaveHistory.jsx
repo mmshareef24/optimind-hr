@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
 import AdvancedSearchFilters from '../reports/AdvancedSearchFilters';
-import { exportToCSV, exportToFormattedText } from '@/utils/reportExporter';
+import { exportToCSV, exportToFormattedText } from '../../utils/reportExporter';
 import { toast } from "sonner";
 
 export default function LeaveHistory({ requests = [], employees = [] }) {
