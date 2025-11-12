@@ -1,19 +1,20 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail } from "lucide-react";
+import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail, Gift } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatCard from "../components/hrms/StatCard";
 import PayslipViewer from "../components/ess/PayslipViewer";
-import PersonalInfoUpdate from "../components/ess/PersonalInfoUpdate";
 import CompanyPolicies from "../components/ess/CompanyPolicies";
 import LeaveRequestsESS from "../components/ess/LeaveRequestsESS";
 import LoanRequestsESS from "../components/ess/LoanRequestsESS";
 import LetterRequestsESS from "../components/ess/LetterRequestsESS";
 import TravelRequestsESS from "../components/ess/TravelRequestsESS";
+import MyProfile from "../components/ess/MyProfile";
+import MyBenefits from "../components/ess/MyBenefits";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -84,22 +85,12 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
-  // Update employee info
-  const updateEmployeeMutation = useMutation({
-    mutationFn: (data) => base44.entities.Employee.update(currentUser.id, { ...currentUser, ...data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['current-user-ess']);
-      toast.success('Personal information updated successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to update personal information');
-      console.error(error);
-    }
+  // Fetch profile change requests
+  const { data: profileChangeRequests = [] } = useQuery({
+    queryKey: ['profile-change-requests', currentUser?.id],
+    queryFn: () => base44.entities.ProfileChangeRequest.filter({ employee_id: currentUser.id }, '-created_date'),
+    enabled: !!currentUser?.id
   });
-
-  const handlePersonalInfoUpdate = (data) => {
-    updateEmployeeMutation.mutate(data);
-  };
 
   // Calculate statistics
   const totalLeaveBalance = leaveBalances.reduce((sum, lb) => sum + (lb.remaining || 0), 0);
@@ -250,66 +241,46 @@ export default function ESS() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1 grid grid-cols-4 lg:grid-cols-8">
-          <TabsTrigger 
-            value="dashboard" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <TrendingUp className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Dashboard</span>
+        <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Dashboard
           </TabsTrigger>
-          <TabsTrigger 
-            value="leave" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <Calendar className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Leave</span>
-            {pendingLeaves > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLeaves}</span>}
+          <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <User className="w-4 h-4 mr-2" />
+            My Profile
           </TabsTrigger>
-          <TabsTrigger 
-            value="loan" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <DollarSign className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Loans</span>
-            {pendingLoans > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLoans}</span>}
+          <TabsTrigger value="benefits" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <Gift className="w-4 h-4 mr-2" />
+            Benefits
           </TabsTrigger>
-          <TabsTrigger 
-            value="travel" 
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <Plane className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Travel</span>
-            {pendingTravel > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingTravel}</span>}
+          <TabsTrigger value="leave" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Calendar className="w-4 h-4 mr-2" />
+            Leave
+            {pendingLeaves > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLeaves}</Badge>}
           </TabsTrigger>
-          <TabsTrigger 
-            value="letters" 
-            className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <Mail className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Letters</span>
-            {pendingLetters > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLetters}</span>}
+          <TabsTrigger value="loan" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <DollarSign className="w-4 h-4 mr-2" />
+            Loans
+            {pendingLoans > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLoans}</Badge>}
           </TabsTrigger>
-          <TabsTrigger 
-            value="payslips" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <FileText className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Payslips</span>
+          <TabsTrigger value="travel" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <Plane className="w-4 h-4 mr-2" />
+            Travel
+            {pendingTravel > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingTravel}</Badge>}
           </TabsTrigger>
-          <TabsTrigger 
-            value="personal-info" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <Settings className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Profile</span>
+          <TabsTrigger value="letters" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
+            <Mail className="w-4 h-4 mr-2" />
+            Letters
+            {pendingLetters > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLetters}</Badge>}
           </TabsTrigger>
-          <TabsTrigger 
-            value="policies" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-          >
-            <BookOpen className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Policies</span>
+          <TabsTrigger value="payslips" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <FileText className="w-4 h-4 mr-2" />
+            Payslips
+          </TabsTrigger>
+          <TabsTrigger value="policies" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Policies
           </TabsTrigger>
         </TabsList>
 
@@ -394,6 +365,16 @@ export default function ESS() {
           </div>
         </TabsContent>
 
+        {/* My Profile Tab */}
+        <TabsContent value="profile">
+          <MyProfile employee={currentUser} changeRequests={profileChangeRequests} />
+        </TabsContent>
+
+        {/* Benefits Tab */}
+        <TabsContent value="benefits">
+          <MyBenefits employee={currentUser} />
+        </TabsContent>
+
         {/* Leave Requests Tab */}
         <TabsContent value="leave">
           <LeaveRequestsESS
@@ -435,15 +416,6 @@ export default function ESS() {
             employee={currentUser}
             payrolls={payrolls}
             isLoading={loadingPayrolls}
-          />
-        </TabsContent>
-
-        {/* Personal Info Tab */}
-        <TabsContent value="personal-info">
-          <PersonalInfoUpdate
-            employee={currentUser}
-            onUpdate={handlePersonalInfoUpdate}
-            isUpdating={updateEmployeeMutation.isPending}
           />
         </TabsContent>
 
