@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Search, ZoomIn, ZoomOut, Maximize, Grid, List, 
-  Download, RefreshCw, Expand, Minimize
+  Download, RefreshCw, Expand, Minimize, Building2
 } from "lucide-react";
 import { 
   Select, 
@@ -26,14 +26,17 @@ export default function OrgChartControls({
   onExport,
   onExpandAll,
   onCollapseAll,
-  departments = []
+  departments = [],
+  companies = [],
+  selectedCompany = 'all',
+  onCompanyChange
 }) {
   return (
     <Card className="border-0 shadow-lg mb-6">
       <CardContent className="p-4">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           {/* Search and Filter */}
-          <div className="flex-1 w-full lg:max-w-2xl flex gap-3">
+          <div className="flex-1 w-full lg:max-w-3xl flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
@@ -43,6 +46,35 @@ export default function OrgChartControls({
                 className="pl-10"
               />
             </div>
+
+            {companies.length > 0 && (
+              <Select value={selectedCompany} onValueChange={onCompanyChange}>
+                <SelectTrigger className="w-52">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      {selectedCompany === 'all' ? 'All Companies' : companies.find(c => c.id === selectedCompany)?.name_en}
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      All Companies
+                    </div>
+                  </SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        {company.name_en}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {departments.length > 0 && (
               <Select onValueChange={(value) => onSearchChange(value)}>
