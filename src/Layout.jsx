@@ -82,7 +82,8 @@ const navigationSections = [
     title: "Administration",
     items: [
       { title: "User Management", url: createPageUrl("UserManagement"), icon: Shield },
-      { title: "Master Data", url: createPageUrl("MasterData"), icon: FileText }
+      { title: "Master Data", url: createPageUrl("MasterData"), icon: FileText },
+      { title: "Public Holidays", url: createPageUrl("PublicHolidays"), icon: Calendar }
     ]
   }
 ];

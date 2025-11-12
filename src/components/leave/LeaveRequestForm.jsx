@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { base44 } from "@/api/base44Client";
 import { Save, X, Upload, AlertCircle, Info, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmit, onCancel, isAdmin = false, allEmployees = [] }) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(employee?.id || '');
@@ -29,6 +30,8 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
   const [validationError, setValidationError] = useState('');
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [loadingBalances, setLoadingBalances] = useState(false);
+  const [leaveDaysCalculation, setLeaveDaysCalculation] = useState(null);
+  const [calculatingDays, setCalculatingDays] = useState(false);
 
   // Calculate working days (excluding weekends)
   const calculateWorkingDays = (start, end) => {
@@ -48,20 +51,42 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
   };
 
   useEffect(() => {
-    if (formData.start_date && formData.end_date) {
-      const start = new Date(formData.start_date);
-      const end = new Date(formData.end_date);
-      
-      if (end < start) {
-        setValidationError('End date must be after start date');
-        setFormData(prev => ({ ...prev, total_days: 0 }));
-        return;
+    const calculateDays = async () => {
+      if (formData.start_date && formData.end_date) {
+        const start = new Date(formData.start_date);
+        const end = new Date(formData.end_date);
+        
+        if (end < start) {
+          setValidationError('End date must be after start date');
+          setFormData(prev => ({ ...prev, total_days: 0 }));
+          setLeaveDaysCalculation(null);
+          return;
+        }
+        
+        // Call backend to calculate days excluding weekends and holidays
+        setCalculatingDays(true);
+        try {
+          const response = await base44.functions.invoke('calculateLeaveDays', {
+            start_date: formData.start_date,
+            end_date: formData.end_date
+          });
+          
+          const calculation = response.data;
+          setLeaveDaysCalculation(calculation);
+          setFormData(prev => ({ ...prev, total_days: calculation.leave_days_to_deduct }));
+          setValidationError('');
+        } catch (error) {
+          // Fallback to simple calculation
+          const days = calculateWorkingDays(start, end);
+          setFormData(prev => ({ ...prev, total_days: days }));
+          setLeaveDaysCalculation(null);
+        } finally {
+          setCalculatingDays(false);
+        }
       }
-      
-      const days = calculateWorkingDays(start, end);
-      setFormData(prev => ({ ...prev, total_days: days }));
-      setValidationError('');
-    }
+    };
+
+    calculateDays();
   }, [formData.start_date, formData.end_date]);
 
   // Check leave balance validation
@@ -306,14 +331,55 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
 
       {/* Days Summary */}
       <div className="p-5 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border-2 border-blue-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-slate-700">Working Days (Excluding Weekends)</span>
-          <span className="text-3xl font-bold text-emerald-600">{formData.total_days}</span>
-        </div>
-        {formData.start_date && formData.end_date && (
-          <p className="text-xs text-slate-600">
-            Friday & Saturday are excluded as per Saudi Arabia weekend policy
-          </p>
+        {calculatingDays ? (
+          <div className="text-center py-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
+            <p className="text-sm text-slate-600">Calculating leave days...</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-slate-700">Leave Days to Deduct</span>
+              <span className="text-3xl font-bold text-emerald-600">{formData.total_days}</span>
+            </div>
+            {leaveDaysCalculation && (
+              <div className="space-y-2 mt-3">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 bg-white rounded text-center">
+                    <p className="text-slate-500">Total Days</p>
+                    <p className="font-bold text-slate-900">{leaveDaysCalculation.total_days}</p>
+                  </div>
+                  <div className="p-2 bg-slate-100 rounded text-center">
+                    <p className="text-slate-500">Weekends</p>
+                    <p className="font-bold text-slate-700">{leaveDaysCalculation.weekend_days}</p>
+                  </div>
+                  <div className="p-2 bg-amber-100 rounded text-center">
+                    <p className="text-amber-700">Holidays</p>
+                    <p className="font-bold text-amber-800">{leaveDaysCalculation.holiday_days}</p>
+                  </div>
+                </div>
+                {leaveDaysCalculation.overlapping_holidays?.length > 0 && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-900 text-xs">
+                      <strong>Public Holidays Detected:</strong>
+                      <ul className="mt-1 space-y-1">
+                        {leaveDaysCalculation.overlapping_holidays.map((h, idx) => (
+                          <li key={idx}>• {h.name} ({format(new Date(h.date), 'MMM dd')})</li>
+                        ))}
+                      </ul>
+                      <p className="mt-1">These days are automatically excluded from your leave balance.</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+            {!leaveDaysCalculation && formData.start_date && formData.end_date && (
+              <p className="text-xs text-slate-600 mt-2">
+                Weekends (Fri & Sat) excluded • Public holidays will be auto-excluded
+              </p>
+            )}
+          </>
         )}
       </div>
 
