@@ -1,440 +1,242 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Plus, Search, Filter, X } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  Users, Plus, Search, Mail, Phone, Calendar, Building2, Briefcase, Shield
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import {
-  Popover, PopoverContent, PopoverTrigger
-} from "@/components/ui/popover";
 import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
 import { toast } from "sonner";
 
-export default function Employees() {
+export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState('all');
-  
-  // Filter states
-  const [filters, setFilters] = useState({
-    department: 'all',
-    jobTitle: 'all',
-    status: 'all',
-    gosiApplicable: 'all',
-    reportingManager: 'all'
-  });
-
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: companies = [] } = useQuery({
-    queryKey: ['companies'],
-    queryFn: () => base44.entities.Company.list(),
+  // Fetch current user to understand their access level
+  const { data: user } = useQuery({
+    queryKey: ['current-user-employees'],
+    queryFn: async () => {
+      const userData = await base44.auth.me();
+      setCurrentUser(userData);
+      return userData;
+    }
   });
 
-  const { data: allEmployees = [], isLoading } = useQuery({
-    queryKey: ['employees'],
-    queryFn: () => base44.entities.Employee.list('-created_date'),
+  // Fetch employees using secure backend function
+  const { data: employeesData, isLoading } = useQuery({
+    queryKey: ['filtered-employees', searchTerm],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getFilteredEmployees', {
+        filters: {
+          search: searchTerm
+        }
+      });
+      return response.data;
+    },
+    enabled: !!user
   });
-  
-  const employees = selectedCompany === 'all' 
-    ? allEmployees 
-    : allEmployees.filter(e => e.company_id === selectedCompany);
 
-  const { data: shifts = [] } = useQuery({
-    queryKey: ['shifts'],
-    queryFn: () => base44.entities.Shift.list(),
-  });
+  const employees = employeesData?.employees || [];
+  const accessLevel = employeesData?.access_level || 'employee';
 
   const createEmployeeMutation = useMutation({
-    mutationFn: async (data) => {
-      // Create employee
-      const employee = await base44.entities.Employee.create(data.employee);
-      
-      // Create dependents
-      if (data.dependents && data.dependents.length > 0) {
-        const dependentsWithEmployeeId = data.dependents.map(dep => ({
-          ...dep,
-          employee_id: employee.id
-        }));
-        await Promise.all(
-          dependentsWithEmployeeId.map(dep => base44.entities.Dependent.create(dep))
-        );
-      }
-      
-      // Create insurance
-      if (data.insurance && data.insurance.length > 0) {
-        const insuranceWithEmployeeId = data.insurance.map(ins => ({
-          ...ins,
-          employee_id: employee.id
-        }));
-        await Promise.all(
-          insuranceWithEmployeeId.map(ins => base44.entities.Insurance.create(ins))
-        );
-      }
-
-      // Create shift assignments
-      if (data.shiftAssignments && data.shiftAssignments.length > 0) {
-        const assignmentsWithEmployeeId = data.shiftAssignments.map(shift => ({
-          ...shift,
-          employee_id: employee.id
-        }));
-        await Promise.all(
-          assignmentsWithEmployeeId.map(shift => base44.entities.ShiftAssignment.create(shift))
-        );
-      }
-      
-      return employee;
-    },
+    mutationFn: (data) => base44.entities.Employee.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['employees']);
-      queryClient.invalidateQueries(['shift-assignments']);
-      setShowDialog(false);
+      queryClient.invalidateQueries(['filtered-employees']);
+      setShowForm(false);
       setEditingEmployee(null);
       toast.success('Employee created successfully');
     },
-    onError: (error) => {
-      toast.error('Failed to create employee: ' + error.message);
+    onError: () => {
+      toast.error('Failed to create employee');
+    }
+  });
+
+  const updateEmployeeMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['filtered-employees']);
+      setShowForm(false);
+      setEditingEmployee(null);
+      toast.success('Employee updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update employee');
     }
   });
 
   const handleSubmit = (data) => {
-    createEmployeeMutation.mutate(data);
+    if (editingEmployee) {
+      updateEmployeeMutation.mutate({ id: editingEmployee.id, data });
+    } else {
+      createEmployeeMutation.mutate(data);
+    }
   };
 
-  // Get unique values for filters
-  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
-  const jobTitles = [...new Set(employees.map(e => e.job_title).filter(Boolean))];
-  const managers = employees.filter(e => 
-    employees.some(emp => emp.manager_id === e.id)
-  );
-
-  // Apply filters
-  const filteredEmployees = employees.filter(e => {
-    const matchesSearch = 
-      e.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.employee_id?.includes(searchTerm) ||
-      e.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.job_title?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesDepartment = filters.department === 'all' || e.department === filters.department;
-    const matchesJobTitle = filters.jobTitle === 'all' || e.job_title === filters.jobTitle;
-    const matchesStatus = filters.status === 'all' || e.status === filters.status;
-    const matchesGOSI = 
-      filters.gosiApplicable === 'all' || 
-      (filters.gosiApplicable === 'yes' && e.gosi_applicable === true) ||
-      (filters.gosiApplicable === 'no' && e.gosi_applicable === false);
-    const matchesManager = 
-      filters.reportingManager === 'all' || e.manager_id === filters.reportingManager;
-
-    return matchesSearch && matchesDepartment && matchesJobTitle && matchesStatus && matchesGOSI && matchesManager;
-  });
-
-  // Clear all filters
-  const clearFilters = () => {
-    setFilters({
-      department: 'all',
-      jobTitle: 'all',
-      status: 'all',
-      gosiApplicable: 'all',
-      reportingManager: 'all'
-    });
+  const getStatusColor = (status) => {
+    const colors = {
+      active: 'bg-emerald-100 text-emerald-700',
+      inactive: 'bg-slate-100 text-slate-700',
+      on_leave: 'bg-amber-100 text-amber-700',
+      terminated: 'bg-red-100 text-red-700'
+    };
+    return colors[status] || 'bg-slate-100 text-slate-700';
   };
-
-  // Check if any filter is active
-  const hasActiveFilters = Object.values(filters).some(f => f !== 'all');
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
+      {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Management</h1>
-          <p className="text-slate-600">Manage your workforce efficiently</p>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
+            <Badge variant="outline" className="text-xs">
+              {accessLevel === 'admin' ? (
+                <><Shield className="w-3 h-3 mr-1" /> Full Access</>
+              ) : accessLevel === 'manager' ? (
+                <><Users className="w-3 h-3 mr-1" /> My Team</>
+              ) : (
+                <><Users className="w-3 h-3 mr-1" /> Personal View</>
+              )}
+            </Badge>
+          </div>
+          <p className="text-slate-600">
+            {accessLevel === 'admin' && 'Manage all employees in the organization'}
+            {accessLevel === 'manager' && 'View and manage your direct reports'}
+            {accessLevel === 'employee' && 'View your employee information'}
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-            <SelectTrigger className="w-[200px] bg-white">
-              <SelectValue placeholder="All Companies" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Companies</SelectItem>
-              {companies.map(company => (
-                <SelectItem key={company.id} value={company.id}>
-                  {company.name_en}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {accessLevel === 'admin' && (
           <Button 
-            onClick={() => { setEditingEmployee(null); setShowDialog(true); }}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+            onClick={() => { setEditingEmployee(null); setShowForm(true); }}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Employee
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
           </Button>
-        </div>
+        )}
       </div>
 
+      {/* Search and Stats */}
+      <div className="grid lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-3 border-0 shadow-lg">
+          <CardContent className="p-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Input
+                placeholder="Search employees by name, ID, email, or department..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 text-base"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">Total Accessible</p>
+                <p className="text-3xl font-bold text-blue-600">{employees.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Employee List */}
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b border-slate-100">
-          <div className="flex flex-col gap-4">
-            {/* Search and Filter Button */}
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search by name, ID, email, department, or job title..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Popover open={showFilters} onOpenChange={setShowFilters}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="relative">
-                    <Filter className="w-4 h-4 mr-2" /> 
-                    Advanced Filters
-                    {hasActiveFilters && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-96" align="end">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-900">Filter Employees</h3>
-                      {hasActiveFilters && (
-                        <Button variant="ghost" size="sm" onClick={clearFilters}>
-                          <X className="w-4 h-4 mr-1" />
-                          Clear All
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      {/* Department Filter */}
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Department</label>
-                        <Select
-                          value={filters.department}
-                          onValueChange={(val) => setFilters({ ...filters, department: val })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
-                            {departments.map(dept => (
-                              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Job Title Filter */}
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Job Title</label>
-                        <Select
-                          value={filters.jobTitle}
-                          onValueChange={(val) => setFilters({ ...filters, jobTitle: val })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Job Titles</SelectItem>
-                            {jobTitles.map(title => (
-                              <SelectItem key={title} value={title}>{title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Status Filter */}
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
-                        <Select
-                          value={filters.status}
-                          onValueChange={(val) => setFilters({ ...filters, status: val })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="on_leave">On Leave</SelectItem>
-                            <SelectItem value="terminated">Terminated</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* GOSI Applicable Filter */}
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">GOSI Applicable</label>
-                        <Select
-                          value={filters.gosiApplicable}
-                          onValueChange={(val) => setFilters({ ...filters, gosiApplicable: val })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
-                            <SelectItem value="no">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Reporting Manager Filter */}
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Reporting Manager</label>
-                        <Select
-                          value={filters.reportingManager}
-                          onValueChange={(val) => setFilters({ ...filters, reportingManager: val })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Managers</SelectItem>
-                            {managers.map(mgr => (
-                              <SelectItem key={mgr.id} value={mgr.id}>
-                                {mgr.first_name} {mgr.last_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap gap-2">
-                {filters.department !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    Department: {filters.department}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => setFilters({ ...filters, department: 'all' })}
-                    />
-                  </Badge>
-                )}
-                {filters.jobTitle !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    Job Title: {filters.jobTitle}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => setFilters({ ...filters, jobTitle: 'all' })}
-                    />
-                  </Badge>
-                )}
-                {filters.status !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    Status: {filters.status}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => setFilters({ ...filters, status: 'all' })}
-                    />
-                  </Badge>
-                )}
-                {filters.gosiApplicable !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    GOSI: {filters.gosiApplicable === 'yes' ? 'Applicable' : 'Not Applicable'}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => setFilters({ ...filters, gosiApplicable: 'all' })}
-                    />
-                  </Badge>
-                )}
-                {filters.reportingManager !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    Manager: {managers.find(m => m.id === filters.reportingManager)?.first_name} {managers.find(m => m.id === filters.reportingManager)?.last_name}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      onClick={() => setFilters({ ...filters, reportingManager: 'all' })}
-                    />
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            {/* Results Count */}
-            <div className="flex items-center justify-between text-sm text-slate-600">
-              <p>Showing <strong>{filteredEmployees.length}</strong> of <strong>{employees.length}</strong> employees</p>
-            </div>
-          </div>
-        </CardHeader>
         <CardContent className="p-6">
           {isLoading ? (
             <div className="space-y-4">
-              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
             </div>
-          ) : filteredEmployees.length === 0 ? (
+          ) : employees.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500 mb-2">
-                {hasActiveFilters ? 'No employees match the selected filters' : 'No employees found'}
+              <p className="text-slate-500 mb-4">
+                {searchTerm ? 'No employees found matching your search' : 'No employees found'}
               </p>
-              {hasActiveFilters && (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear Filters
+              {accessLevel === 'admin' && (
+                <Button onClick={() => setShowForm(true)} variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Employee
                 </Button>
               )}
             </div>
           ) : (
-            <div className="grid gap-4">
-              {filteredEmployees.map((employee) => (
-                <Card key={employee.id} className="border border-slate-200 hover:shadow-md transition-all">
+            <div className="grid lg:grid-cols-2 gap-4">
+              {employees.map((employee) => (
+                <Card 
+                  key={employee.id} 
+                  className="border border-slate-200 hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => { setEditingEmployee(employee); setShowForm(true); }}
+                >
                   <CardContent className="p-5">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="w-14 h-14 border-2 border-emerald-100">
-                        <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-semibold">
-                          {employee.first_name?.[0]}{employee.last_name?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-slate-900">{employee.first_name} {employee.last_name}</h3>
-                        <p className="text-sm text-slate-500">{employee.job_title} • {employee.department}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs text-slate-400">ID: {employee.employee_id}</p>
-                          {employee.gosi_applicable && (
-                            <Badge className="text-xs bg-amber-100 text-amber-700">GOSI</Badge>
-                          )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-lg">
+                          {employee.first_name?.charAt(0)}{employee.last_name?.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">
+                            {employee.first_name} {employee.last_name}
+                          </h3>
+                          <p className="text-sm text-slate-500">{employee.employee_id}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right hidden md:block">
-                          <p className="text-sm text-slate-500">Status</p>
-                          <Badge className={
-                            employee.status === 'active' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                            employee.status === 'on_leave' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                            'bg-slate-100 text-slate-700 border-slate-200'
-                          }>
-                            {employee.status}
-                          </Badge>
+                      <Badge className={getStatusColor(employee.status)}>
+                        {employee.status}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Briefcase className="w-4 h-4" />
+                        <span>{employee.job_title}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Building2 className="w-4 h-4" />
+                        <span>{employee.department}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Mail className="w-4 h-4" />
+                        <span className="truncate">{employee.email}</span>
+                      </div>
+                      {employee.phone && (
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Phone className="w-4 h-4" />
+                          <span>{employee.phone}</span>
                         </div>
-                        <Button variant="outline" size="sm">View Details</Button>
+                      )}
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Calendar className="w-4 h-4" />
+                        <span>Joined {new Date(employee.hire_date).toLocaleDateString()}</span>
                       </div>
                     </div>
+
+                    {employee.manager_id === employeesData?.current_employee_id && (
+                      <div className="mt-3 pt-3 border-t">
+                        <Badge variant="outline" className="text-xs">
+                          <Users className="w-3 h-3 mr-1" />
+                          Reports to You
+                        </Badge>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -444,8 +246,8 @@ export default function Employees() {
       </Card>
 
       {/* Employee Form Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
@@ -453,10 +255,9 @@ export default function Employees() {
           </DialogHeader>
           <EmployeeFormTabs
             employee={editingEmployee}
-            shifts={shifts}
             onSubmit={handleSubmit}
             onCancel={() => {
-              setShowDialog(false);
+              setShowForm(false);
               setEditingEmployee(null);
             }}
           />

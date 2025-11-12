@@ -22,6 +22,7 @@ import AIAssistant from './pages/AIAssistant';
 import TimeTracking from './pages/TimeTracking';
 import Reports from './pages/Reports';
 import Approvals from './pages/Approvals';
+import UserManagement from './pages/UserManagement';
 import Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Reports": Reports,
     "Approvals": Approvals,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {

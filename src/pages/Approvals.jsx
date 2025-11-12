@@ -36,95 +36,65 @@ export default function Approvals() {
     queryFn: () => base44.entities.Employee.list()
   });
 
-  // Fetch pending leave requests
-  const { data: leaveRequests = [], isLoading: loadingLeaves } = useQuery({
+  // Fetch pending leave requests using secure backend
+  const { data: leaveRequestsData, isLoading: loadingLeaves } = useQuery({
     queryKey: ['leave-requests-approvals'],
     queryFn: async () => {
-      const requests = await base44.entities.LeaveRequest.filter({ status: 'pending' }, '-created_date');
-      
-      // Enrich with employee names
-      return requests.map(req => {
-        const employee = allEmployees.find(e => e.id === req.employee_id);
-        return {
-          ...req,
-          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown',
-          employee_email: employee?.email
-        };
+      const response = await base44.functions.invoke('getFilteredLeaveRequests', {
+        filters: { status: 'pending' }
       });
+      return response.data;
     },
-    enabled: allEmployees.length > 0
+    enabled: !!currentUser
   });
+  const leaveRequests = leaveRequestsData?.leave_requests || [];
 
-  // Fetch pending travel requests
-  const { data: travelRequests = [], isLoading: loadingTravels } = useQuery({
+  // Fetch pending travel requests using secure backend
+  const { data: travelRequestsData, isLoading: loadingTravels } = useQuery({
     queryKey: ['travel-requests-approvals'],
     queryFn: async () => {
-      const requests = await base44.entities.TravelRequest.filter({ status: 'pending' }, '-created_date');
-      
-      // Enrich with employee names
-      return requests.map(req => {
-        const employee = allEmployees.find(e => e.id === req.employee_id);
-        return {
-          ...req,
-          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown',
-          employee_email: employee?.email
-        };
+      const response = await base44.functions.invoke('getFilteredTravelRequests', {
+        filters: { status: 'pending' }
       });
+      return response.data;
     },
-    enabled: allEmployees.length > 0
+    enabled: !!currentUser
   });
+  const travelRequests = travelRequestsData?.travel_requests || [];
 
-  // Fetch pending loan requests
-  const { data: loanRequests = [], isLoading: loadingLoans } = useQuery({
+  // Fetch pending loan requests using secure backend
+  const { data: loanRequestsData, isLoading: loadingLoans } = useQuery({
     queryKey: ['loan-requests-approvals'],
     queryFn: async () => {
-      const requests = await base44.entities.LoanRequest.filter({ status: 'pending' }, '-created_date');
-      
-      // Enrich with employee names
-      return requests.map(req => {
-        const employee = allEmployees.find(e => e.id === req.employee_id);
-        return {
-          ...req,
-          employee_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown',
-          employee_email: employee?.email
-        };
+      const response = await base44.functions.invoke('getFilteredLoanRequests', {
+        filters: { status: 'pending' }
       });
+      return response.data;
     },
-    enabled: allEmployees.length > 0
+    enabled: !!currentUser
   });
+  const loanRequests = loanRequestsData?.loan_requests || [];
 
-  // Filter based on current user role and employee manager relationship
+  // Filter based on current user role and approval stage
   const myLeaveApprovals = leaveRequests.filter(leave => {
     if (currentUser?.role === 'admin') {
       return leave.current_approver_role === 'hr';
     }
-    if (currentEmployee?.id) {
-      const employee = allEmployees.find(e => e.id === leave.employee_id);
-      return leave.current_approver_role === 'manager' && employee?.manager_id === currentEmployee.id;
-    }
-    return false;
+    return leave.current_approver_role === 'manager';
   });
 
   const myTravelApprovals = travelRequests.filter(travel => {
     if (currentUser?.role === 'admin') {
       return travel.current_approver_role === 'finance';
     }
-    if (currentEmployee?.id) {
-      const employee = allEmployees.find(e => e.id === travel.employee_id);
-      return travel.current_approver_role === 'manager' && employee?.manager_id === currentEmployee.id;
-    }
-    return false;
+    return travel.current_approver_role === 'manager';
   });
 
   const myLoanApprovals = loanRequests.filter(loan => {
     if (currentUser?.role === 'admin') {
       return loan.current_approver_role === 'hr' || loan.current_approver_role === 'senior_management';
     }
-    if (currentEmployee?.id) {
-      const employee = allEmployees.find(e => e.id === loan.employee_id);
-      return loan.current_approver_role === 'manager' && employee?.manager_id === currentEmployee.id;
-    }
-    return false;
+    return loan.current_approver_role === 'manager';
   });
 
   const totalPendingApprovals = myLeaveApprovals.length + myTravelApprovals.length + myLoanApprovals.length;
