@@ -76,6 +76,12 @@ const navigationSections = [
       { title: "Health & Safety", url: createPageUrl("HealthSafety"), icon: Shield },
       { title: "Employee Relations", url: createPageUrl("EmployeeRelations"), icon: MessageSquare }
     ]
+  },
+  {
+    title: "Administration",
+    items: [
+      { title: "User Management", url: createPageUrl("UserManagement"), icon: Shield }
+    ]
   }
 ];
 
