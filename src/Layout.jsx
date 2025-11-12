@@ -80,7 +80,8 @@ const navigationSections = [
   {
     title: "Administration",
     items: [
-      { title: "User Management", url: createPageUrl("UserManagement"), icon: Shield }
+      { title: "User Management", url: createPageUrl("UserManagement"), icon: Shield },
+      { title: "Master Data", url: createPageUrl("MasterData"), icon: FileText }
     ]
   }
 ];

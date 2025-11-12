@@ -24,6 +24,7 @@ import Reports from './pages/Reports';
 import Approvals from './pages/Approvals';
 import UserManagement from './pages/UserManagement';
 import PayrollManagement from './pages/PayrollManagement';
+import MasterData from './pages/MasterData';
 import Layout from './Layout.jsx';
 
 
@@ -54,6 +55,7 @@ export const PAGES = {
     "Approvals": Approvals,
     "UserManagement": UserManagement,
     "PayrollManagement": PayrollManagement,
+    "MasterData": MasterData,
 }
 
 export const pagesConfig = {
