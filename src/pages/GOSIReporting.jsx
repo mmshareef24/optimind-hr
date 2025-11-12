@@ -11,6 +11,7 @@ import GOSIReportGenerator from "../components/gosi/GOSIReportGenerator";
 import GOSIUploadInterface from "../components/gosi/GOSIUploadInterface";
 import GOSIReportHistory from "../components/gosi/GOSIReportHistory";
 import GOSIComplianceCheck from "../components/gosi/GOSIComplianceCheck";
+import GOSIReportExporter from "../components/gosi/GOSIReportExporter";
 import { toast } from "sonner";
 
 export default function GOSIReporting() {
@@ -94,8 +95,7 @@ export default function GOSIReporting() {
   };
 
   const handleDownloadReport = (report) => {
-    // Generate and download report file
-    toast.info('Downloading GOSI report...');
+    // Handled by GOSIReportExporter component
   };
 
   // Calculate statistics
