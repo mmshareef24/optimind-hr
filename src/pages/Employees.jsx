@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -26,6 +25,7 @@ export default function Employees() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState('all');
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -38,10 +38,19 @@ export default function Employees() {
 
   const queryClient = useQueryClient();
 
-  const { data: employees = [], isLoading } = useQuery({
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list(),
+  });
+
+  const { data: allEmployees = [], isLoading } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list('-created_date'),
   });
+  
+  const employees = selectedCompany === 'all' 
+    ? allEmployees 
+    : allEmployees.filter(e => e.company_id === selectedCompany);
 
   const { data: shifts = [] } = useQuery({
     queryKey: ['shifts'],
@@ -155,12 +164,27 @@ export default function Employees() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Management</h1>
           <p className="text-slate-600">Manage your workforce efficiently</p>
         </div>
-        <Button 
-          onClick={() => { setEditingEmployee(null); setShowDialog(true); }}
-          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Employee
-        </Button>
+        <div className="flex gap-3">
+          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+            <SelectTrigger className="w-[200px] bg-white">
+              <SelectValue placeholder="All Companies" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Companies</SelectItem>
+              {companies.map(company => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name_en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => { setEditingEmployee(null); setShowDialog(true); }}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add Employee
+          </Button>
+        </div>
       </div>
 
       <Card className="border-0 shadow-lg">

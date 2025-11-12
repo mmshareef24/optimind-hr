@@ -26,6 +26,7 @@ export default function Onboarding() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState('user');
+  const [selectedCompany, setSelectedCompany] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -43,10 +44,19 @@ export default function Onboarding() {
   });
 
   // Fetch data
-  const { data: employees = [], isLoading: loadingEmployees } = useQuery({
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list(),
+  });
+
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list(),
   });
+  
+  const employees = selectedCompany === 'all' 
+    ? allEmployees 
+    : allEmployees.filter(e => e.company_id === selectedCompany);
 
   const { data: checklists = [], isLoading: loadingChecklists } = useQuery({
     queryKey: ['onboarding-checklists'],
@@ -214,14 +224,31 @@ export default function Onboarding() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Onboarding</h1>
           <p className="text-slate-600">Streamline the new hire experience</p>
         </div>
-        {userRole === 'admin' && (
-          <Button 
-            onClick={() => { setEditingChecklist(null); setShowChecklistForm(true); }}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
-          >
-            <CheckSquare className="w-4 h-4 mr-2" /> Create Checklist
-          </Button>
-        )}
+        <div className="flex gap-3">
+          {userRole === 'admin' && (
+            <>
+              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                <SelectTrigger className="w-[180px] bg-white">
+                  <SelectValue placeholder="All Companies" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Companies</SelectItem>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={() => { setEditingChecklist(null); setShowChecklistForm(true); }}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+              >
+                <CheckSquare className="w-4 h-4 mr-2" /> Create Checklist
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Statistics */}
