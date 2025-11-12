@@ -97,15 +97,15 @@ const navigationSections = [
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
-        <Sidebar className="border-r border-emerald-100/50 bg-white/80 backdrop-blur-xl">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 rtl:flex-row-reverse">
+        <Sidebar className="ltr:border-r rtl:border-l border-emerald-100/50 bg-white/80 backdrop-blur-xl">
           <SidebarHeader className="border-b border-emerald-100/50 p-6">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 rtl:flex-row-reverse">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
-                <div>
+                <div className="rtl:text-right">
                   <h2 className="font-bold text-lg text-slate-900">{t('app_name')}</h2>
                   <p className="text-xs text-emerald-700 font-medium">{t('app_tagline')}</p>
                 </div>
@@ -121,9 +121,9 @@ const navigationSections = [
                 defaultOpen={sectionIndex === 0 || sectionIndex === 1}
                 className="mb-2"
               >
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group">
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group rtl:flex-row-reverse">
                   <span>{section.title}</span>
-                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180 rtl:rotate-180 rtl:group-data-[state=open]:rotate-0" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarGroup>
@@ -157,11 +157,11 @@ const navigationSections = [
           </SidebarContent>
 
           <SidebarFooter className="border-t border-emerald-100/50 p-4">
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent rtl:flex-row-reverse">
               <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white font-semibold text-sm">HR</span>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 rtl:text-right">
                 <p className="font-semibold text-slate-900 text-sm truncate">HR Admin</p>
                 <p className="text-xs text-slate-500 truncate">admin@company.sa</p>
               </div>
@@ -171,14 +171,14 @@ const navigationSections = [
 
         <main className="flex-1 flex flex-col min-w-0">
           <header className="bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 px-6 py-4 lg:hidden sticky top-0 z-10">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4 rtl:flex-row-reverse">
+              <div className="flex items-center gap-4 rtl:flex-row-reverse">
                 <SidebarTrigger className="hover:bg-emerald-50 p-2 rounded-lg transition-colors" />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rtl:flex-row-reverse">
                   <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-white" />
                   </div>
-                  <div>
+                  <div className="rtl:text-right">
                     <h1 className="text-lg font-bold text-slate-900">{t('app_name')}</h1>
                     <p className="text-xs text-emerald-700">{t('app_tagline')}</p>
                   </div>
