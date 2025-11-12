@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Calendar, Plus, TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Plus, TrendingUp, Clock, CheckCircle, XCircle, Users, Filter, Download, History, AlertTriangle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import StatCard from "../components/hrms/StatCard";
 import LeaveBalanceCard from "../components/leave/LeaveBalanceCard";
 import LeaveRequestForm from "../components/leave/LeaveRequestForm";
@@ -15,13 +18,17 @@ import LeaveApprovalPanel from "../components/leave/LeaveApprovalPanel";
 import LeaveCalendar from "../components/leave/LeaveCalendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isWithinInterval, addDays } from "date-fns";
 
 export default function LeaveManagement() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState('user');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterLeaveType, setFilterLeaveType] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   const queryClient = useQueryClient();
 
@@ -181,11 +188,64 @@ export default function LeaveManagement() {
   const myRequests = currentUser ? leaveRequests.filter(r => r.employee_id === currentUser.id) : [];
   const teamRequests = userRole === 'admin' ? leaveRequests : [];
 
+  // Apply filters
+  const filteredMyRequests = myRequests.filter(r => {
+    if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+    if (filterLeaveType !== 'all' && r.leave_type !== filterLeaveType) return false;
+    return true;
+  });
+
   // Calculate statistics
   const pendingCount = myRequests.filter(r => r.status === 'pending').length;
   const approvedCount = myRequests.filter(r => r.status === 'approved').length;
+  const rejectedCount = myRequests.filter(r => r.status === 'rejected').length;
   const totalDaysUsed = leaveBalances.reduce((sum, b) => sum + b.used, 0);
   const totalDaysRemaining = leaveBalances.reduce((sum, b) => sum + b.remaining, 0);
+  const totalPending = leaveBalances.reduce((sum, b) => sum + b.pending, 0);
+
+  // Get upcoming leaves
+  const today = new Date();
+  const upcomingLeaves = myRequests.filter(r => {
+    if (r.status !== 'approved') return false;
+    const startDate = new Date(r.start_date);
+    return startDate > today && startDate <= addDays(today, 30);
+  }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+  // Check for overlapping requests
+  const hasOverlappingRequests = (startDate, endDate) => {
+    return myRequests.some(r => {
+      if (r.status === 'rejected' || r.status === 'cancelled') return false;
+      const existingStart = new Date(r.start_date);
+      const existingEnd = new Date(r.end_date);
+      const newStart = new Date(startDate);
+      const newEnd = new Date(endDate);
+      
+      return (
+        (newStart >= existingStart && newStart <= existingEnd) ||
+        (newEnd >= existingStart && newEnd <= existingEnd) ||
+        (newStart <= existingStart && newEnd >= existingEnd)
+      );
+    });
+  };
+
+  // Export leave history
+  const handleExportHistory = () => {
+    let csvContent = 'Leave Type,Start Date,End Date,Days,Status,Reason,Submitted Date\n';
+    myRequests.forEach(req => {
+      csvContent += `${req.leave_type},${req.start_date},${req.end_date},${req.total_days},${req.status},"${req.reason}",${req.created_date}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leave-history-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Leave history exported');
+  };
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -193,15 +253,47 @@ export default function LeaveManagement() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Leave Management</h1>
-          <p className="text-slate-600">Manage leave requests and balances</p>
+          <p className="text-slate-600">Track and manage your leave requests seamlessly</p>
         </div>
-        <Button
-          onClick={() => setShowRequestForm(true)}
-          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Request Leave
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportHistory}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export History
+          </Button>
+          <Button
+            onClick={() => setShowRequestForm(true)}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Request Leave
+          </Button>
+        </div>
       </div>
+
+      {/* Alerts for upcoming leaves */}
+      {upcomingLeaves.length > 0 && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Calendar className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-900">
+            <strong>Upcoming Leave:</strong> {upcomingLeaves[0].leave_type} leave starting {format(new Date(upcomingLeaves[0].start_date), 'MMM dd, yyyy')} ({upcomingLeaves[0].total_days} days)
+            {upcomingLeaves.length > 1 && ` • +${upcomingLeaves.length - 1} more`}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Pending approvals alert (for admins) */}
+      {userRole === 'admin' && teamRequests.filter(r => r.status === 'pending').length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-900">
+            <strong>{teamRequests.filter(r => r.status === 'pending').length} leave requests</strong> are waiting for your approval
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -224,7 +316,7 @@ export default function LeaveManagement() {
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Approved Requests"
+          title="Approved This Year"
           value={approvedCount}
           icon={CheckCircle}
           bgColor="from-purple-500 to-purple-600"
