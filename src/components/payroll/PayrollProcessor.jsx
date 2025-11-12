@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Play, CheckCircle, AlertCircle, DollarSign, Users, TrendingUp } from "lucide-react";
+import { Play, CheckCircle, AlertCircle, DollarSign, Users, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
+import ReportExporter from "../reports/ReportExporter";
 
 export default function PayrollProcessor() {
   const [selectedMonth, setSelectedMonth] = useState(
@@ -178,6 +179,15 @@ export default function PayrollProcessor() {
                 </div>
               </div>
             )}
+
+            <div className="pt-4 border-t">
+              <ReportExporter
+                reportType="payroll"
+                filters={{ month: processingResult.month }}
+                buttonText="Export Payroll Report"
+                buttonVariant="default"
+              />
+            </div>
           </div>
         )}
       </CardContent>

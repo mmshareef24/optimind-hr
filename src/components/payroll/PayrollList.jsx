@@ -41,28 +41,50 @@ export default function PayrollList() {
   });
 
   const generatePayslipMutation = useMutation({
-    mutationFn: async ({ payroll_id, send_email }) => {
-      const response = await base44.functions.invoke('generatePayslip', {
-        payroll_id,
-        send_email
-      });
-      return response.data;
+    mutationFn: async ({ payroll_id, send_email, format = 'pdf' }) => {
+      if (format === 'pdf') {
+        const response = await base44.functions.invoke('generatePDFPayslip', {
+          payroll_id,
+          send_email
+        });
+        return { format: 'pdf', data: response.data };
+      } else {
+        const response = await base44.functions.invoke('generatePayslip', {
+          payroll_id,
+          send_email
+        });
+        return { format: 'text', data: response.data };
+      }
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (result, variables) => {
       if (variables.send_email) {
         toast.success('Payslip sent via email');
       } else {
-        // Download the payslip
-        const blob = new Blob([data.payslip_text], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `payslip-${data.payslip.payslip_id}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
-        toast.success('Payslip downloaded');
+        if (result.format === 'pdf') {
+          // Download PDF
+          const blob = new Blob([result.data], { type: 'application/pdf' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `payslip-${variables.payroll_id}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+          toast.success('PDF Payslip downloaded');
+        } else {
+          // Download text
+          const blob = new Blob([result.data.payslip_text], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `payslip-${result.data.payslip.payslip_id}.txt`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+          toast.success('Payslip downloaded');
+        }
       }
     },
     onError: () => {
@@ -209,16 +231,16 @@ export default function PayrollList() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => generatePayslipMutation.mutate({ payroll_id: record.id, send_email: false })}
+                      onClick={() => generatePayslipMutation.mutate({ payroll_id: record.id, send_email: false, format: 'pdf' })}
                       disabled={generatePayslipMutation.isPending}
                     >
                       <Download className="w-4 h-4 mr-1" />
-                      Download
+                      PDF
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => generatePayslipMutation.mutate({ payroll_id: record.id, send_email: true })}
+                      onClick={() => generatePayslipMutation.mutate({ payroll_id: record.id, send_email: true, format: 'pdf' })}
                       disabled={generatePayslipMutation.isPending}
                     >
                       <Mail className="w-4 h-4 mr-1" />
