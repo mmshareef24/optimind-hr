@@ -84,8 +84,12 @@ export default function LeaveManagement() {
     mutationFn: async (data) => {
       const request = await base44.entities.LeaveRequest.create(data);
       
-      // Update pending balance
-      const balance = leaveBalances.find(b => b.leave_type === data.leave_type);
+      // Update pending balance for the employee
+      const employeeBalances = await base44.entities.LeaveBalance.filter({ 
+        employee_id: data.employee_id 
+      });
+      const balance = employeeBalances.find(b => b.leave_type === data.leave_type);
+      
       if (balance) {
         await base44.entities.LeaveBalance.update(balance.id, {
           ...balance,
@@ -95,11 +99,17 @@ export default function LeaveManagement() {
       
       return request;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['leave-requests']);
       queryClient.invalidateQueries(['leave-balances']);
       setShowRequestForm(false);
-      toast.success('Leave request submitted successfully');
+      
+      const targetEmployee = employees.find(e => e.id === variables.employee_id);
+      if (userRole === 'admin' && targetEmployee && targetEmployee.id !== currentUser?.id) {
+        toast.success(`Leave request created for ${targetEmployee.first_name} ${targetEmployee.last_name}`);
+      } else {
+        toast.success('Leave request submitted successfully');
+      }
     },
     onError: () => {
       toast.error('Failed to submit leave request');
@@ -664,16 +674,18 @@ export default function LeaveManagement() {
       <Dialog open={showRequestForm} onOpenChange={setShowRequestForm}>
         <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Submit Leave Request</DialogTitle>
+            <DialogTitle>
+              {userRole === 'admin' ? 'Create Leave Request for Employee' : 'Submit Leave Request'}
+            </DialogTitle>
           </DialogHeader>
-          {currentUser && leaveBalances && (
-            <LeaveRequestForm
-              employee={currentUser}
-              leaveBalances={leaveBalances}
-              onSubmit={handleSubmitRequest}
-              onCancel={() => setShowRequestForm(false)}
-            />
-          )}
+          <LeaveRequestForm
+            employee={currentUser}
+            leaveBalances={leaveBalances}
+            onSubmit={handleSubmitRequest}
+            onCancel={() => setShowRequestForm(false)}
+            isAdmin={userRole === 'admin'}
+            allEmployees={employees}
+          />
         </DialogContent>
       </Dialog>
     </div>
