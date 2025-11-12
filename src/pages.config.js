@@ -21,6 +21,7 @@ import PerformanceManagement from './pages/PerformanceManagement';
 import AIAssistant from './pages/AIAssistant';
 import TimeTracking from './pages/TimeTracking';
 import Reports from './pages/Reports';
+import Approvals from './pages/Approvals';
 import Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "AIAssistant": AIAssistant,
     "TimeTracking": TimeTracking,
     "Reports": Reports,
+    "Approvals": Approvals,
 }
 
 export const pagesConfig = {
