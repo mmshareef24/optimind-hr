@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText } from "lucide-react";
+import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText, Clock3 } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
 import ReportExporter from "../components/reports/ReportExporter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +35,16 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Attendance.list('-date', 5),
   });
 
+  const { data: shifts = [] } = useQuery({
+    queryKey: ['shifts'],
+    queryFn: () => base44.entities.Shift.list(),
+  });
+
+  const { data: shiftAssignments = [] } = useQuery({
+    queryKey: ['shift-assignments'],
+    queryFn: () => base44.entities.ShiftAssignment.list(),
+  });
+
   // Filter employees by selected company
   const employees = selectedCompany === 'all' 
     ? allEmployees 
@@ -43,6 +53,12 @@ export default function Dashboard() {
   const activeEmployees = employees.filter(e => e.status === 'active').length;
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
   const selectedCompanyData = companies.find(c => c.id === selectedCompany);
+
+  // Calculate shift statistics
+  const activeShifts = shifts.filter(s => s.is_active).length;
+  const employeesWithShifts = new Set(
+    shiftAssignments.filter(a => a.status === 'active').map(a => a.employee_id)
+  ).size;
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -123,9 +139,9 @@ export default function Dashboard() {
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title={selectedCompany === 'all' ? 'Total Companies' : 'Company'}
-          value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : selectedCompanyData?.name_en?.substring(0, 15) || '...'}
-          icon={Building2}
+          title={selectedCompany === 'all' ? 'Total Companies' : 'Active Shifts'}
+          value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : activeShifts}
+          icon={selectedCompany === 'all' ? Building2 : Clock3}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
@@ -239,6 +255,18 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm text-slate-500">Payroll Status</p>
                     <p className="text-lg font-bold text-slate-900">All Processed</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-transparent border border-purple-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100">
+                    <Clock3 className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Shift Coverage</p>
+                    <p className="text-lg font-bold text-slate-900">{employeesWithShifts} Assigned</p>
                   </div>
                 </div>
               </div>
