@@ -141,7 +141,7 @@ const navigationSections = [
                                 }
                               `}
                             >
-                              <Link to={item.url} className="flex items-center gap-3">
+                              <Link to={item.url} className="flex items-center gap-3 rtl:flex-row-reverse rtl:justify-end">
                                 <item.icon className="w-4 h-4" />
                                 <span className="text-sm">{item.title}</span>
                               </Link>
