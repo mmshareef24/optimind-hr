@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Download, FileText, Users, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import { exportToCSV, exportToPDF } from '../utils/exportUtils';
+import { exportToCSV, exportToPDF } from '@/components/utils/exportUtils';
 
 export default function EmployeeReports({ employees = [], attendance = [], leaves = [], performanceReviews = [] }) {
   const [reportType, setReportType] = useState('all_employees');
