@@ -1,31 +1,24 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatCard from "../components/hrms/StatCard";
 import PayslipViewer from "../components/ess/PayslipViewer";
 import PersonalInfoUpdate from "../components/ess/PersonalInfoUpdate";
 import CompanyPolicies from "../components/ess/CompanyPolicies";
+import LeaveRequestsESS from "../components/ess/LeaveRequestsESS";
+import LoanRequestsESS from "../components/ess/LoanRequestsESS";
+import LetterRequestsESS from "../components/ess/LetterRequestsESS";
+import TravelRequestsESS from "../components/ess/TravelRequestsESS";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function ESS() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [showRequestDialog, setShowRequestDialog] = useState(false);
-  const [requestType, setRequestType] = useState('payslip');
-  const [requestDetails, setRequestDetails] = useState('');
-  const [requestMonth, setRequestMonth] = useState(new Date().toISOString().slice(0, 7));
-
   const queryClient = useQueryClient();
 
   // Fetch current user
@@ -33,7 +26,6 @@ export default function ESS() {
     queryKey: ['current-user-ess'],
     queryFn: async () => {
       const userData = await base44.auth.me();
-      // Find employee record
       const employees = await base44.entities.Employee.list();
       const employee = employees.find(e => e.email === userData.email);
       setCurrentUser(employee);
@@ -65,6 +57,20 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
+  // Fetch loan requests
+  const { data: loanRequests = [] } = useQuery({
+    queryKey: ['my-loans', currentUser?.id],
+    queryFn: () => base44.entities.LoanRequest.filter({ employee_id: currentUser.id }, '-created_date'),
+    enabled: !!currentUser?.id
+  });
+
+  // Fetch travel requests
+  const { data: travelRequests = [] } = useQuery({
+    queryKey: ['my-travel', currentUser?.id],
+    queryFn: () => base44.entities.TravelRequest.filter({ employee_id: currentUser.id }, '-created_date'),
+    enabled: !!currentUser?.id
+  });
+
   // Fetch company policies
   const { data: policies = [], isLoading: loadingPolicies } = useQuery({
     queryKey: ['company-policies'],
@@ -91,53 +97,21 @@ export default function ESS() {
     }
   });
 
-  // Create ESS request
-  const createRequestMutation = useMutation({
-    mutationFn: (data) => base44.entities.ESSRequest.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['my-ess-requests']);
-      setShowRequestDialog(false);
-      setRequestDetails('');
-      setRequestType('payslip');
-      toast.success('Request submitted successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to submit request');
-      console.error(error);
-    }
-  });
-
   const handlePersonalInfoUpdate = (data) => {
     updateEmployeeMutation.mutate(data);
   };
 
-  const handleRequestPayslip = () => {
-    setRequestType('payslip');
-    setShowRequestDialog(true);
-  };
-
-  const handleSubmitRequest = () => {
-    if (!currentUser) return;
-
-    const requestData = {
-      employee_id: currentUser.id,
-      request_type: requestType,
-      request_details: requestDetails,
-      status: 'pending'
-    };
-
-    if (requestType === 'payslip' && requestMonth) {
-      requestData.month = requestMonth;
-    }
-
-    createRequestMutation.mutate(requestData);
-  };
-
   // Calculate statistics
   const totalLeaveBalance = leaveBalances.reduce((sum, lb) => sum + (lb.remaining || 0), 0);
-  const pendingRequests = essRequests.filter(r => r.status === 'pending').length;
-  const lastPayroll = payrolls[0];
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
+  const pendingLoans = loanRequests.filter(l => l.status === 'pending').length;
+  const pendingTravel = travelRequests.filter(t => t.status === 'pending').length;
+  const pendingLetters = essRequests.filter(r => 
+    (r.request_type === 'salary_certificate' || r.request_type === 'employment_letter') && 
+    r.status === 'pending'
+  ).length;
+  const totalPendingRequests = pendingLeaves + pendingLoans + pendingTravel + pendingLetters;
+  const lastPayroll = payrolls[0];
 
   if (loadingUser) {
     return (
@@ -207,7 +181,7 @@ export default function ESS() {
         />
         <StatCard
           title="Pending Requests"
-          value={pendingRequests + pendingLeaves}
+          value={totalPendingRequests}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
@@ -218,6 +192,26 @@ export default function ESS() {
           bgColor="from-purple-500 to-purple-600"
         />
       </div>
+
+      {/* Pending Requests Alert */}
+      {totalPendingRequests > 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="font-semibold text-amber-900">You have {totalPendingRequests} pending request{totalPendingRequests > 1 ? 's' : ''}</p>
+                <p className="text-sm text-amber-700">
+                  {pendingLeaves > 0 && `${pendingLeaves} Leave • `}
+                  {pendingLoans > 0 && `${pendingLoans} Loan • `}
+                  {pendingTravel > 0 && `${pendingTravel} Travel • `}
+                  {pendingLetters > 0 && `${pendingLetters} Letters`}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Summary */}
       <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 via-blue-50 to-white">
@@ -255,40 +249,196 @@ export default function ESS() {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="payslips" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1">
+      <Tabs defaultValue="dashboard" className="space-y-6">
+        <TabsList className="bg-white border border-slate-200 p-1 grid grid-cols-4 lg:grid-cols-8">
+          <TabsTrigger 
+            value="dashboard" 
+            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
+          >
+            <TrendingUp className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Dashboard</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="leave" 
+            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs lg:text-sm"
+          >
+            <Calendar className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Leave</span>
+            {pendingLeaves > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLeaves}</span>}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="loan" 
+            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
+          >
+            <DollarSign className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Loans</span>
+            {pendingLoans > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLoans}</span>}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="travel" 
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs lg:text-sm"
+          >
+            <Plane className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Travel</span>
+            {pendingTravel > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingTravel}</span>}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="letters" 
+            className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-xs lg:text-sm"
+          >
+            <Mail className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Letters</span>
+            {pendingLetters > 0 && <span className="ml-1 px-1 py-0.5 bg-amber-500 text-white text-xs rounded-full">{pendingLetters}</span>}
+          </TabsTrigger>
           <TabsTrigger 
             value="payslips" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
           >
-            <FileText className="w-4 h-4 mr-2" />
-            Payslips
+            <FileText className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Payslips</span>
           </TabsTrigger>
           <TabsTrigger 
             value="personal-info" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
           >
-            <Settings className="w-4 h-4 mr-2" />
-            Personal Info
+            <Settings className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Profile</span>
           </TabsTrigger>
           <TabsTrigger 
             value="policies" 
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
           >
-            <BookOpen className="w-4 h-4 mr-2" />
-            Company Policies
+            <BookOpen className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Policies</span>
           </TabsTrigger>
         </TabsList>
 
+        {/* Dashboard Tab */}
+        <TabsContent value="dashboard">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    onClick={() => document.querySelector('[value="leave"]').click()}
+                  >
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm">Request Leave</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    onClick={() => document.querySelector('[value="loan"]').click()}
+                  >
+                    <DollarSign className="w-6 h-6 text-emerald-600" />
+                    <span className="text-sm">Request Loan</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    onClick={() => document.querySelector('[value="travel"]').click()}
+                  >
+                    <Plane className="w-6 h-6 text-purple-600" />
+                    <span className="text-sm">Travel Request</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    onClick={() => document.querySelector('[value="letters"]').click()}
+                  >
+                    <Mail className="w-6 h-6 text-amber-600" />
+                    <span className="text-sm">Request Letter</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Requests</h3>
+                <div className="space-y-3">
+                  {[...leaveRequests.slice(0, 2), ...loanRequests.slice(0, 2), ...travelRequests.slice(0, 1)]
+                    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+                    .slice(0, 5)
+                    .map((req, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {req.leave_type ? 'Leave Request' : req.loan_type ? 'Loan Request' : 'Travel Request'}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(req.created_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge className={
+                          req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                          req.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                          req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-slate-100 text-slate-700'
+                        }>
+                          {req.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  {[...leaveRequests, ...loanRequests, ...travelRequests].length === 0 && (
+                    <p className="text-center py-8 text-slate-500">No recent requests</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Leave Requests Tab */}
+        <TabsContent value="leave">
+          <LeaveRequestsESS
+            employee={currentUser}
+            leaveRequests={leaveRequests}
+            leaveBalances={leaveBalances}
+          />
+        </TabsContent>
+
+        {/* Loan Requests Tab */}
+        <TabsContent value="loan">
+          <LoanRequestsESS
+            employee={currentUser}
+            loanRequests={loanRequests}
+          />
+        </TabsContent>
+
+        {/* Travel Requests Tab */}
+        <TabsContent value="travel">
+          <TravelRequestsESS
+            employee={currentUser}
+            travelRequests={travelRequests}
+          />
+        </TabsContent>
+
+        {/* Letter Requests Tab */}
+        <TabsContent value="letters">
+          <LetterRequestsESS
+            employee={currentUser}
+            letterRequests={essRequests.filter(r => 
+              r.request_type === 'salary_certificate' || r.request_type === 'employment_letter'
+            )}
+          />
+        </TabsContent>
+
+        {/* Payslips Tab */}
         <TabsContent value="payslips">
           <PayslipViewer
             employee={currentUser}
             payrolls={payrolls}
             isLoading={loadingPayrolls}
-            onRequestPayslip={handleRequestPayslip}
           />
         </TabsContent>
 
+        {/* Personal Info Tab */}
         <TabsContent value="personal-info">
           <PersonalInfoUpdate
             employee={currentUser}
@@ -297,6 +447,7 @@ export default function ESS() {
           />
         </TabsContent>
 
+        {/* Policies Tab */}
         <TabsContent value="policies">
           <CompanyPolicies
             policies={policies}
@@ -304,75 +455,6 @@ export default function ESS() {
           />
         </TabsContent>
       </Tabs>
-
-      {/* Request Dialog */}
-      <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Submit Request</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Request Type</Label>
-              <Select value={requestType} onValueChange={setRequestType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="payslip">Payslip</SelectItem>
-                  <SelectItem value="salary_certificate">Salary Certificate</SelectItem>
-                  <SelectItem value="employment_letter">Employment Letter</SelectItem>
-                  <SelectItem value="info_update">Information Update</SelectItem>
-                  <SelectItem value="document_access">Document Access</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {requestType === 'payslip' && (
-              <div>
-                <Label>Month</Label>
-                <input
-                  type="month"
-                  value={requestMonth}
-                  onChange={(e) => setRequestMonth(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                />
-              </div>
-            )}
-
-            <div>
-              <Label>Additional Details {requestType === 'other' ? '*' : '(Optional)'}</Label>
-              <Textarea
-                value={requestDetails}
-                onChange={(e) => setRequestDetails(e.target.value)}
-                placeholder="Provide any additional information..."
-                rows={3}
-                required={requestType === 'other'}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowRequestDialog(false);
-                setRequestDetails('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmitRequest} 
-              className="bg-emerald-600 hover:bg-emerald-700"
-              disabled={createRequestMutation.isPending || (requestType === 'other' && !requestDetails.trim())}
-            >
-              {createRequestMutation.isPending ? 'Submitting...' : 'Submit Request'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
