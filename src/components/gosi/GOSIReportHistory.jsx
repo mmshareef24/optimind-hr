@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, CheckCircle, Clock, XCircle, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import GOSIReportExporter from "./GOSIReportExporter";
 
 export default function GOSIReportHistory({ reports, isLoading, onViewReport, onDownloadReport }) {
   const getStatusIcon = (status) => {
@@ -130,24 +131,7 @@ export default function GOSIReportHistory({ reports, isLoading, onViewReport, on
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onViewReport(report)}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
-                      {report.report_file_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDownloadReport(report)}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                      )}
+                      <GOSIReportExporter month={report.report_month} companyId={report.company_id} />
                       {report.uploaded_file_url && (
                         <Button
                           variant="outline"
