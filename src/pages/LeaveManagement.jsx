@@ -16,6 +16,9 @@ import LeaveBalanceCard from "../components/leave/LeaveBalanceCard";
 import LeaveRequestForm from "../components/leave/LeaveRequestForm";
 import LeaveApprovalPanel from "../components/leave/LeaveApprovalPanel";
 import LeaveCalendar from "../components/leave/LeaveCalendar";
+import TeamLeaveCalendar from "../components/leave/TeamLeaveCalendar";
+import LeaveAnalytics from "../components/leave/LeaveAnalytics";
+import LeavePolicy from "../components/leave/LeavePolicy";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -348,29 +351,60 @@ export default function LeaveManagement() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue={userRole === 'admin' ? 'approvals' : 'my-requests'} className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1">
+        <TabsList className="bg-white border-2 border-slate-200 p-1 flex-wrap h-auto shadow-sm">
           <TabsTrigger
             value="my-requests"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white"
           >
-            <Calendar className="w-4 h-4 mr-2" />
+            <History className="w-4 h-4 mr-2" />
             My Requests
+            {pendingCount > 0 && (
+              <Badge className="ml-2 bg-amber-500 text-white text-xs">{pendingCount}</Badge>
+            )}
           </TabsTrigger>
           {userRole === 'admin' && (
-            <TabsTrigger
-              value="approvals"
-              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approvals
-            </TabsTrigger>
+            <>
+              <TabsTrigger
+                value="approvals"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Approvals
+                {teamRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <Badge className="ml-2 bg-red-500 text-white text-xs">
+                    {teamRequests.filter(r => r.status === 'pending').length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="team-calendar"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Team Calendar
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:text-white"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+            </>
           )}
           <TabsTrigger
             value="calendar"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-teal-700 data-[state=active]:text-white"
           >
             <Calendar className="w-4 h-4 mr-2" />
-            Calendar
+            My Calendar
+          </TabsTrigger>
+          <TabsTrigger
+            value="policy"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-slate-700 data-[state=active]:text-white"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Leave Policies
           </TabsTrigger>
         </TabsList>
 
@@ -543,10 +577,54 @@ export default function LeaveManagement() {
           </TabsContent>
         )}
 
+        {/* Team Calendar Tab (Admin) */}
+        {userRole === 'admin' && (
+          <TabsContent value="team-calendar">
+            <div className="space-y-4">
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
+                    >
+                      ← Previous
+                    </Button>
+                    <h3 className="text-lg font-semibold">
+                      {format(selectedMonth, 'MMMM yyyy')}
+                    </h3>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+                    >
+                      Next →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <TeamLeaveCalendar
+                leaveRequests={teamRequests}
+                employees={employees}
+                currentMonth={selectedMonth}
+              />
+            </div>
+          </TabsContent>
+        )}
+
+        {/* Analytics Tab (Admin) */}
+        {userRole === 'admin' && (
+          <TabsContent value="analytics">
+            <LeaveAnalytics
+              leaveRequests={teamRequests}
+              employees={employees}
+            />
+          </TabsContent>
+        )}
+
         {/* Calendar Tab */}
         <TabsContent value="calendar">
           <div className="space-y-4">
-            {/* Month Navigation */}
             <Card className="border-0 shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -570,10 +648,15 @@ export default function LeaveManagement() {
             </Card>
 
             <LeaveCalendar
-              leaveRequests={userRole === 'admin' ? teamRequests : myRequests}
+              leaveRequests={myRequests}
               currentMonth={selectedMonth}
             />
           </div>
+        </TabsContent>
+
+        {/* Leave Policy Tab */}
+        <TabsContent value="policy">
+          <LeavePolicy />
         </TabsContent>
       </Tabs>
 
