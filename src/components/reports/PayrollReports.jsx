@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Download, FileText, DollarSign } from "lucide-react";
 import { toast } from "sonner";
-import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
+import { exportToCSV, exportToPDF } from '@/utils/exportUtils';
 
 export default function PayrollReports({ payrolls = [], employees = [] }) {
   const [reportType, setReportType] = useState('monthly_payroll');

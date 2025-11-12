@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Download, FileText, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
-import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
+import { exportToCSV, exportToPDF } from '@/utils/exportUtils';
 
 export default function ProjectReports({ projects = [], employees = [], timeEntries = [] }) {
   const [reportType, setReportType] = useState('all_projects');

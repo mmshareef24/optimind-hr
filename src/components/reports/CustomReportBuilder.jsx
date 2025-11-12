@@ -9,7 +9,7 @@ import {
 import { Download, FileText, Filter, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
+import { exportToCSV, exportToPDF } from '@/utils/exportUtils';
 
 export default function CustomReportBuilder({ employees = [], projects = [], timeEntries = [], payrolls = [], attendance = [], leaves = [] }) {
   const [dataSource, setDataSource] = useState('employees');
