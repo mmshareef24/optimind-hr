@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -6,6 +7,7 @@ import { Clock, LogIn, LogOut, Coffee, CheckCircle, MapPin, AlertCircle } from "
 import { format } from "date-fns";
 
 export default function ClockInOut({ employee, todayAttendance, shift, onClockIn, onClockOut, onBreakStart, onBreakEnd }) {
+  const { t } = useTranslation();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
@@ -52,16 +54,16 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
           
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location permissions to punch in/out.';
+              errorMessage = t('location_denied');
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable. Please check your device settings.';
+              errorMessage = t('location_unavailable');
               break;
             case error.TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
+              errorMessage = t('location_timeout');
               break;
             default:
-              errorMessage = 'An unknown error occurred while fetching location.';
+              errorMessage = t('location_error');
           }
           
           setLocationError(errorMessage);
@@ -166,7 +168,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Clock className="w-6 h-6 text-emerald-600" />
-            Attendance Clock
+            {t('attendance_clock')}
           </span>
           <div className="text-right">
             <div className="text-3xl font-bold text-slate-900 tabular-nums">
@@ -182,7 +184,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
         {/* Shift Info */}
         {shift && (
           <div className="mb-6 p-4 bg-white rounded-lg border border-emerald-100">
-            <p className="text-sm text-slate-500 mb-1">Today's Shift</p>
+            <p className="text-sm text-slate-500 mb-1">{t('today_shift')}</p>
             <p className="font-semibold text-slate-900">{shift.shift_name}</p>
             <p className="text-sm text-slate-600">
               {shift.start_time} - {shift.end_time} ({shift.working_hours} hours)
@@ -198,7 +200,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <LogIn className="w-5 h-5 text-emerald-600" />
-                    <span className="text-sm font-medium text-slate-700">Clock In</span>
+                    <span className="text-sm font-medium text-slate-700">{t('clock_in')}</span>
                   </div>
                   <span className="font-bold text-emerald-600">{todayAttendance.clock_in}</span>
                 </div>
@@ -214,7 +216,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
               <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Coffee className="w-5 h-5 text-amber-600" />
-                  <span className="text-sm font-medium text-slate-700">Break Started</span>
+                  <span className="text-sm font-medium text-slate-700">{t('break_started')}</span>
                 </div>
                 <span className="font-bold text-amber-600">{todayAttendance.break_start}</span>
               </div>
@@ -223,7 +225,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-blue-600" />
-                  <span className="text-sm font-medium text-slate-700">Break Ended</span>
+                  <span className="text-sm font-medium text-slate-700">{t('break_ended')}</span>
                 </div>
                 <span className="font-bold text-blue-600">{todayAttendance.break_end}</span>
               </div>
@@ -233,7 +235,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <LogOut className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-medium text-slate-700">Clock Out</span>
+                    <span className="text-sm font-medium text-slate-700">{t('clock_out')}</span>
                   </div>
                   <span className="font-bold text-slate-600">{todayAttendance.clock_out}</span>
                 </div>
@@ -255,7 +257,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
             <AlertDescription className="text-sm">
               {locationError}
               <p className="text-xs mt-2">
-                💡 Please enable location permissions in your browser settings and try again.
+                💡 {t('location_help')}
               </p>
             </AlertDescription>
           </Alert>
@@ -266,7 +268,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
           <Alert className="mb-4 border-blue-200 bg-blue-50">
             <MapPin className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-900 text-sm">
-              <strong>Location Required:</strong> Your location will be recorded when you punch in/out for security and attendance tracking purposes.
+              <strong>{t('location_required')}:</strong> {t('location_required_desc')}
             </AlertDescription>
           </Alert>
         )}
@@ -282,12 +284,12 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
               {fetchingLocation ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Getting Location...
+                  {t('getting_location')}
                 </>
               ) : (
                 <>
                   <LogIn className="w-6 h-6 mr-2" />
-                  Clock In
+                  {t('clock_in')}
                 </>
               )}
             </Button>
@@ -302,7 +304,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
                   className="w-full h-12 border-amber-200 text-amber-700 hover:bg-amber-50"
                 >
                   <Coffee className="w-5 h-5 mr-2" />
-                  Start Break
+                  {t('start_break')}
                 </Button>
               ) : (
                 <Button
@@ -311,7 +313,7 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
                   className="w-full h-12 border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
                   <CheckCircle className="w-5 h-5 mr-2" />
-                  End Break
+                  {t('end_break')}
                 </Button>
               )}
 
@@ -323,12 +325,12 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
                 {fetchingLocation ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Getting Location...
+                    {t('getting_location')}
                   </>
                 ) : (
                   <>
                     <LogOut className="w-6 h-6 mr-2" />
-                    Clock Out
+                    {t('clock_out')}
                   </>
                 )}
               </Button>
@@ -338,8 +340,8 @@ export default function ClockInOut({ employee, todayAttendance, shift, onClockIn
           {isClockedOut && (
             <div className="text-center py-4">
               <CheckCircle className="w-16 h-16 mx-auto mb-3 text-emerald-600" />
-              <p className="font-semibold text-slate-900 text-lg">Attendance Recorded</p>
-              <p className="text-sm text-slate-500">You have clocked out for today</p>
+              <p className="font-semibold text-slate-900 text-lg">{t('attendance_recorded')}</p>
+              <p className="text-sm text-slate-500">{t('clocked_out_today')}</p>
             </div>
           )}
         </div>
