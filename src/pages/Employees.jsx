@@ -76,10 +76,13 @@ export default function EmployeesPage() {
   });
 
   const handleSubmit = (data) => {
+    // Extract employee data from the form submission
+    const employeeData = data.employee || data;
+    
     if (editingEmployee) {
-      updateEmployeeMutation.mutate({ id: editingEmployee.id, data });
+      updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData });
     } else {
-      createEmployeeMutation.mutate(data);
+      createEmployeeMutation.mutate(employeeData);
     }
   };
 
