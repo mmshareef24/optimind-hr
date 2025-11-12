@@ -1,22 +1,27 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 export default function Dashboard() {
-  const { data: employees = [], isLoading: loadingEmployees } = useQuery({
-    queryKey: ['employees'],
-    queryFn: () => base44.entities.Employee.list(),
-  });
+  const [selectedCompany, setSelectedCompany] = useState('all');
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ['companies'],
     queryFn: () => base44.entities.Company.list(),
+  });
+
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => base44.entities.Employee.list(),
   });
 
   const { data: leaveRequests = [], isLoading: loadingLeaves } = useQuery({
@@ -29,24 +34,77 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Attendance.list('-date', 5),
   });
 
+  // Filter employees by selected company
+  const employees = selectedCompany === 'all' 
+    ? allEmployees 
+    : allEmployees.filter(e => e.company_id === selectedCompany);
+
   const activeEmployees = employees.filter(e => e.status === 'active').length;
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
+  const selectedCompanyData = companies.find(c => c.id === selectedCompany);
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
-      {/* Header */}
+      {/* Header with Company Filter */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
           <p className="text-slate-600">Welcome back, here's your HR overview</p>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-3">
           <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
             <span className="text-slate-500">Today: </span>
             <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
           </div>
+          <div className="flex items-center gap-2 min-w-[280px]">
+            <Filter className="w-5 h-5 text-slate-400" />
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    <span>All Companies</span>
+                  </div>
+                </SelectItem>
+                {companies.map(company => (
+                  <SelectItem key={company.id} value={company.id}>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      <span>{company.name_en}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
+
+      {/* Selected Company Info */}
+      {selectedCompanyData && (
+        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-slate-900">{selectedCompanyData.name_en}</h3>
+                <p className="text-sm text-slate-600">
+                  {selectedCompanyData.industry} • CR: {selectedCompanyData.cr_number}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-500">Total Employees</p>
+                <p className="text-2xl font-bold text-blue-600">{employees.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -59,8 +117,8 @@ export default function Dashboard() {
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Companies"
-          value={loadingCompanies ? "..." : companies.length}
+          title={selectedCompany === 'all' ? 'Total Companies' : 'Company'}
+          value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : selectedCompanyData?.name_en?.substring(0, 15) || '...'}
           icon={Building2}
           bgColor="from-blue-500 to-blue-600"
         />
@@ -104,27 +162,30 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {leaveRequests.slice(0, 5).map((leave) => (
-                  <div key={leave.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100">
-                    <div className="flex-1">
-                      <p className="font-semibold text-slate-900 mb-1">
-                        Employee #{leave.employee_id?.slice(0, 8)}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        {leave.leave_type} • {leave.total_days} days
-                      </p>
+                {leaveRequests.slice(0, 5).map((leave) => {
+                  const employee = employees.find(e => e.id === leave.employee_id);
+                  return (
+                    <div key={leave.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 mb-1">
+                          {employee ? `${employee.first_name} ${employee.last_name}` : `Employee #${leave.employee_id?.slice(0, 8)}`}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {leave.leave_type} • {leave.total_days} days
+                        </p>
+                      </div>
+                      <Badge 
+                        className={
+                          leave.status === 'pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                          leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          'bg-red-100 text-red-700 border-red-200'
+                        }
+                      >
+                        {leave.status}
+                      </Badge>
                     </div>
-                    <Badge 
-                      className={
-                        leave.status === 'pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                        leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                        'bg-red-100 text-red-700 border-red-200'
-                      }
-                    >
-                      {leave.status}
-                    </Badge>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
