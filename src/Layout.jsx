@@ -26,7 +26,7 @@ const navigationSections = [
     items: [
       { title: "Companies", url: createPageUrl("Companies"), icon: Building2 },
       { title: "Org Structure", url: createPageUrl("OrgStructure"), icon: Network },
-      { title: "Departments", url: createPageUrl("Employees"), icon: Users }
+      { title: "Departments", url: createPageUrl("Departments"), icon: Users }
     ]
   },
   {
