@@ -20,6 +20,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import StatCard from "../components/hrms/StatCard";
+import AccrualScheduler from "../components/leave/AccrualScheduler";
+import AccrualPolicyCard from "../components/leave/AccrualPolicyCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -247,17 +249,81 @@ export default function LeaveAccrualManagement() {
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="policies" className="space-y-6">
+      <Tabs defaultValue="scheduler" className="space-y-6">
         <TabsList className="bg-white border-2 border-slate-200 p-1">
-          <TabsTrigger value="policies" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-            <Settings className="w-4 h-4 mr-2" />
-            Accrual Policies
+          <TabsTrigger value="scheduler" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <Calendar className="w-4 h-4 mr-2" />
+            Scheduler
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsTrigger value="policies" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Settings className="w-4 h-4 mr-2" />
+            Policies ({activePolicies})
+          </TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <History className="w-4 h-4 mr-2" />
-            Processing History
+            History
           </TabsTrigger>
         </TabsList>
+
+        {/* Scheduler Tab */}
+        <TabsContent value="scheduler">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <AccrualScheduler
+                onRunNow={() => setShowProcessDialog(true)}
+                isProcessing={processAccrualMutation.isPending}
+              />
+            </div>
+
+            {/* Quick Info */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
+                <CardTitle className="text-base">How It Works</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-emerald-700">1</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Monthly Processing</p>
+                    <p className="text-xs text-slate-600">Runs automatically on the 1st of each month</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-blue-700">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Policy Application</p>
+                    <p className="text-xs text-slate-600">Each active policy is applied to eligible employees</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-purple-700">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Balance Updates</p>
+                    <p className="text-xs text-slate-600">Leave balances are automatically updated</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-amber-700">4</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Audit Trail</p>
+                    <p className="text-xs text-slate-600">All accruals are logged for compliance</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Policies Tab */}
         <TabsContent value="policies">
@@ -281,63 +347,13 @@ export default function LeaveAccrualManagement() {
                   <p className="text-slate-500">No policies configured</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {policies.map((policy) => (
-                    <Card key={policy.id} className="border-2 border-slate-200">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h4 className="font-bold text-slate-900 text-lg mb-1">{policy.policy_name}</h4>
-                            <Badge className={`${
-                              policy.leave_type === 'annual' ? 'bg-blue-100 text-blue-700' :
-                              policy.leave_type === 'sick' ? 'bg-red-100 text-red-700' :
-                              'bg-purple-100 text-purple-700'
-                            }`}>
-                              {policy.leave_type.toUpperCase()}
-                            </Badge>
-                          </div>
-                          <Badge className={policy.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}>
-                            {policy.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-3 mb-4">
-                          <div className="flex justify-between p-2 bg-slate-50 rounded">
-                            <span className="text-sm text-slate-600">Annual Entitlement</span>
-                            <span className="font-semibold">{policy.annual_entitlement} days</span>
-                          </div>
-                          <div className="flex justify-between p-2 bg-emerald-50 rounded">
-                            <span className="text-sm text-emerald-700">Monthly Accrual</span>
-                            <span className="font-semibold text-emerald-700">{policy.monthly_accrual_rate} days</span>
-                          </div>
-                          <div className="flex justify-between p-2 bg-blue-50 rounded">
-                            <span className="text-sm text-blue-700">Probation Period</span>
-                            <span className="font-semibold text-blue-700">{policy.probation_period_months} months</span>
-                          </div>
-                          {policy.max_carryover > 0 && (
-                            <div className="flex justify-between p-2 bg-purple-50 rounded">
-                              <span className="text-sm text-purple-700">Max Carryover</span>
-                              <span className="font-semibold text-purple-700">{policy.max_carryover} days</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2 text-xs text-slate-600 mb-4">
-                          <div className="flex items-center gap-2">
-                            {policy.prorate_for_new_hires ? <CheckCircle className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-slate-400" />}
-                            <span>Prorate for new hires</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {policy.accrue_while_on_leave ? <CheckCircle className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-slate-400" />}
-                            <span>Accrue while on leave</span>
-                          </div>
-                        </div>
-
-                        <Button variant="outline" onClick={() => handleEditPolicy(policy)} className="w-full">
-                          Edit Policy
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <AccrualPolicyCard
+                      key={policy.id}
+                      policy={policy}
+                      onEdit={handleEditPolicy}
+                    />
                   ))}
                 </div>
               )}

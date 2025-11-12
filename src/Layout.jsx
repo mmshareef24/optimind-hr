@@ -42,7 +42,8 @@ const navigationSections = [
     items: [
       { title: "Time Management", url: createPageUrl("TimeManagement"), icon: Clock },
       { title: "Shift Management", url: createPageUrl("Shifts"), icon: Clock3 },
-      { title: "Leave Management", url: createPageUrl("LeaveManagement"), icon: Calendar }
+      { title: "Leave Management", url: createPageUrl("LeaveManagement"), icon: Calendar },
+      { title: "Leave Accrual", url: createPageUrl("LeaveAccrualManagement"), icon: TrendingUp }
     ]
   },
   {
