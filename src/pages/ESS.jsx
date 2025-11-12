@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail, Gift } from "lucide-react";
+import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail, Gift, UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,10 @@ import TravelRequestsESS from "../components/ess/TravelRequestsESS";
 import MyProfile from "../components/ess/MyProfile";
 import MyBenefits from "../components/ess/MyBenefits";
 import NewHirePortal from "../components/onboarding/NewHirePortal";
+import ClockInOut from "../components/time/ClockInOut";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function ESS() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -101,6 +103,75 @@ export default function ESS() {
       assigned_to: 'new_hire'
     }, '-day_number'),
     enabled: !!currentUser?.id
+  });
+
+  // Fetch today's attendance
+  const { data: todayAttendance, refetch: refetchAttendance } = useQuery({
+    queryKey: ['my-attendance-today', currentUser?.id],
+    queryFn: async () => {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const attendance = await base44.entities.Attendance.filter({ 
+        employee_id: currentUser.id,
+        date: today
+      });
+      return attendance[0] || null;
+    },
+    enabled: !!currentUser?.id
+  });
+
+  // Fetch employee's shift
+  const { data: myShift } = useQuery({
+    queryKey: ['my-shift', currentUser?.id],
+    queryFn: async () => {
+      const assignments = await base44.entities.ShiftAssignment.filter({
+        employee_id: currentUser.id,
+        status: 'active'
+      });
+      if (assignments.length === 0) return null;
+      
+      const shifts = await base44.entities.Shift.list();
+      return shifts.find(s => s.id === assignments[0].shift_id);
+    },
+    enabled: !!currentUser?.id
+  });
+
+  // Clock In Mutation
+  const clockInMutation = useMutation({
+    mutationFn: (data) => base44.entities.Attendance.create(data),
+    onSuccess: () => {
+      refetchAttendance();
+      toast.success('Clocked in successfully!');
+    },
+    onError: () => toast.error('Failed to clock in')
+  });
+
+  // Clock Out Mutation
+  const clockOutMutation = useMutation({
+    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    onSuccess: () => {
+      refetchAttendance();
+      toast.success('Clocked out successfully!');
+    },
+    onError: () => toast.error('Failed to clock out')
+  });
+
+  // Break Mutations
+  const breakStartMutation = useMutation({
+    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    onSuccess: () => {
+      refetchAttendance();
+      toast.success('Break started');
+    },
+    onError: () => toast.error('Failed to start break')
+  });
+
+  const breakEndMutation = useMutation({
+    mutationFn: ({ id, ...data }) => base44.entities.Attendance.update(id, data),
+    onSuccess: () => {
+      refetchAttendance();
+      toast.success('Break ended');
+    },
+    onError: () => toast.error('Failed to end break')
   });
 
   // Calculate statistics
@@ -276,6 +347,10 @@ export default function ESS() {
             <TrendingUp className="w-4 h-4 mr-2" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="attendance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Clock className="w-4 h-4 mr-2" />
+            Clock In/Out
+          </TabsTrigger>
           <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />
             My Profile
@@ -323,6 +398,19 @@ export default function ESS() {
             />
           </TabsContent>
         )}
+
+        {/* Attendance Clock Tab */}
+        <TabsContent value="attendance">
+          <ClockInOut
+            employee={currentUser}
+            todayAttendance={todayAttendance}
+            shift={myShift}
+            onClockIn={(data) => clockInMutation.mutate(data)}
+            onClockOut={(data) => clockOutMutation.mutate(data)}
+            onBreakStart={(data) => breakStartMutation.mutate(data)}
+            onBreakEnd={(data) => breakEndMutation.mutate(data)}
+          />
+        </TabsContent>
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard">
