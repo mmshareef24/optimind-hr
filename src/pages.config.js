@@ -26,6 +26,7 @@ import UserManagement from './pages/UserManagement';
 import PayrollManagement from './pages/PayrollManagement';
 import MasterData from './pages/MasterData';
 import Departments from './pages/Departments';
+import LeaveAccrualManagement from './pages/LeaveAccrualManagement';
 import Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "PayrollManagement": PayrollManagement,
     "MasterData": MasterData,
     "Departments": Departments,
+    "LeaveAccrualManagement": LeaveAccrualManagement,
 }
 
 export const pagesConfig = {
