@@ -54,7 +54,7 @@ export default function TimeManagement() {
     mutationFn: (data) => base44.entities.Attendance.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['attendances']);
-      toast.success('Clocked in successfully');
+      toast.success(t('clocked_in_success'));
     }
   });
 
@@ -62,7 +62,7 @@ export default function TimeManagement() {
     mutationFn: ({ id, data }) => base44.entities.Attendance.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['attendances']);
-      toast.success('Attendance updated');
+      toast.success(t('attendance_updated'));
     }
   });
 
@@ -74,7 +74,6 @@ export default function TimeManagement() {
     }
   });
 
-  // Get employee's shift
   const getEmployeeShift = (employeeId) => {
     const assignment = assignments.find(
       a => a.employee_id === employeeId && a.status === 'active'
@@ -82,7 +81,6 @@ export default function TimeManagement() {
     return shifts.find(s => s.id === assignment?.shift_id);
   };
 
-  // Get today's attendance
   const getTodayAttendance = (employeeId) => {
     const today = format(new Date(), 'yyyy-MM-dd');
     return attendances.find(
@@ -106,7 +104,6 @@ export default function TimeManagement() {
     updateAttendanceMutation.mutate({ id: data.id, data });
   };
 
-  // Generate timesheet
   const generateTimesheet = (employeeId) => {
     const periodStart = startOfMonth(new Date(selectedMonth + '-01'));
     const periodEnd = endOfMonth(new Date(selectedMonth + '-01'));
@@ -151,7 +148,6 @@ export default function TimeManagement() {
     createTimesheetMutation.mutate(timesheetData);
   };
 
-  // Calculate stats
   const todayAttendances = attendances.filter(
     a => a.date === format(new Date(), 'yyyy-MM-dd')
   );
@@ -163,32 +159,32 @@ export default function TimeManagement() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className={isRTL ? 'text-right' : ''}>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Time Management</h1>
-        <p className="text-slate-600">Track attendance, timesheets, and calculate overtime</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('time_management')}</h1>
+        <p className="text-slate-600">{t('time_management_desc')}</p>
       </div>
 
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Present Today"
+          title={t('present_today')}
           value={presentToday}
           icon={CheckCircle}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Absent Today"
+          title={t('absent_today')}
           value={absentToday}
           icon={AlertCircle}
           bgColor="from-red-500 to-red-600"
         />
         <StatCard
-          title="Late Arrivals"
+          title={t('late_arrivals')}
           value={lateToday}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Total Overtime (Month)"
+          title={t('total_overtime_month')}
           value={`${totalOvertimeHours.toFixed(1)}h`}
           icon={TrendingUp}
           bgColor="from-blue-500 to-blue-600"
@@ -200,15 +196,15 @@ export default function TimeManagement() {
         <TabsList className="bg-white border border-slate-200 p-1">
           <TabsTrigger value="clock" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Clock className="w-4 h-4 mr-2" />
-            Clock In/Out
+            {t('clock_in_slash_out')}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Calendar className="w-4 h-4 mr-2" />
-            Attendance Records
+            {t('attendance_records')}
           </TabsTrigger>
           <TabsTrigger value="timesheets" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <TrendingUp className="w-4 h-4 mr-2" />
-            Timesheets
+            {t('timesheets')}
           </TabsTrigger>
         </TabsList>
 
@@ -218,10 +214,10 @@ export default function TimeManagement() {
             <div>
               <Card className="border-0 shadow-lg mb-6">
                 <CardHeader className="border-b">
-                  <CardTitle className={isRTL ? 'text-right' : ''}>Select Employee</CardTitle>
+                  <CardTitle className={isRTL ? 'text-right' : ''}>{t('select_employee')}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <Label>Employee</Label>
+                  <Label>{t('employee')}</Label>
                   <Select
                     value={selectedEmployee?.id}
                     onValueChange={(id) => {
@@ -230,7 +226,7 @@ export default function TimeManagement() {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose employee..." />
+                      <SelectValue placeholder={t('choose_employee')} />
                     </SelectTrigger>
                     <SelectContent>
                       {employees.map((emp) => (
@@ -274,7 +270,7 @@ export default function TimeManagement() {
         <TabsContent value="attendance">
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
-              <CardTitle className={isRTL ? 'text-right' : ''}>Attendance Records</CardTitle>
+              <CardTitle className={isRTL ? 'text-right' : ''}>{t('attendance_records')}</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {loadingAttendance ? (
@@ -284,7 +280,7 @@ export default function TimeManagement() {
               ) : attendances.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">No attendance records yet</p>
+                  <p className="text-slate-500">{t('no_attendance_records')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -305,26 +301,26 @@ export default function TimeManagement() {
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                 <div>
-                                  <span className="text-slate-500">Clock In:</span>
-                                  <span className="ml-2 font-semibold text-emerald-600">
+                                  <span className="text-slate-500">{t('clock_in')}:</span>
+                                  <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-emerald-600`}>
                                     {attendance.clock_in || '-'}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-500">Clock Out:</span>
-                                  <span className="ml-2 font-semibold text-slate-600">
+                                  <span className="text-slate-500">{t('clock_out')}:</span>
+                                  <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-slate-600`}>
                                     {attendance.clock_out || '-'}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-500">Hours:</span>
-                                  <span className="ml-2 font-semibold text-blue-600">
+                                  <span className="text-slate-500">{t('hours')}:</span>
+                                  <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-blue-600`}>
                                     {attendance.actual_hours?.toFixed(2) || 0}h
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-500">Overtime:</span>
-                                  <span className="ml-2 font-semibold text-purple-600">
+                                  <span className="text-slate-500">{t('overtime')}:</span>
+                                  <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-purple-600`}>
                                     {attendance.overtime_hours?.toFixed(2) || 0}h
                                   </span>
                                 </div>
@@ -347,12 +343,12 @@ export default function TimeManagement() {
             {/* Generate Timesheet */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
-                <CardTitle className={isRTL ? 'text-right' : ''}>Generate Timesheet</CardTitle>
+                <CardTitle className={isRTL ? 'text-right' : ''}>{t('generate_timesheet')}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <Label>Employee</Label>
+                    <Label>{t('employee')}</Label>
                     <Select
                       value={selectedEmployee?.id}
                       onValueChange={(id) => {
@@ -361,7 +357,7 @@ export default function TimeManagement() {
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select employee..." />
+                        <SelectValue placeholder={t('choose_employee')} />
                       </SelectTrigger>
                       <SelectContent>
                         {employees.map((emp) => (
@@ -373,7 +369,7 @@ export default function TimeManagement() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Period</Label>
+                    <Label>{t('period')}</Label>
                     <input
                       type="month"
                       value={selectedMonth}
@@ -387,7 +383,7 @@ export default function TimeManagement() {
                       disabled={!selectedEmployee}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      Generate Timesheet
+                      {t('generate_timesheet')}
                     </Button>
                   </div>
                 </div>
@@ -397,13 +393,13 @@ export default function TimeManagement() {
             {/* Timesheets List */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
-                <CardTitle className={isRTL ? 'text-right' : ''}>Generated Timesheets</CardTitle>
+                <CardTitle className={isRTL ? 'text-right' : ''}>{t('generated_timesheets')}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {timesheets.length === 0 ? (
                   <div className="text-center py-12">
                     <TrendingUp className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <p className="text-slate-500">No timesheets generated yet</p>
+                    <p className="text-slate-500">{t('no_timesheets_yet')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -422,26 +418,26 @@ export default function TimeManagement() {
                                 </p>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                   <div>
-                                    <span className="text-slate-500">Present:</span>
-                                    <span className="ml-2 font-semibold text-emerald-600">
-                                      {timesheet.days_present} days
+                                    <span className="text-slate-500">{t('present')}:</span>
+                                    <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-emerald-600`}>
+                                      {timesheet.days_present} {t('days')}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-500">Total Hours:</span>
-                                    <span className="ml-2 font-semibold text-blue-600">
+                                    <span className="text-slate-500">{t('total_hours')}:</span>
+                                    <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-blue-600`}>
                                       {timesheet.total_hours_worked?.toFixed(1)}h
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-500">Overtime:</span>
-                                    <span className="ml-2 font-semibold text-purple-600">
+                                    <span className="text-slate-500">{t('overtime')}:</span>
+                                    <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-purple-600`}>
                                       {timesheet.overtime_hours?.toFixed(1)}h
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-500">OT Pay:</span>
-                                    <span className="ml-2 font-semibold text-slate-900">
+                                    <span className="text-slate-500">{t('ot_pay')}:</span>
+                                    <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-slate-900`}>
                                       {timesheet.overtime_amount?.toLocaleString()} SAR
                                     </span>
                                   </div>
