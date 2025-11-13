@@ -106,7 +106,7 @@ export default function UserManagement() {
     ];
 
     const toggleRole = (role) => {
-      const currentRoles = formData.custom_roles || [];
+      const currentRoles = Array.isArray(formData.custom_roles) ? formData.custom_roles : [];
       const newRoles = currentRoles.includes(role)
         ? currentRoles.filter(r => r !== role)
         : [...currentRoles, role];
@@ -114,7 +114,7 @@ export default function UserManagement() {
     };
 
     const toggleCompany = (companyId) => {
-      const currentCompanies = formData.company_access || [];
+      const currentCompanies = Array.isArray(formData.company_access) ? formData.company_access : [];
       const newCompanies = currentCompanies.includes(companyId)
         ? currentCompanies.filter(c => c !== companyId)
         : [...currentCompanies, companyId];
@@ -125,8 +125,8 @@ export default function UserManagement() {
       setFormData({
         ...formData,
         permissions: {
-          ...formData.permissions,
-          [permission]: !formData.permissions[permission]
+          ...(formData.permissions || {}),
+          [permission]: !(formData.permissions?.[permission])
         }
       });
     };
@@ -196,27 +196,29 @@ export default function UserManagement() {
           </p>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {availableRoles.map(role => (
-              <div
-                key={role.value}
-                onClick={() => toggleRole(role.value)}
-                className={`
-                  p-4 rounded-lg border-2 cursor-pointer transition-all
-                  ${(formData.custom_roles || []).includes(role.value)
-                    ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-slate-200 hover:border-emerald-200 bg-white'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={(formData.custom_roles || []).includes(role.value)}
-                    readOnly
-                  />
-                  <span className="font-medium text-sm text-slate-900">{role.label}</span>
+            {availableRoles.map(role => {
+              const currentRoles = Array.isArray(formData.custom_roles) ? formData.custom_roles : [];
+              const isChecked = currentRoles.includes(role.value);
+              
+              return (
+                <div
+                  key={role.value}
+                  onClick={() => toggleRole(role.value)}
+                  className={`
+                    p-4 rounded-lg border-2 cursor-pointer transition-all
+                    ${isChecked
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : 'border-slate-200 hover:border-emerald-200 bg-white'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={isChecked} readOnly />
+                    <span className="font-medium text-sm text-slate-900">{role.label}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -228,30 +230,32 @@ export default function UserManagement() {
           </p>
           
           <div className="grid md:grid-cols-2 gap-3">
-            {companies.map(company => (
-              <div
-                key={company.id}
-                onClick={() => toggleCompany(company.id)}
-                className={`
-                  p-4 rounded-lg border-2 cursor-pointer transition-all
-                  ${(formData.company_access || []).includes(company.id)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-slate-200 hover:border-blue-200 bg-white'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={(formData.company_access || []).includes(company.id)}
-                    readOnly
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-sm text-slate-900">{company.name_en}</p>
-                    <p className="text-xs text-slate-500">{company.cr_number}</p>
+            {companies.map(company => {
+              const currentCompanies = Array.isArray(formData.company_access) ? formData.company_access : [];
+              const isChecked = currentCompanies.includes(company.id);
+              
+              return (
+                <div
+                  key={company.id}
+                  onClick={() => toggleCompany(company.id)}
+                  className={`
+                    p-4 rounded-lg border-2 cursor-pointer transition-all
+                    ${isChecked
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-slate-200 hover:border-blue-200 bg-white'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={isChecked} readOnly />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-slate-900">{company.name_en}</p>
+                      <p className="text-xs text-slate-500">{company.cr_number}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -263,11 +267,11 @@ export default function UserManagement() {
           </p>
           
           <div className="grid md:grid-cols-2 gap-3">
-            {Object.keys(formData.permissions).map(perm => (
+            {Object.keys(formData.permissions || {}).map(perm => (
               <div key={perm} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                 <Checkbox
                   id={perm}
-                  checked={formData.permissions[perm]}
+                  checked={formData.permissions?.[perm] || false}
                   onCheckedChange={() => togglePermission(perm)}
                 />
                 <Label htmlFor={perm} className="cursor-pointer text-sm">
@@ -345,7 +349,9 @@ export default function UserManagement() {
             <div className="space-y-3">
               {users.map(user => {
                 const employee = employees.find(e => e.id === user.employee_id);
-                const linkedCompanies = companies.filter(c => user.company_access?.includes(c.id));
+                const userCompanyAccess = Array.isArray(user.company_access) ? user.company_access : [];
+                const linkedCompanies = companies.filter(c => userCompanyAccess.includes(c.id));
+                const userRoles = Array.isArray(user.custom_roles) ? user.custom_roles : [];
                 
                 return (
                   <Card key={user.id} className="border border-slate-200">
@@ -368,9 +374,9 @@ export default function UserManagement() {
                             </p>
                           )}
 
-                          {user.custom_roles && user.custom_roles.length > 0 && (
+                          {userRoles.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-3">
-                              {user.custom_roles.map(role => (
+                              {userRoles.map(role => (
                                 <Badge key={role} variant="outline" className="text-xs bg-emerald-50 text-emerald-700">
                                   {role.replace(/_/g, ' ')}
                                 </Badge>

@@ -39,6 +39,7 @@ export function AccessControlProvider({ children }) {
   const { data: userData, isLoading: loadingUserData } = useQuery({
     queryKey: ['user-data', baseUser?.email],
     queryFn: async () => {
+      if (!baseUser?.email) return null;
       const users = await base44.entities.User.filter({ email: baseUser.email });
       return users[0] || null;
     },
@@ -49,6 +50,7 @@ export function AccessControlProvider({ children }) {
   const { data: employee } = useQuery({
     queryKey: ['employee-record', baseUser?.email],
     queryFn: async () => {
+      if (!baseUser?.email) return null;
       const employees = await base44.entities.Employee.filter({ email: baseUser.email });
       return employees[0] || null;
     },
@@ -63,10 +65,12 @@ export function AccessControlProvider({ children }) {
 
   // Determine user's accessible companies
   const accessibleCompanies = React.useMemo(() => {
-    if (baseUser?.role === 'admin') {
+    if (!baseUser) return [];
+    
+    if (baseUser.role === 'admin') {
       return companies; // Admin sees all
     }
-    if (userData?.company_access && userData.company_access.length > 0) {
+    if (userData?.company_access && Array.isArray(userData.company_access) && userData.company_access.length > 0) {
       return companies.filter(c => userData.company_access.includes(c.id));
     }
     if (employee?.company_id) {
@@ -124,13 +128,15 @@ export function AccessControlProvider({ children }) {
   // Check if user has a specific permission
   const hasPermission = (permissionName) => {
     if (baseUser?.role === 'admin') return true;
-    return userData?.permissions?.[permissionName] || false;
+    if (!userData?.permissions || typeof userData.permissions !== 'object') return false;
+    return userData.permissions[permissionName] || false;
   };
 
   // Check if user has a specific custom role
   const hasRole = (roleName) => {
     if (baseUser?.role === 'admin') return true;
-    return userData?.custom_roles?.includes(roleName) || false;
+    const userRoles = userData?.custom_roles || [];
+    return Array.isArray(userRoles) && userRoles.includes(roleName);
   };
 
   // Get accessible company IDs for filtering
@@ -157,7 +163,7 @@ export function AccessControlProvider({ children }) {
     hasRole,
     getAccessibleCompanyIds,
     isAdmin: baseUser?.role === 'admin',
-    isSuperAdmin: baseUser?.role === 'admin' || userData?.custom_roles?.includes('super_admin')
+    isSuperAdmin: baseUser?.role === 'admin' || (userData?.custom_roles && Array.isArray(userData.custom_roles) && userData.custom_roles.includes('super_admin'))
   };
 
   return (
