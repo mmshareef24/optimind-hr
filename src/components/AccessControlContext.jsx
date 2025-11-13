@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -23,11 +23,9 @@ const ROLE_MODULE_MAP = {
 };
 
 export function AccessControlProvider({ children }) {
-  const [selectedCompanyId, setSelectedCompanyId] = useState(() => {
+  const [selectedCompanyId, setSelectedCompanyIdState] = useState(() => {
     return localStorage.getItem('selectedCompanyId') || 'all';
   });
-  
-  const isInitialMount = useRef(true);
 
   // Fetch current user
   const { data: baseUser, isLoading: loadingUser } = useQuery({
@@ -77,34 +75,15 @@ export function AccessControlProvider({ children }) {
       return companies.filter(c => c.id === employee.company_id);
     }
     return [];
-  }, [baseUser, userData, employee, companies]);
+  }, [baseUser?.role, userData?.company_access, employee?.company_id, companies]);
 
-  // Validate and fix selected company on mount or when accessible companies change
-  useEffect(() => {
-    if (accessibleCompanies.length === 0) return;
-    
-    // Only run this logic once on initial mount or when accessible companies first load
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      
-      if (selectedCompanyId !== 'all') {
-        const isAccessible = accessibleCompanies.some(c => c.id === selectedCompanyId);
-        if (!isAccessible) {
-          const newCompanyId = accessibleCompanies[0]?.id || 'all';
-          setSelectedCompanyId(newCompanyId);
-          localStorage.setItem('selectedCompanyId', newCompanyId);
-        }
-      }
-    }
-  }, [accessibleCompanies.length]); // Only depend on length to avoid infinite loops
-
-  const changeSelectedCompany = (companyId) => {
-    setSelectedCompanyId(companyId);
+  const changeSelectedCompany = useCallback((companyId) => {
+    setSelectedCompanyIdState(companyId);
     localStorage.setItem('selectedCompanyId', companyId);
-  };
+  }, []);
 
   // Check if user has access to a specific module
-  const hasModuleAccess = (moduleName) => {
+  const hasModuleAccess = useCallback((moduleName) => {
     // Admin has access to everything
     if (baseUser?.role === 'admin') return true;
 
@@ -123,24 +102,24 @@ export function AccessControlProvider({ children }) {
     }
 
     return false;
-  };
+  }, [baseUser?.role, userData?.custom_roles]);
 
   // Check if user has a specific permission
-  const hasPermission = (permissionName) => {
+  const hasPermission = useCallback((permissionName) => {
     if (baseUser?.role === 'admin') return true;
     if (!userData?.permissions || typeof userData.permissions !== 'object') return false;
     return userData.permissions[permissionName] || false;
-  };
+  }, [baseUser?.role, userData?.permissions]);
 
   // Check if user has a specific custom role
-  const hasRole = (roleName) => {
+  const hasRole = useCallback((roleName) => {
     if (baseUser?.role === 'admin') return true;
     const userRoles = userData?.custom_roles || [];
     return Array.isArray(userRoles) && userRoles.includes(roleName);
-  };
+  }, [baseUser?.role, userData?.custom_roles]);
 
   // Get accessible company IDs for filtering
-  const getAccessibleCompanyIds = () => {
+  const getAccessibleCompanyIds = useCallback(() => {
     if (selectedCompanyId !== 'all') {
       return [selectedCompanyId];
     }
@@ -148,9 +127,9 @@ export function AccessControlProvider({ children }) {
       return companies.map(c => c.id);
     }
     return accessibleCompanies.map(c => c.id);
-  };
+  }, [selectedCompanyId, baseUser?.role, companies, accessibleCompanies]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     baseUser,
     userData,
     employee,
@@ -164,7 +143,20 @@ export function AccessControlProvider({ children }) {
     getAccessibleCompanyIds,
     isAdmin: baseUser?.role === 'admin',
     isSuperAdmin: baseUser?.role === 'admin' || (userData?.custom_roles && Array.isArray(userData.custom_roles) && userData.custom_roles.includes('super_admin'))
-  };
+  }), [
+    baseUser,
+    userData,
+    employee,
+    loadingUser,
+    loadingUserData,
+    selectedCompanyId,
+    changeSelectedCompany,
+    accessibleCompanies,
+    hasModuleAccess,
+    hasPermission,
+    hasRole,
+    getAccessibleCompanyIds
+  ]);
 
   return (
     <AccessControlContext.Provider value={value}>
