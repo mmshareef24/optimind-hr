@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Clock, Calendar, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +16,8 @@ import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export default function TimeManagement() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
@@ -159,7 +162,7 @@ export default function TimeManagement() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div>
+      <div className={isRTL ? 'text-right' : ''}>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Time Management</h1>
         <p className="text-slate-600">Track attendance, timesheets, and calculate overtime</p>
       </div>
@@ -215,7 +218,7 @@ export default function TimeManagement() {
             <div>
               <Card className="border-0 shadow-lg mb-6">
                 <CardHeader className="border-b">
-                  <CardTitle>Select Employee</CardTitle>
+                  <CardTitle className={isRTL ? 'text-right' : ''}>Select Employee</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <Label>Employee</Label>
@@ -271,7 +274,7 @@ export default function TimeManagement() {
         <TabsContent value="attendance">
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
-              <CardTitle>Attendance Records</CardTitle>
+              <CardTitle className={isRTL ? 'text-right' : ''}>Attendance Records</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {loadingAttendance ? (
@@ -290,9 +293,9 @@ export default function TimeManagement() {
                     return (
                       <Card key={attendance.id} className="border border-slate-200 hover:shadow-md transition-all">
                         <CardContent className="p-4">
-                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
+                          <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+                            <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
+                              <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <h3 className="font-semibold text-slate-900">
                                   {employee?.first_name} {employee?.last_name}
                                 </h3>
@@ -344,7 +347,7 @@ export default function TimeManagement() {
             {/* Generate Timesheet */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
-                <CardTitle>Generate Timesheet</CardTitle>
+                <CardTitle className={isRTL ? 'text-right' : ''}>Generate Timesheet</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid md:grid-cols-3 gap-4">
@@ -394,7 +397,7 @@ export default function TimeManagement() {
             {/* Timesheets List */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
-                <CardTitle>Generated Timesheets</CardTitle>
+                <CardTitle className={isRTL ? 'text-right' : ''}>Generated Timesheets</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {timesheets.length === 0 ? (
@@ -409,8 +412,8 @@ export default function TimeManagement() {
                       return (
                         <Card key={timesheet.id} className="border border-slate-200 hover:shadow-md transition-all">
                           <CardContent className="p-5">
-                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                              <div className="flex-1">
+                            <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+                              <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
                                 <h3 className="font-semibold text-slate-900 mb-2">
                                   {employee?.first_name} {employee?.last_name}
                                 </h3>

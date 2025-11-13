@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Clock3, Plus, Edit, Trash, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function Shifts() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [showDialog, setShowDialog] = useState(false);
   const [editingShift, setEditingShift] = useState(null);
 
@@ -78,8 +81,8 @@ export default function Shifts() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Shift Management</h1>
           <p className="text-slate-600">Create and manage employee work shifts</p>
         </div>
@@ -128,7 +131,7 @@ export default function Shifts() {
       {/* Shifts List */}
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
-          <CardTitle>All Shifts</CardTitle>
+          <CardTitle className={isRTL ? 'text-right' : ''}>All Shifts</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           {isLoading ? (
@@ -149,7 +152,7 @@ export default function Shifts() {
                   style={{ borderColor: shift.color_code + '40' }}
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className={`flex items-start justify-between mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
                         style={{ backgroundColor: shift.color_code }}
@@ -166,34 +169,36 @@ export default function Shifts() {
                       </div>
                     </div>
 
-                    <h3 className="font-bold text-lg text-slate-900 mb-1">{shift.shift_name}</h3>
-                    <p className="text-sm text-slate-500 mb-4">{shift.shift_code}</p>
+                    <div className={isRTL ? 'text-right' : ''}>
+                      <h3 className="font-bold text-lg text-slate-900 mb-1">{shift.shift_name}</h3>
+                      <p className="text-sm text-slate-500 mb-4">{shift.shift_code}</p>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Timing</span>
-                        <span className="font-semibold text-slate-900">
-                          {shift.start_time} - {shift.end_time}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Hours</span>
-                        <span className="font-semibold text-slate-900">{shift.working_hours}h</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Break</span>
-                        <span className="font-semibold text-slate-900">{shift.break_duration} min</span>
-                      </div>
-                      {shift.department && (
+                      <div className="space-y-2 mb-4">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600">Department</span>
-                          <span className="font-semibold text-slate-900">{shift.department}</span>
+                          <span className="text-slate-600">Timing</span>
+                          <span className="font-semibold text-slate-900">
+                            {shift.start_time} - {shift.end_time}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600">Hours</span>
+                          <span className="font-semibold text-slate-900">{shift.working_hours}h</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600">Break</span>
+                          <span className="font-semibold text-slate-900">{shift.break_duration} min</span>
+                        </div>
+                        {shift.department && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-600">Department</span>
+                            <span className="font-semibold text-slate-900">{shift.department}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
+                    <div className={`flex items-center justify-between pt-4 border-t border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Users className="w-4 h-4 text-slate-400" />
                         <span className="text-sm text-slate-600">
                           {getEmployeeCount(shift.id)} employees
