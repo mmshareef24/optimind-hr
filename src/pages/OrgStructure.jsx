@@ -1,29 +1,46 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase } from "lucide-react";
+import { useTranslation } from '@/components/TranslationContext';
+import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase, Plus, Sitemap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 import OrgChart from "../components/org/OrgChart";
 import OrgListView from "../components/org/OrgListView";
 import OrgChartControls from "../components/org/OrgChartControls";
 import EmployeeDetailsModal from "../components/org/EmployeeDetailsModal";
 import ManageReportingModal from "../components/org/ManageReportingModal";
+import PositionForm from "../components/positions/PositionForm";
+import PositionCard from "../components/positions/PositionCard";
+import PositionDetailsModal from "../components/positions/PositionDetailsModal";
+import PositionHierarchyChart from "../components/positions/PositionHierarchyChart";
 import StatCard from "../components/hrms/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function OrgStructure() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedPosition, setSelectedPosition] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPositionModal, setShowPositionModal] = useState(false);
   const [showReportingModal, setShowReportingModal] = useState(false);
+  const [showPositionForm, setShowPositionForm] = useState(false);
+  const [editingPosition, setEditingPosition] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('chart');
   const [zoomLevel, setZoomLevel] = useState(1);
   const chartRef = useRef(null);
   const [allExpanded, setAllExpanded] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState('all');
-  const [viewType, setViewType] = useState('unified'); // 'unified' or 'by-company'
+  const [viewType, setViewType] = useState('unified');
+  const [hierarchyView, setHierarchyView] = useState('employee'); // 'employee' or 'position'
 
   const queryClient = useQueryClient();
 
@@ -35,6 +52,38 @@ export default function OrgStructure() {
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ['companies'],
     queryFn: () => base44.entities.Company.list(),
+  });
+
+  const { data: positions = [], isLoading: loadingPositions } = useQuery({
+    queryKey: ['positions'],
+    queryFn: () => base44.entities.Position.list('-created_date'),
+  });
+
+  const createPositionMutation = useMutation({
+    mutationFn: (data) => base44.entities.Position.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['positions']);
+      setShowPositionForm(false);
+      setEditingPosition(null);
+      toast.success('Position created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create position');
+    }
+  });
+
+  const updatePositionMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Position.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['positions']);
+      setShowPositionForm(false);
+      setEditingPosition(null);
+      setShowPositionModal(false);
+      toast.success('Position updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update position');
+    }
   });
 
   const updateEmployeeMutation = useMutation({
@@ -49,15 +98,16 @@ export default function OrgStructure() {
     }
   });
 
-  // Filter employees by company
   const companyFilteredEmployees = selectedCompany === 'all' 
     ? employees 
     : employees.filter(e => e.company_id === selectedCompany);
 
-  // Get unique departments
+  const companyFilteredPositions = selectedCompany === 'all'
+    ? positions
+    : positions.filter(p => p.company_id === selectedCompany);
+
   const departments = [...new Set(companyFilteredEmployees.map(e => e.department).filter(Boolean))];
 
-  // Filter employees based on search
   const filteredEmployees = companyFilteredEmployees.filter(emp => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -68,40 +118,47 @@ export default function OrgStructure() {
     );
   });
 
-  // Get CEO (employee with no manager)
+  const filteredPositions = companyFilteredPositions.filter(pos => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      pos.position_title?.toLowerCase().includes(searchLower) ||
+      pos.position_code?.toLowerCase().includes(searchLower) ||
+      pos.department?.toLowerCase().includes(searchLower)
+    );
+  });
+
   const ceo = employees.find(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id));
   
-  // Get company structure
   const getCompanyStructure = (companyId) => {
     const companyEmployees = employees.filter(e => e.company_id === companyId);
     const companyHead = companyEmployees.find(e => e.manager_id === ceo?.id);
     return { companyHead, employeeCount: companyEmployees.length };
   };
 
-  // Get employee's manager
   const getManager = (employee) => {
     return employees.find(e => e.id === employee?.manager_id);
   };
 
-  // Get employee's subordinates
   const getSubordinates = (employeeId) => {
     return employees.filter(e => e.manager_id === employeeId);
   };
 
-  // Handle node click
   const handleNodeClick = (employee) => {
     setSelectedEmployee(employee);
     setShowDetailsModal(true);
   };
 
-  // Handle manage reporting
+  const handlePositionClick = (position) => {
+    setSelectedPosition(position);
+    setShowPositionModal(true);
+  };
+
   const handleManageReporting = (employee) => {
     setSelectedEmployee(employee);
     setShowDetailsModal(false);
     setShowReportingModal(true);
   };
 
-  // Save reporting relationship
   const handleSaveReporting = (employeeId, managerId) => {
     const employee = employees.find(e => e.id === employeeId);
     updateEmployeeMutation.mutate({
@@ -113,7 +170,21 @@ export default function OrgStructure() {
     });
   };
 
-  // Zoom controls
+  const handleSubmitPosition = (data) => {
+    // Update headcount_filled based on actual employees
+    const employeesInPosition = employees.filter(e => e.position_id === data.id).length;
+    const finalData = {
+      ...data,
+      headcount_filled: employeesInPosition
+    };
+
+    if (editingPosition) {
+      updatePositionMutation.mutate({ id: editingPosition.id, data: finalData });
+    } else {
+      createPositionMutation.mutate(finalData);
+    }
+  };
+
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.1, 2));
   };
@@ -126,20 +197,16 @@ export default function OrgStructure() {
     setZoomLevel(1);
   };
 
-  // Expand/Collapse all
   const handleExpandAll = () => {
     setAllExpanded(true);
-    // Trigger re-render of org chart
     setTimeout(() => setAllExpanded(false), 100);
   };
 
   const handleCollapseAll = () => {
     setAllExpanded(false);
-    // Trigger re-render of org chart
     refetch();
   };
 
-  // Export org chart
   const handleExport = () => {
     const generateTextChart = (employee, level = 0) => {
       const indent = '  '.repeat(level);
@@ -188,13 +255,17 @@ export default function OrgStructure() {
     toast.success('Organization structure exported successfully');
   };
 
-  // Calculate statistics
   const totalEmployees = companyFilteredEmployees.length;
+  const totalPositions = companyFilteredPositions.length;
+  const managerialPositions = companyFilteredPositions.filter(p => p.is_managerial).length;
+  const vacantPositions = companyFilteredPositions.filter(p => {
+    const employeesInPos = employees.filter(e => e.position_id === p.id).length;
+    return employeesInPos < p.headcount_allocated;
+  }).length;
   const managers = new Set(companyFilteredEmployees.map(e => e.manager_id).filter(Boolean)).size;
   const topLevel = companyFilteredEmployees.filter(e => !e.manager_id || !employees.find(emp => emp.id === e.manager_id)).length;
   const avgTeamSize = managers > 0 ? (totalEmployees / managers).toFixed(1) : 0;
   
-  // Count by hierarchy level
   const countByLevel = () => {
     const levels = { executives: 0, seniorManagers: 0, managers: 0, staff: 0 };
     companyFilteredEmployees.forEach(emp => {
@@ -214,22 +285,42 @@ export default function OrgStructure() {
   
   const hierarchyLevels = countByLevel();
 
+  const getEmployeesInPosition = (positionId) => {
+    return employees.filter(e => e.position_id === positionId);
+  };
+
+  const getParentPosition = (position) => {
+    return positions.find(p => p.id === position?.reports_to_position_id);
+  };
+
+  const getSubordinatePositions = (positionId) => {
+    return positions.filter(p => p.reports_to_position_id === positionId);
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Organization Structure</h1>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('organization_structure')}</h1>
           <p className="text-slate-600">
             {selectedCompany === 'all' 
-              ? `Multi-company hierarchy visualization • ${companies.length} companies, ${employees.length} employees`
-              : `${companies.find(c => c.id === selectedCompany)?.name_en || 'Company'} organizational structure`
+              ? `${t('org_desc')} • ${companies.length} ${t('companies')}, ${employees.length} ${t('employees')}`
+              : `${companies.find(c => c.id === selectedCompany)?.name_en || t('companies')} ${t('organization_structure')}`
             }
           </p>
         </div>
         
-        {/* View Type Toggle */}
-        <div className="flex items-center gap-3">
+        {/* View Type Toggle & Create Position */}
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <Button
+            onClick={() => { setEditingPosition(null); setShowPositionForm(true); }}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t('create_position')}
+          </Button>
+          
           <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
             <button
               onClick={() => setViewType('unified')}
@@ -240,7 +331,7 @@ export default function OrgStructure() {
               }`}
             >
               <Crown className="w-4 h-4 inline mr-2" />
-              Unified View
+              {t('unified_view')}
             </button>
             <button
               onClick={() => setViewType('by-company')}
@@ -251,7 +342,7 @@ export default function OrgStructure() {
               }`}
             >
               <Building2 className="w-4 h-4 inline mr-2" />
-              By Company
+              {t('by_company')}
             </button>
           </div>
         </div>
@@ -260,27 +351,27 @@ export default function OrgStructure() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Employees"
+          title={t('total_employees')}
           value={totalEmployees}
           icon={Users}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Managers"
-          value={managers}
-          icon={TrendingUp}
+          title={t('total_positions')}
+          value={totalPositions}
+          icon={Sitemap}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Departments"
-          value={departments.length}
-          icon={Layers}
+          title={t('managerial_positions')}
+          value={managerialPositions}
+          icon={TrendingUp}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Companies"
-          value={selectedCompany === 'all' ? companies.length : 1}
-          icon={Building2}
+          title={t('vacant_positions')}
+          value={vacantPositions}
+          icon={Briefcase}
           bgColor="from-amber-500 to-amber-600"
         />
       </div>
@@ -288,27 +379,27 @@ export default function OrgStructure() {
       {/* Hierarchy Level Stats */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-white">
         <CardContent className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Hierarchy Distribution</h3>
+          <h3 className={`text-lg font-bold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>{t('hierarchy_distribution')}</h3>
           <div className="grid md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
               <Crown className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <p className="text-2xl font-bold text-purple-900">{hierarchyLevels.executives}</p>
-              <p className="text-sm text-purple-700">Executive Level</p>
+              <p className="text-sm text-purple-700">{t('executive_level')}</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
               <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-blue-900">{hierarchyLevels.seniorManagers}</p>
-              <p className="text-sm text-blue-700">Senior Managers</p>
+              <p className="text-sm text-blue-700">{t('senior_managers')}</p>
             </div>
             <div className="text-center p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200">
               <Briefcase className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
               <p className="text-2xl font-bold text-emerald-900">{hierarchyLevels.managers}</p>
-              <p className="text-sm text-emerald-700">Managers</p>
+              <p className="text-sm text-emerald-700">{t('managers')}</p>
             </div>
             <div className="text-center p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
               <Users className="w-6 h-6 mx-auto mb-2 text-slate-600" />
               <p className="text-2xl font-bold text-slate-900">{hierarchyLevels.staff}</p>
-              <p className="text-sm text-slate-700">Staff</p>
+              <p className="text-sm text-slate-700">{t('staff')}</p>
             </div>
           </div>
         </CardContent>
@@ -333,110 +424,158 @@ export default function OrgStructure() {
         onCompanyChange={setSelectedCompany}
       />
 
-      {/* Main Content */}
-      {viewType === 'unified' ? (
-        <Card className="border-0 shadow-xl overflow-hidden">
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-12 space-y-4">
-                <Skeleton className="h-32 w-full" />
-                <div className="flex gap-4 justify-center">
-                  <Skeleton className="h-32 w-64" />
-                  <Skeleton className="h-32 w-64" />
-                  <Skeleton className="h-32 w-64" />
-                </div>
-              </div>
-            ) : filteredEmployees.length === 0 ? (
-              <div className="text-center py-12">
-                <Network className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                <p className="text-slate-500">
-                  {searchTerm ? 'No employees found matching your search' : 'No employees to display'}
-                </p>
-              </div>
-            ) : viewMode === 'chart' ? (
-              <div
-                ref={chartRef}
-                style={{
-                  transform: `scale(${zoomLevel})`,
-                  transformOrigin: 'top center',
-                  transition: 'transform 0.3s ease'
-                }}
-              >
-                <OrgChart
-                  employees={filteredEmployees}
-                  onNodeClick={handleNodeClick}
-                  companies={companies}
-                />
-              </div>
-            ) : (
-              <div className="p-6">
-                <OrgListView
-                  employees={filteredEmployees}
-                  onEmployeeClick={handleNodeClick}
-                  onManageReporting={handleManageReporting}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs defaultValue={companies[0]?.id || 'all'} className="space-y-6">
-          <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
-            {companies.map((company) => {
-              const structure = getCompanyStructure(company.id);
-              return (
-                <TabsTrigger
-                  key={company.id}
-                  value={company.id}
-                  className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  {company.name_en}
-                  <span className="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-                    {structure.employeeCount}
-                  </span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+      {/* Hierarchy View Toggle */}
+      <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          <button
+            onClick={() => setHierarchyView('employee')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              hierarchyView === 'employee' 
+                ? 'bg-blue-600 text-white' 
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Users className="w-4 h-4 inline mr-2" />
+            {t('employee_based_view')}
+          </button>
+          <button
+            onClick={() => setHierarchyView('position')}
+            className={`px-4 py-2 text-sm font-medium border-l transition-colors ${
+              hierarchyView === 'position' 
+                ? 'bg-blue-600 text-white' 
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Sitemap className="w-4 h-4 inline mr-2" />
+            {t('position_based_view')}
+          </button>
+        </div>
+      </div>
 
-          {companies.map((company) => {
-            const companyEmployees = employees.filter(e => e.company_id === company.id);
-            return (
-              <TabsContent key={company.id} value={company.id}>
-                <Card className="border-0 shadow-xl overflow-hidden">
-                  <CardContent className="p-0">
-                    {viewMode === 'chart' ? (
-                      <div
-                        style={{
-                          transform: `scale(${zoomLevel})`,
-                          transformOrigin: 'top center',
-                          transition: 'transform 0.3s ease'
-                        }}
-                      >
-                        <OrgChart
-                          employees={companyEmployees}
-                          onNodeClick={handleNodeClick}
-                          companyName={company.name_en}
-                          companies={companies}
-                        />
-                      </div>
-                    ) : (
-                      <div className="p-6">
-                        <OrgListView
-                          employees={companyEmployees}
-                          onEmployeeClick={handleNodeClick}
-                          onManageReporting={handleManageReporting}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      )}
+      {/* Main Content - Tabs */}
+      <Tabs defaultValue="hierarchy" className="space-y-6">
+        <TabsList className="bg-white border-2 border-slate-200 p-1">
+          <TabsTrigger value="hierarchy" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <Network className="w-4 h-4 mr-2" />
+            Hierarchy
+          </TabsTrigger>
+          <TabsTrigger value="positions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Sitemap className="w-4 h-4 mr-2" />
+            {t('positions_tab')} ({positions.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Hierarchy Tab */}
+        <TabsContent value="hierarchy">
+          {hierarchyView === 'employee' ? (
+            <Card className="border-0 shadow-xl overflow-hidden">
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-12 space-y-4">
+                    <Skeleton className="h-32 w-full" />
+                    <div className="flex gap-4 justify-center">
+                      <Skeleton className="h-32 w-64" />
+                      <Skeleton className="h-32 w-64" />
+                      <Skeleton className="h-32 w-64" />
+                    </div>
+                  </div>
+                ) : filteredEmployees.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Network className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-slate-500">
+                      {searchTerm ? t('no_employees_found_search') : t('no_employees_display')}
+                    </p>
+                  </div>
+                ) : viewMode === 'chart' ? (
+                  <div
+                    ref={chartRef}
+                    style={{
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'top center',
+                      transition: 'transform 0.3s ease'
+                    }}
+                  >
+                    <OrgChart
+                      employees={filteredEmployees}
+                      onNodeClick={handleNodeClick}
+                      companies={companies}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-6">
+                    <OrgListView
+                      employees={filteredEmployees}
+                      onEmployeeClick={handleNodeClick}
+                      onManageReporting={handleManageReporting}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-6">
+                {loadingPositions ? (
+                  <Skeleton className="h-96 w-full" />
+                ) : filteredPositions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Sitemap className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-slate-500 mb-4">{t('no_positions_found')}</p>
+                    <p className="text-sm text-slate-400 mb-4">{t('create_first_position')}</p>
+                    <Button onClick={() => setShowPositionForm(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t('create_position')}
+                    </Button>
+                  </div>
+                ) : (
+                  <PositionHierarchyChart
+                    positions={filteredPositions}
+                    employees={employees}
+                    onPositionClick={handlePositionClick}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Positions Tab */}
+        <TabsContent value="positions">
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6">
+              {loadingPositions ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-64" />)}
+                </div>
+              ) : filteredPositions.length === 0 ? (
+                <div className="text-center py-12">
+                  <Briefcase className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                  <p className="text-slate-500 mb-4">{t('no_positions_found')}</p>
+                  <Button onClick={() => setShowPositionForm(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t('create_position')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredPositions.map((position) => (
+                    <PositionCard
+                      key={position.id}
+                      position={position}
+                      employeeCount={getEmployeesInPosition(position.id).length}
+                      onView={handlePositionClick}
+                      onEdit={(pos) => {
+                        setEditingPosition(pos);
+                        setShowPositionForm(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Employee Details Modal */}
       <EmployeeDetailsModal
@@ -455,6 +594,42 @@ export default function OrgStructure() {
         isOpen={showReportingModal}
         onClose={() => setShowReportingModal(false)}
         onSave={handleSaveReporting}
+      />
+
+      {/* Position Form Dialog */}
+      <Dialog open={showPositionForm} onOpenChange={setShowPositionForm}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className={isRTL ? 'text-right' : ''}>
+              {editingPosition ? t('edit_position') : t('create_position')}
+            </DialogTitle>
+          </DialogHeader>
+          <PositionForm
+            position={editingPosition}
+            positions={positions}
+            companies={companies}
+            onSubmit={handleSubmitPosition}
+            onCancel={() => {
+              setShowPositionForm(false);
+              setEditingPosition(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Position Details Modal */}
+      <PositionDetailsModal
+        position={selectedPosition}
+        parentPosition={getParentPosition(selectedPosition)}
+        subordinatePositions={getSubordinatePositions(selectedPosition?.id)}
+        employees={getEmployeesInPosition(selectedPosition?.id)}
+        isOpen={showPositionModal}
+        onClose={() => setShowPositionModal(false)}
+        onEdit={(pos) => {
+          setEditingPosition(pos);
+          setShowPositionModal(false);
+          setShowPositionForm(true);
+        }}
       />
     </div>
   );

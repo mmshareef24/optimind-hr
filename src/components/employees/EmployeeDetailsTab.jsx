@@ -1,259 +1,287 @@
+
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
-import { User, Briefcase, Phone } from "lucide-react";
+import { useTranslation } from '@/components/TranslationContext';
 
-export default function EmployeeDetailsTab({ formData, setFormData }) {
+export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [] }) {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+
+  // Filter positions by selected company
+  const availablePositions = formData.company_id
+    ? positions.filter(p => p.company_id === formData.company_id && p.status === 'active')
+    : positions.filter(p => p.status === 'active');
+
+  // When a position is selected, auto-fill department and job_title
+  const handlePositionChange = (positionId) => {
+    const selectedPosition = positions.find(p => p.id === positionId);
+    if (selectedPosition) {
+      setFormData({
+        ...formData,
+        position_id: positionId,
+        job_title: selectedPosition.position_title,
+        department: selectedPosition.department
+      });
+    } else {
+      setFormData({
+        ...formData,
+        position_id: positionId,
+        // Optionally clear job_title and department if 'None' is selected,
+        // but the outline only clears position_id.
+        // If positionId is null, it means 'None' was selected.
+        // We will keep existing job_title/department unless explicitly cleared
+        // or a new position is selected.
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Personal Information */}
-      <Card className="border-emerald-200">
-        <CardHeader className="bg-gradient-to-r from-emerald-50 to-white border-b">
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-emerald-600" />
-            Personal Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>First Name (English) *</Label>
-              <Input
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="John"
-                required
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Employee ID *</Label>
+          <Input
+            value={formData.employee_id}
+            onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
+            placeholder="e.g., EMP001"
+            required
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Company</Label>
+          <Select
+            value={formData.company_id}
+            onValueChange={(val) => setFormData({...formData, company_id: val})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map(company => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name_en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <div>
-              <Label>Last Name (English) *</Label>
-              <Input
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Doe"
-                required
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>First Name *</Label>
+          <Input
+            value={formData.first_name}
+            onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+            required
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Last Name *</Label>
+          <Input
+            value={formData.last_name}
+            onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+            required
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label>First Name (Arabic)</Label>
-              <Input
-                value={formData.first_name_ar}
-                onChange={(e) => setFormData({ ...formData, first_name_ar: e.target.value })}
-                placeholder="محمد"
-                dir="rtl"
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>First Name (Arabic)</Label>
+          <Input
+            value={formData.first_name_ar}
+            onChange={(e) => setFormData({...formData, first_name_ar: e.target.value})}
+            dir="rtl"
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Last Name (Arabic)</Label>
+          <Input
+            value={formData.last_name_ar}
+            onChange={(e) => setFormData({...formData, last_name_ar: e.target.value})}
+            dir="rtl"
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label>Last Name (Arabic)</Label>
-              <Input
-                value={formData.last_name_ar}
-                onChange={(e) => setFormData({ ...formData, last_name_ar: e.target.value })}
-                placeholder="أحمد"
-                dir="rtl"
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Email *</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            required
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Phone</Label>
+          <Input
+            value={formData.phone}
+            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label>Date of Birth</Label>
-              <Input
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>National ID / Iqama *</Label>
+          <Input
+            value={formData.national_id}
+            onChange={(e) => setFormData({...formData, national_id: e.target.value})}
+            required
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Passport Number</Label>
+          <Input
+            value={formData.passport_number}
+            onChange={(e) => setFormData({...formData, passport_number: e.target.value})}
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label>Gender</Label>
-              <Select
-                value={formData.gender}
-                onValueChange={(val) => setFormData({ ...formData, gender: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="grid md:grid-cols-3 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Date of Birth</Label>
+          <Input
+            type="date"
+            value={formData.date_of_birth}
+            onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Gender</Label>
+          <Select
+            value={formData.gender}
+            onValueChange={(val) => setFormData({...formData, gender: val})}
+          >
+            <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Marital Status</Label>
+          <Select
+            value={formData.marital_status}
+            onValueChange={(val) => setFormData({...formData, marital_status: val})}
+          >
+            <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="single">Single</SelectItem>
+              <SelectItem value="married">Married</SelectItem>
+              <SelectItem value="divorced">Divorced</SelectItem>
+              <SelectItem value="widowed">Widowed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <div>
-              <Label>Nationality</Label>
-              <Input
-                value={formData.nationality}
-                onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                placeholder="Saudi Arabia"
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Nationality</Label>
+          <Input
+            value={formData.nationality}
+            onChange={(e) => setFormData({...formData, nationality: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Hire Date *</Label>
+          <Input
+            type="date"
+            value={formData.hire_date}
+            onChange={(e) => setFormData({...formData, hire_date: e.target.value})}
+            required
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label>Marital Status</Label>
-              <Select
-                value={formData.marital_status}
-                onValueChange={(val) => setFormData({ ...formData, marital_status: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">Single</SelectItem>
-                  <SelectItem value="married">Married</SelectItem>
-                  <SelectItem value="divorced">Divorced</SelectItem>
-                  <SelectItem value="widowed">Widowed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Position Selection */}
+      <div className="p-4 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg border-2 border-emerald-200">
+        <h3 className={`font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Position & Role</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label className={isRTL ? 'text-right block' : ''}>Position</Label>
+            <Select
+              value={formData.position_id}
+              onValueChange={handlePositionChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>None (Use Job Title)</SelectItem>
+                {availablePositions.map(position => (
+                  <SelectItem key={position.id} value={position.id}>
+                    {position.position_title} ({position.department})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className={`text-xs text-slate-500 mt-1 ${isRTL ? 'text-right' : ''}`}>
+              Select a position to auto-fill job title and department
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Contact Information */}
-      <Card className="border-blue-200">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="w-5 h-5 text-blue-600" />
-            Contact Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Email *</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="john.doe@company.com"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Phone *</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+966 50 123 4567"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Emergency Contact Name</Label>
-              <Input
-                value={formData.emergency_contact_name}
-                onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                placeholder="Emergency contact name"
-              />
-            </div>
-
-            <div>
-              <Label>Emergency Contact Phone</Label>
-              <Input
-                value={formData.emergency_contact_phone}
-                onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                placeholder="+966 50 123 4567"
-              />
-            </div>
+          <div>
+            <Label className={isRTL ? 'text-right block' : ''}>Job Title (Legacy) *</Label>
+            <Input
+              value={formData.job_title}
+              onChange={(e) => setFormData({...formData, job_title: e.target.value})}
+              placeholder="e.g., Software Engineer"
+              required
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Employment Details */}
-      <Card className="border-purple-200">
-        <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-purple-600" />
-            Employment Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Employee ID *</Label>
-              <Input
-                value={formData.employee_id}
-                onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                placeholder="EMP-001"
-                required
-              />
-            </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Department</Label>
+          <Input
+            value={formData.department}
+            onChange={(e) => setFormData({...formData, department: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Employment Type</Label>
+          <Select
+            value={formData.employment_type}
+            onValueChange={(val) => setFormData({...formData, employment_type: val})}
+          >
+            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="full_time">Full Time</SelectItem>
+              <SelectItem value="part_time">Part Time</SelectItem>
+              <SelectItem value="contract">Contract</SelectItem>
+              <SelectItem value="temporary">Temporary</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <div>
-              <Label>Hire Date *</Label>
-              <Input
-                type="date"
-                value={formData.hire_date}
-                onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Job Title *</Label>
-              <Input
-                value={formData.job_title}
-                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                placeholder="Software Engineer"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Department</Label>
-              <Input
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                placeholder="IT Department"
-              />
-            </div>
-
-            <div>
-              <Label>Employment Type</Label>
-              <Select
-                value={formData.employment_type}
-                onValueChange={(val) => setFormData({ ...formData, employment_type: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full_time">Full Time</SelectItem>
-                  <SelectItem value="part_time">Part Time</SelectItem>
-                  <SelectItem value="contract">Contract</SelectItem>
-                  <SelectItem value="temporary">Temporary</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(val) => setFormData({ ...formData, status: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="on_leave">On Leave</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div>
+        <Label className={isRTL ? 'text-right block' : ''}>Status</Label>
+        <Select
+          value={formData.status}
+          onValueChange={(val) => setFormData({...formData, status: val})}
+        >
+          <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="on_leave">On Leave</SelectItem>
+            <SelectItem value="terminated">Terminated</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
