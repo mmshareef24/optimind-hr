@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -66,30 +67,30 @@ export default function Dashboard() {
       {/* Header */}
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
-          <p className="text-slate-600">Welcome back, here's your HR overview</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('dashboard')}</h1>
+          <p className="text-slate-600">{t('welcome_back')}</p>
         </div>
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <ReportExporter
             reportType="employees"
             filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
-            buttonText="Export Report"
+            buttonText={t('export_report')}
           />
           <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
-            <span className="text-slate-500">Today: </span>
+            <span className="text-slate-500">{t('today')}: </span>
             <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
           </div>
           <div className={`flex items-center gap-2 min-w-[280px] ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Filter className="w-5 h-5 text-slate-400" />
             <Select value={selectedCompany} onValueChange={setSelectedCompany}>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select Company" />
+                <SelectValue placeholder={t('select_company')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
                   <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Building2 className="w-4 h-4" />
-                    <span>All Companies</span>
+                    <span>{t('all_companies')}</span>
                   </div>
                 </SelectItem>
                 {companies.map(company => (
@@ -121,7 +122,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className={isRTL ? 'text-left' : 'text-right'}>
-                <p className="text-sm text-slate-500">Total Employees</p>
+                <p className="text-sm text-slate-500">{t('total_employees')}</p>
                 <p className="text-2xl font-bold text-blue-600">{employees.length}</p>
               </div>
             </div>
@@ -132,7 +133,7 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Employees"
+          title={t('total_employees')}
           value={loadingEmployees ? "..." : activeEmployees}
           icon={Users}
           trend="up"
@@ -140,13 +141,13 @@ export default function Dashboard() {
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title={selectedCompany === 'all' ? 'Total Companies' : 'Active Shifts'}
+          title={selectedCompany === 'all' ? t('total_companies') : t('active_shifts')}
           value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : activeShifts}
           icon={selectedCompany === 'all' ? Building2 : Clock3}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Pending Leaves"
+          title={t('pending_leaves')}
           value={loadingLeaves ? "..." : pendingLeaves}
           icon={Calendar}
           trend="down"
@@ -154,7 +155,7 @@ export default function Dashboard() {
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Attendance Today"
+          title={t('attendance_today')}
           value={loadingAttendance ? "..." : attendance.filter(a => a.status === 'present').length}
           icon={Clock}
           trend="up"
@@ -170,7 +171,7 @@ export default function Dashboard() {
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-emerald-50/30">
             <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="w-5 h-5 text-emerald-600" />
-              Recent Leave Requests
+              {t('recent_leave_requests')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -181,7 +182,7 @@ export default function Dashboard() {
             ) : leaveRequests.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>No leave requests yet</p>
+                <p>{t('no_leave_requests_yet')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -194,7 +195,7 @@ export default function Dashboard() {
                           {employee ? `${employee.first_name} ${employee.last_name}` : `Employee #${leave.employee_id?.slice(0, 8)}`}
                         </p>
                         <p className="text-sm text-slate-500">
-                          {leave.leave_type} • {leave.total_days} days
+                          {leave.leave_type} • {leave.total_days} {t('days')}
                         </p>
                       </div>
                       <Badge 
@@ -219,7 +220,7 @@ export default function Dashboard() {
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-blue-50/30">
             <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              HR Metrics
+              {t('hr_metrics')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -230,8 +231,8 @@ export default function Dashboard() {
                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
-                    <p className="text-sm text-slate-500">Active Status</p>
-                    <p className="text-lg font-bold text-slate-900">{activeEmployees} Employees</p>
+                    <p className="text-sm text-slate-500">{t('active_status')}</p>
+                    <p className="text-lg font-bold text-slate-900">{activeEmployees} {t('employees')}</p>
                   </div>
                 </div>
               </div>
@@ -242,8 +243,8 @@ export default function Dashboard() {
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
-                    <p className="text-sm text-slate-500">Pending Actions</p>
-                    <p className="text-lg font-bold text-slate-900">{pendingLeaves} Leave Approvals</p>
+                    <p className="text-sm text-slate-500">{t('pending_actions')}</p>
+                    <p className="text-lg font-bold text-slate-900">{pendingLeaves} {t('leave_approvals')}</p>
                   </div>
                 </div>
               </div>
@@ -254,8 +255,8 @@ export default function Dashboard() {
                     <DollarSign className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
-                    <p className="text-sm text-slate-500">Payroll Status</p>
-                    <p className="text-lg font-bold text-slate-900">All Processed</p>
+                    <p className="text-sm text-slate-500">{t('payroll_status')}</p>
+                    <p className="text-lg font-bold text-slate-900">{t('all_processed')}</p>
                   </div>
                 </div>
               </div>
@@ -266,7 +267,7 @@ export default function Dashboard() {
                     <Clock3 className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
-                    <p className="text-sm text-slate-500">Shift Coverage</p>
+                    <p className="text-sm text-slate-500">{t('shift_coverage')}</p>
                     <p className="text-lg font-bold text-slate-900">{employeesWithShifts} Assigned</p>
                   </div>
                 </div>
@@ -281,7 +282,7 @@ export default function Dashboard() {
         <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-purple-50/30">
           <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Users className="w-5 h-5 text-purple-600" />
-            Department Distribution
+            {t('department_distribution')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">

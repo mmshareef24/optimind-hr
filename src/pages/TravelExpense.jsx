@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -17,8 +18,11 @@ import TravelApprovalPanel from "../components/travel/TravelApprovalPanel";
 import ExpenseApprovalPanel from "../components/travel/ExpenseApprovalPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useTranslation } from 'react-i18next';
 
 export default function TravelExpense() {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar'; // Assuming 'ar' is the Arabic language code for RTL
   const [showTravelForm, setShowTravelForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingTravel, setEditingTravel] = useState(null);
@@ -63,10 +67,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['travel-requests']);
       setShowTravelForm(false);
       setEditingTravel(null);
-      toast.success('Travel request submitted successfully');
+      toast.success(t('toast_travel_submitted_success'));
     },
     onError: () => {
-      toast.error('Failed to submit travel request');
+      toast.error(t('toast_travel_submitted_fail'));
     }
   });
 
@@ -76,10 +80,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['travel-requests']);
       setShowTravelForm(false);
       setEditingTravel(null);
-      toast.success('Travel request updated successfully');
+      toast.success(t('toast_travel_updated_success'));
     },
     onError: () => {
-      toast.error('Failed to update travel request');
+      toast.error(t('toast_travel_updated_fail'));
     }
   });
 
@@ -95,10 +99,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests']);
-      toast.success('Travel request approved');
+      toast.success(t('toast_travel_approved'));
     },
     onError: () => {
-      toast.error('Failed to approve travel request');
+      toast.error(t('toast_travel_approve_fail'));
     }
   });
 
@@ -115,10 +119,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests']);
-      toast.success('Travel request rejected');
+      toast.success(t('toast_travel_rejected'));
     },
     onError: () => {
-      toast.error('Failed to reject travel request');
+      toast.error(t('toast_travel_reject_fail'));
     }
   });
 
@@ -129,10 +133,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['expense-claims']);
       setShowExpenseForm(false);
       setEditingExpense(null);
-      toast.success('Expense claim submitted successfully');
+      toast.success(t('toast_expense_submitted_success'));
     },
     onError: () => {
-      toast.error('Failed to submit expense claim');
+      toast.error(t('toast_expense_submitted_fail'));
     }
   });
 
@@ -142,10 +146,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['expense-claims']);
       setShowExpenseForm(false);
       setEditingExpense(null);
-      toast.success('Expense claim updated successfully');
+      toast.success(t('toast_expense_updated_success'));
     },
     onError: () => {
-      toast.error('Failed to update expense claim');
+      toast.error(t('toast_expense_updated_fail'));
     }
   });
 
@@ -161,10 +165,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims']);
-      toast.success('Expense claim approved');
+      toast.success(t('toast_expense_approved'));
     },
     onError: () => {
-      toast.error('Failed to approve expense claim');
+      toast.error(t('toast_expense_approve_fail'));
     }
   });
 
@@ -181,10 +185,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims']);
-      toast.success('Expense claim rejected');
+      toast.success(t('toast_expense_rejected'));
     },
     onError: () => {
-      toast.error('Failed to reject expense claim');
+      toast.error(t('toast_expense_reject_fail'));
     }
   });
 
@@ -233,23 +237,23 @@ export default function TravelExpense() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Travel & Expense Management</h1>
-          <p className="text-slate-600">Manage business travel and expense claims</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('travel_expense_management')}</h1>
+          <p className="text-slate-600">{t('travel_expense_desc')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Button
             onClick={() => { setEditingTravel(null); setShowTravelForm(true); }}
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
           >
-            <Plane className="w-4 h-4 mr-2" /> New Travel Request
+            <Plane className="w-4 h-4 mr-2" /> {t('new_travel_request')}
           </Button>
           <Button
             onClick={() => { setEditingExpense(null); setShowExpenseForm(true); }}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
           >
-            <Receipt className="w-4 h-4 mr-2" /> New Expense Claim
+            <Receipt className="w-4 h-4 mr-2" /> {t('new_expense_claim')}
           </Button>
         </div>
       </div>
@@ -257,25 +261,25 @@ export default function TravelExpense() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Pending Travel"
+          title={t('pending_travel')}
           value={pendingTravelCount}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Approved Travel"
+          title={t('approved_travel')}
           value={approvedTravelCount}
           icon={CheckCircle}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Total Expenses"
+          title={t('total_expenses')}
           value={`${totalExpenseAmount.toLocaleString()} SAR`}
           icon={DollarSign}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Pending Claims"
+          title={t('pending_claims')}
           value={`${pendingExpenseAmount.toLocaleString()} SAR`}
           icon={Receipt}
           bgColor="from-purple-500 to-purple-600"
@@ -290,14 +294,14 @@ export default function TravelExpense() {
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
           >
             <Plane className="w-4 h-4 mr-2" />
-            My Travel
+            {t('my_travel')}
           </TabsTrigger>
           <TabsTrigger
             value="my-expenses"
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <Receipt className="w-4 h-4 mr-2" />
-            My Expenses
+            {t('my_expenses')}
           </TabsTrigger>
           {userRole === 'admin' && (
             <>
@@ -306,14 +310,14 @@ export default function TravelExpense() {
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Travel Approvals
+                {t('travel_approvals')}
               </TabsTrigger>
               <TabsTrigger
                 value="expense-approvals"
                 className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Expense Approvals
+                {t('expense_approvals')}
               </TabsTrigger>
             </>
           )}
@@ -330,9 +334,9 @@ export default function TravelExpense() {
               ) : myTravelRequests.length === 0 ? (
                 <div className="text-center py-12">
                   <Plane className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500 mb-4">No travel requests yet</p>
+                  <p className="text-slate-500 mb-4">{t('no_travel_requests')}</p>
                   <Button onClick={() => setShowTravelForm(true)} variant="outline">
-                    Submit Your First Travel Request
+                    {t('submit_first_travel')}
                   </Button>
                 </div>
               ) : (
@@ -362,9 +366,9 @@ export default function TravelExpense() {
               ) : myExpenses.length === 0 ? (
                 <div className="text-center py-12">
                   <Receipt className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500 mb-4">No expense claims yet</p>
+                  <p className="text-slate-500 mb-4">{t('no_expense_claims')}</p>
                   <Button onClick={() => setShowExpenseForm(true)} variant="outline">
-                    Submit Your First Expense Claim
+                    {t('submit_first_expense')}
                   </Button>
                 </div>
               ) : (
@@ -415,7 +419,7 @@ export default function TravelExpense() {
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingTravel ? 'Edit Travel Request' : 'New Travel Request'}
+              {editingTravel ? t('edit_travel_request') : t('new_travel_request')}
             </DialogTitle>
           </DialogHeader>
           {currentUser && (
@@ -437,7 +441,7 @@ export default function TravelExpense() {
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingExpense ? 'Edit Expense Claim' : 'New Expense Claim'}
+              {editingExpense ? t('edit_expense_claim') : t('new_expense_claim')}
             </DialogTitle>
           </DialogHeader>
           {currentUser && (

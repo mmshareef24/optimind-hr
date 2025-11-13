@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -15,8 +16,11 @@ import TravelExpenseApprovals from "../components/mss/TravelExpenseApprovals";
 import ProfileChangeApprovals from "../components/mss/ProfileChangeApprovals";
 import TeamAnalytics from "../components/mss/TeamAnalytics";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export default function MSS() {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const queryClient = useQueryClient();
@@ -41,7 +45,7 @@ export default function MSS() {
   });
 
   // Fetch team members (direct reports)
-  const teamMembers = currentEmployee 
+  const teamMembers = currentEmployee
     ? employees.filter(e => e.manager_id === currentEmployee.id)
     : [];
 
@@ -112,9 +116,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
-      toast.success('Leave request approved');
+      toast.success(t('leave_request_approved'));
     },
-    onError: () => toast.error('Failed to approve leave request')
+    onError: () => toast.error(t('failed_to_approve_leave_request'))
   });
 
   const rejectLeave = useMutation({
@@ -130,9 +134,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
-      toast.success('Leave request rejected');
+      toast.success(t('leave_request_rejected'));
     },
-    onError: () => toast.error('Failed to reject leave request')
+    onError: () => toast.error(t('failed_to_reject_leave_request'))
   });
 
   // Mutations for Travel Approvals
@@ -148,9 +152,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests-mss']);
-      toast.success('Travel request approved');
+      toast.success(t('travel_request_approved'));
     },
-    onError: () => toast.error('Failed to approve travel request')
+    onError: () => toast.error(t('failed_to_approve_travel_request'))
   });
 
   const rejectTravel = useMutation({
@@ -166,9 +170,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests-mss']);
-      toast.success('Travel request rejected');
+      toast.success(t('travel_request_rejected'));
     },
-    onError: () => toast.error('Failed to reject travel request')
+    onError: () => toast.error(t('failed_to_reject_travel_request'))
   });
 
   // Mutations for Expense Approvals
@@ -184,9 +188,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims-mss']);
-      toast.success('Expense claim approved');
+      toast.success(t('expense_claim_approved'));
     },
-    onError: () => toast.error('Failed to approve expense claim')
+    onError: () => toast.error(t('failed_to_approve_expense_claim'))
   });
 
   const rejectExpense = useMutation({
@@ -202,9 +206,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims-mss']);
-      toast.success('Expense claim rejected');
+      toast.success(t('expense_claim_rejected'));
     },
-    onError: () => toast.error('Failed to reject expense claim')
+    onError: () => toast.error(t('failed_to_reject_expense_claim'))
   });
 
   // Mutations for Profile Change Approvals
@@ -225,9 +229,9 @@ export default function MSS() {
     onSuccess: () => {
       queryClient.invalidateQueries(['profile-change-requests-mss']);
       queryClient.invalidateQueries(['employees']);
-      toast.success('Profile change approved and applied');
+      toast.success(t('profile_change_approved_and_applied'));
     },
-    onError: () => toast.error('Failed to approve profile change')
+    onError: () => toast.error(t('failed_to_approve_profile_change'))
   });
 
   const rejectProfileChange = useMutation({
@@ -243,9 +247,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['profile-change-requests-mss']);
-      toast.success('Profile change rejected');
+      toast.success(t('profile_change_rejected'));
     },
-    onError: () => toast.error('Failed to reject profile change')
+    onError: () => toast.error(t('failed_to_reject_profile_change'))
   });
 
   // Filter data for team
@@ -268,7 +272,7 @@ export default function MSS() {
   // Calculate team attendance rate
   const recentAttendance = teamAttendance.slice(0, teamSize * 30); // Last 30 days
   const presentCount = recentAttendance.filter(a => a.status === 'present').length;
-  const attendanceRate = recentAttendance.length > 0 
+  const attendanceRate = recentAttendance.length > 0
     ? Math.round((presentCount / recentAttendance.length) * 100)
     : 0;
 
@@ -290,10 +294,8 @@ export default function MSS() {
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto mb-4 text-amber-600" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Employee Record Found</h2>
-            <p className="text-slate-600">
-              Your account is not linked to an employee record. Please contact HR.
-            </p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('no_employee_record')}</h2>
+            <p className="text-slate-600">{t('contact_hr')}</p>
           </CardContent>
         </Card>
       </div>
@@ -306,13 +308,9 @@ export default function MSS() {
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Team Members</h2>
-            <p className="text-slate-600 mb-4">
-              You don't have any direct reports assigned yet.
-            </p>
-            <p className="text-sm text-slate-500">
-              Once employees are assigned to report to you, you'll be able to manage your team here.
-            </p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('no_team_members')}</h2>
+            <p className="text-slate-600 mb-4">{t('no_direct_reports')}</p>
+            <p className="text-sm text-slate-500">{t('once_assigned')}</p>
           </CardContent>
         </Card>
       </div>
@@ -322,33 +320,33 @@ export default function MSS() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Manager Self Service</h1>
-        <p className="text-slate-600">Manage your team of {teamSize} member{teamSize !== 1 ? 's' : ''}</p>
+      <div className={isRTL ? 'text-right' : ''}>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('manager_self_service')}</h1>
+        <p className="text-slate-600">{t('manage_your_team')} {teamSize} {teamSize !== 1 ? t('members') : t('member')}</p>
       </div>
 
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Team Size"
+          title={t('team_size')}
           value={teamSize}
           icon={Users}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Pending Approvals"
+          title={t('pending_approvals')}
           value={pendingLeaves + pendingTravel + pendingExpenses + pendingProfileChanges}
           icon={CheckCircle}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Attendance Rate"
+          title={t('attendance_rate')}
           value={`${attendanceRate}%`}
           icon={Clock}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Active Goals"
+          title={t('active_goals')}
           value={teamPerformanceGoals.filter(g => g.status === 'in_progress').length}
           icon={Award}
           bgColor="from-purple-500 to-purple-600"
@@ -360,15 +358,15 @@ export default function MSS() {
         <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
           <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <BarChart3 className="w-4 h-4 mr-2" />
-            Overview
+            {t('overview')}
           </TabsTrigger>
           <TabsTrigger value="team" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Users className="w-4 h-4 mr-2" />
-            Team Members
+            {t('team_members_tab')}
           </TabsTrigger>
           <TabsTrigger value="leave-approvals" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Calendar className="w-4 h-4 mr-2" />
-            Leave
+            {t('leave')}
             {pendingLeaves > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
                 {pendingLeaves}
@@ -377,7 +375,7 @@ export default function MSS() {
           </TabsTrigger>
           <TabsTrigger value="profile-approvals" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />
-            Profile Changes
+            {t('profile_changes')}
             {pendingProfileChanges > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
                 {pendingProfileChanges}
@@ -386,15 +384,15 @@ export default function MSS() {
           </TabsTrigger>
           <TabsTrigger value="performance" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <TrendingUp className="w-4 h-4 mr-2" />
-            Performance
+            {t('performance')}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Clock className="w-4 h-4 mr-2" />
-            Attendance
+            {t('attendance')}
           </TabsTrigger>
           <TabsTrigger value="travel-expense" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Plane className="w-4 h-4 mr-2" />
-            Travel & Expense
+            {t('travel_expense')}
             {(pendingTravel + pendingExpenses) > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
                 {pendingTravel + pendingExpenses}

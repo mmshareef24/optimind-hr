@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -13,8 +14,12 @@ import GOSIReportHistory from "../components/gosi/GOSIReportHistory";
 import GOSIComplianceCheck from "../components/gosi/GOSIComplianceCheck";
 import GOSIReportExporter from "../components/gosi/GOSIReportExporter";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function GOSIReporting() {
+  const { t, i18n } = useTranslation(); // Initialize useTranslation
+  const isRTL = i18n.language === 'ar'; // Determine if current language is Arabic for RTL
+
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -46,10 +51,10 @@ export default function GOSIReporting() {
       queryClient.invalidateQueries(['gosi-reports']);
       setSelectedReport(newReport);
       setShowUploadDialog(true);
-      toast.success('GOSI report generated successfully');
+      toast.success(t('gosi_report_generated_success')); // Translated toast
     },
     onError: () => {
-      toast.error('Failed to generate GOSI report');
+      toast.error(t('gosi_report_generated_fail')); // Translated toast
     }
   });
 
@@ -59,10 +64,10 @@ export default function GOSIReporting() {
       queryClient.invalidateQueries(['gosi-reports']);
       setShowUploadDialog(false);
       setSelectedReport(null);
-      toast.success('GOSI report submission recorded successfully');
+      toast.success(t('gosi_report_submission_recorded_success')); // Translated toast
     },
     onError: () => {
-      toast.error('Failed to update GOSI report');
+      toast.error(t('gosi_report_submission_recorded_fail')); // Translated toast
     }
   });
 
@@ -111,33 +116,33 @@ export default function GOSIReporting() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">GOSI Reporting</h1>
-        <p className="text-slate-600">Manage GOSI contributions and compliance reporting</p>
+      <div className={isRTL ? 'text-right' : ''}> {/* Apply text-right for RTL */}
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('gosi_reporting')}</h1> {/* Translated title */}
+        <p className="text-slate-600">{t('gosi_desc')}</p> {/* Translated description */}
       </div>
 
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Current Month Status"
-          value={currentMonthReport?.status || 'Pending'}
+          title={t('current_month_status')} {/* Translated title */}
+          value={currentMonthReport?.status || t('pending')} {/* Translated status */}
           icon={Shield}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Total Contributions (YTD)"
-          value={`${totalContributions.toLocaleString()} SAR`}
+          title={t('total_contributions_ytd')} {/* Translated title */}
+          value={`${totalContributions.toLocaleString()} ${t('sar')}`} {/* Translated currency */}
           icon={TrendingUp}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Submitted Reports"
+          title={t('submitted_reports')} {/* Translated title */}
           value={submittedReports}
           icon={FileText}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Pending Actions"
+          title={t('pending_actions')} {/* Translated title */}
           value={pendingReports}
           icon={Calendar}
           bgColor="from-amber-500 to-amber-600"
@@ -155,14 +160,14 @@ export default function GOSIReporting() {
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <FileText className="w-4 h-4 mr-2" />
-            Generate Report
+            {t('generate_report')} {/* Translated tab trigger */}
           </TabsTrigger>
           <TabsTrigger 
             value="history" 
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <Calendar className="w-4 h-4 mr-2" />
-            Report History
+            {t('report_history')} {/* Translated tab trigger */}
           </TabsTrigger>
         </TabsList>
 
@@ -189,9 +194,9 @@ export default function GOSIReporting() {
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}> {/* Apply flex-row-reverse for RTL */}
               <Upload className="w-5 h-5 text-emerald-600" />
-              Submit to GOSI Portal
+              {t('submit_to_gosi')} {/* Translated dialog title */}
             </DialogTitle>
           </DialogHeader>
           <GOSIUploadInterface

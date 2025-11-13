@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -200,13 +201,9 @@ export default function ESS() {
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-12 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-amber-600" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Employee Record Found</h2>
-            <p className="text-slate-600 mb-4">
-              Your account is not linked to an employee record.
-            </p>
-            <p className="text-sm text-slate-500">
-              Please contact HR department to set up your employee profile.
-            </p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('no_employee_record')}</h2>
+            <p className="text-slate-600 mb-4">{t('contact_hr')}</p>
+            <p className="text-sm text-slate-500">Please contact HR department to set up your employee profile.</p>
           </CardContent>
         </Card>
       </div>
@@ -219,13 +216,13 @@ export default function ESS() {
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome, {currentUser.first_name}!
+            {t('ess_welcome')}, {currentUser.first_name}!
           </h1>
-          <p className="text-slate-600">Your Employee Self-Service Portal</p>
+          <p className="text-slate-600">{t('your_ess_portal')}</p>
         </div>
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={isRTL ? 'text-left' : 'text-right'}>
-            <p className="text-sm text-slate-500">Employee ID</p>
+            <p className="text-sm text-slate-500">{t('employee_id')}</p>
             <p className="font-semibold text-slate-900">{currentUser.employee_id}</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg">
@@ -237,25 +234,25 @@ export default function ESS() {
       {/* Quick Stats */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Current Salary"
+          title={t('current_salary')}
           value={lastPayroll ? `${lastPayroll.net_salary?.toLocaleString()} SAR` : 'N/A'}
           icon={TrendingUp}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Leave Balance"
-          value={`${totalLeaveBalance} Days`}
+          title={t('leave_balance')}
+          value={`${totalLeaveBalance} ${t('days')}`}
           icon={Calendar}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Pending Requests"
+          title={t('pending_requests_count')}
           value={totalPendingRequests}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Available Policies"
+          title={t('available_policies')}
           value={policies.length}
           icon={BookOpen}
           bgColor="from-purple-500 to-purple-600"
@@ -269,12 +266,14 @@ export default function ESS() {
             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Clock className="w-5 h-5 text-amber-600" />
               <div className={isRTL ? 'text-right' : ''}>
-                <p className="font-semibold text-amber-900">You have {totalPendingRequests} pending request{totalPendingRequests > 1 ? 's' : ''}</p>
+                <p className="font-semibold text-amber-900">
+                  {t('you_have_pending')} {totalPendingRequests} {totalPendingRequests > 1 ? t('pending_requests_plural') : t('pending_request')}
+                </p>
                 <p className="text-sm text-amber-700">
-                  {pendingLeaves > 0 && `${pendingLeaves} Leave • `}
-                  {pendingLoans > 0 && `${pendingLoans} Loan • `}
-                  {pendingTravel > 0 && `${pendingTravel} Travel • `}
-                  {pendingLetters > 0 && `${pendingLetters} Letters`}
+                  {pendingLeaves > 0 && `${pendingLeaves} ${t('leave')} • `}
+                  {pendingLoans > 0 && `${pendingLoans} ${t('loans')} • `}
+                  {pendingTravel > 0 && `${pendingTravel} ${t('travel')} • `}
+                  {pendingLetters > 0 && `${pendingLetters} ${t('letters')}`}
                 </p>
               </div>
             </div>
@@ -295,15 +294,15 @@ export default function ESS() {
               </h3>
               <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-slate-500">Position:</span>
+                  <span className="text-slate-500">{t('position')}:</span>
                   <span className="ml-2 font-semibold text-slate-900">{currentUser.job_title || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">Department:</span>
+                  <span className="text-slate-500">{t('department')}:</span>
                   <span className="ml-2 font-semibold text-slate-900">{currentUser.department || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500">Status:</span>
+                  <span className="text-slate-500">{t('status')}:</span>
                   <Badge className={
                     currentUser.status === 'active' ? 'ml-2 bg-emerald-100 text-emerald-700 border-emerald-200' :
                     'ml-2 bg-slate-100 text-slate-700 border-slate-200'
@@ -323,7 +322,7 @@ export default function ESS() {
           {isNewHire && onboardingTasks.length > 0 && (
             <TabsTrigger value="onboarding" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <UserPlus className="w-4 h-4 mr-2" />
-              My Onboarding
+              {t('my_onboarding')}
               {pendingOnboardingTasks > 0 && (
                 <Badge className="ml-2 bg-amber-500 text-white text-xs">{pendingOnboardingTasks}</Badge>
               )}
@@ -331,47 +330,47 @@ export default function ESS() {
           )}
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <TrendingUp className="w-4 h-4 mr-2" />
-            Dashboard
+            {t('dashboard')}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Clock className="w-4 h-4 mr-2" />
-            Clock In/Out
+            {t('clock_in_out')}
           </TabsTrigger>
           <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <User className="w-4 h-4 mr-2" />
-            My Profile
+            {t('my_profile')}
           </TabsTrigger>
           <TabsTrigger value="benefits" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <Gift className="w-4 h-4 mr-2" />
-            Benefits
+            {t('benefits')}
           </TabsTrigger>
           <TabsTrigger value="leave" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Calendar className="w-4 h-4 mr-2" />
-            Leave
+            {t('leave')}
             {pendingLeaves > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLeaves}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="loan" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <DollarSign className="w-4 h-4 mr-2" />
-            Loans
+            {t('loans')}
             {pendingLoans > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLoans}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="travel" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <Plane className="w-4 h-4 mr-2" />
-            Travel
+            {t('travel')}
             {pendingTravel > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingTravel}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="letters" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
             <Mail className="w-4 h-4 mr-2" />
-            Letters
+            {t('letters')}
             {pendingLetters > 0 && <Badge className="ml-1 bg-amber-500 text-white text-xs">{pendingLetters}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="payslips" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <FileText className="w-4 h-4 mr-2" />
-            Payslips
+            {t('payslips')}
           </TabsTrigger>
           <TabsTrigger value="policies" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
             <BookOpen className="w-4 h-4 mr-2" />
-            Policies
+            {t('policies')}
           </TabsTrigger>
         </TabsList>
 
@@ -400,7 +399,7 @@ export default function ESS() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Quick Actions</h3>
+                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>{t('quick_actions')}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
@@ -408,7 +407,7 @@ export default function ESS() {
                     onClick={() => document.querySelector('[value="leave"]').click()}
                   >
                     <Calendar className="w-6 h-6 text-blue-600" />
-                    <span className="text-sm">Request Leave</span>
+                    <span className="text-sm">{t('request_leave_action')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -416,7 +415,7 @@ export default function ESS() {
                     onClick={() => document.querySelector('[value="loan"]').click()}
                   >
                     <DollarSign className="w-6 h-6 text-emerald-600" />
-                    <span className="text-sm">Request Loan</span>
+                    <span className="text-sm">{t('request_loan')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -424,7 +423,7 @@ export default function ESS() {
                     onClick={() => document.querySelector('[value="travel"]').click()}
                   >
                     <Plane className="w-6 h-6 text-purple-600" />
-                    <span className="text-sm">Travel Request</span>
+                    <span className="text-sm">{t('travel_request')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -432,7 +431,7 @@ export default function ESS() {
                     onClick={() => document.querySelector('[value="letters"]').click()}
                   >
                     <Mail className="w-6 h-6 text-amber-600" />
-                    <span className="text-sm">Request Letter</span>
+                    <span className="text-sm">{t('request_letter')}</span>
                   </Button>
                 </div>
               </CardContent>
@@ -440,7 +439,7 @@ export default function ESS() {
 
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Recent Requests</h3>
+                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>{t('recent_requests')}</h3>
                 <div className="space-y-3">
                   {[...leaveRequests.slice(0, 2), ...loanRequests.slice(0, 2), ...travelRequests.slice(0, 1)]
                     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
@@ -449,7 +448,7 @@ export default function ESS() {
                       <div key={idx} className={`flex items-center justify-between p-3 border rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <div className={isRTL ? 'text-right' : ''}>
                           <p className="text-sm font-medium text-slate-900">
-                            {req.leave_type ? 'Leave Request' : req.loan_type ? 'Loan Request' : 'Travel Request'}
+                            {req.leave_type ? t('leave_request') : req.loan_type ? t('loan_request') : t('travel_request')}
                           </p>
                           <p className="text-xs text-slate-500">
                             {new Date(req.created_date).toLocaleDateString()}
@@ -466,7 +465,7 @@ export default function ESS() {
                       </div>
                     ))}
                   {[...leaveRequests, ...loanRequests, ...travelRequests].length === 0 && (
-                    <p className="text-center py-8 text-slate-500">No recent requests</p>
+                    <p className="text-center py-8 text-slate-500">{t('no_recent_requests')}</p>
                   )}
                 </div>
               </CardContent>

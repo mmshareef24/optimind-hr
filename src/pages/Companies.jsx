@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -84,14 +85,14 @@ export default function Companies() {
     <div className="p-6 lg:p-8 space-y-6">
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Companies</h1>
-          <p className="text-slate-600">Manage your organization's companies</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('companies')}</h1>
+          <p className="text-slate-600">{t('manage_companies')}</p>
         </div>
         <Button
           onClick={() => { resetForm(); setShowDialog(true); }}
           className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
         >
-          <Plus className="w-4 h-4 mr-2" /> Add Company
+          <Plus className="w-4 h-4 mr-2" /> {t('add_company')}
         </Button>
       </div>
 
@@ -101,7 +102,7 @@ export default function Companies() {
             <div className="relative flex-1">
               <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
               <Input
-                placeholder="Search by name or CR number..."
+                placeholder={t('search_by_name_or_cr')} // Placeholder for search input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={isRTL ? 'pr-10' : 'pl-10'}
@@ -117,7 +118,7 @@ export default function Companies() {
           ) : filteredCompanies.length === 0 ? (
             <div className="text-center py-12">
               <Building2 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">No companies found</p>
+              <p className="text-slate-500">{t('no_companies_found')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -137,8 +138,8 @@ export default function Companies() {
                       {company.name_ar && <p className="text-sm text-slate-500 mb-3">{company.name_ar}</p>}
                       <div className="space-y-2 text-sm mb-4">
                         <p className="text-slate-600"><span className="font-medium">CR:</span> {company.cr_number}</p>
-                        <p className="text-slate-600"><span className="font-medium">Industry:</span> {company.industry}</p>
-                        <p className="text-slate-600"><span className="font-medium">City:</span> {company.city || 'N/A'}</p>
+                        <p className="text-slate-600"><span className="font-medium">{t('industry')}:</span> {company.industry}</p>
+                        <p className="text-slate-600"><span className="font-medium">{t('city')}:</span> {company.city || 'N/A'}</p>
                       </div>
                     </div>
                     <Button
@@ -147,7 +148,7 @@ export default function Companies() {
                       onClick={() => handleEdit(company)}
                       className="w-full"
                     >
-                      <Edit className="w-4 h-4 mr-2" /> Edit Details
+                      <Edit className="w-4 h-4 mr-2" /> {t('edit_details')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -160,36 +161,36 @@ export default function Companies() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingCompany ? 'Edit Company' : 'Add New Company'}</DialogTitle>
+            <DialogTitle>{editingCompany ? t('edit_company') : t('add_company')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label>Company Name (English) *</Label>
+                <Label>{t('company_name_en')} *</Label>
                 <Input value={formData.name_en} onChange={(e) => setFormData({...formData, name_en: e.target.value})} required />
               </div>
               <div>
-                <Label>Company Name (Arabic)</Label>
+                <Label>{t('company_name_ar')}</Label>
                 <Input value={formData.name_ar} onChange={(e) => setFormData({...formData, name_ar: e.target.value})} />
               </div>
               <div>
-                <Label>CR Number *</Label>
+                <Label>{t('cr_number')} *</Label>
                 <Input value={formData.cr_number} onChange={(e) => setFormData({...formData, cr_number: e.target.value})} required />
               </div>
               <div>
-                <Label>Tax Number</Label>
+                <Label>{t('tax_number')}</Label>
                 <Input value={formData.tax_number} onChange={(e) => setFormData({...formData, tax_number: e.target.value})} />
               </div>
               <div>
-                <Label>GOSI Number</Label>
+                <Label>{t('gosi_number')}</Label>
                 <Input value={formData.gosi_number} onChange={(e) => setFormData({...formData, gosi_number: e.target.value})} />
               </div>
               <div>
-                <Label>Establishment Date</Label>
+                <Label>{t('establishment_date')}</Label>
                 <Input type="date" value={formData.establishment_date} onChange={(e) => setFormData({...formData, establishment_date: e.target.value})} />
               </div>
               <div>
-                <Label>Industry</Label>
+                <Label>{t('industry')}</Label>
                 <Select value={formData.industry} onValueChange={(val) => setFormData({...formData, industry: val})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -205,26 +206,26 @@ export default function Companies() {
                 </Select>
               </div>
               <div>
-                <Label>City</Label>
+                <Label>{t('city')}</Label>
                 <Input value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} />
               </div>
               <div>
-                <Label>Phone</Label>
+                <Label>{t('phone')}</Label>
                 <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
               </div>
               <div>
-                <Label>Email</Label>
+                <Label>{t('email')}</Label>
                 <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
             </div>
             <div>
-              <Label>Address</Label>
+              <Label>{t('address')}</Label>
               <Input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>{t('cancel')}</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                {editingCompany ? 'Update' : 'Create'} Company
+                {editingCompany ? t('update') : t('create')} {t('companies')}
               </Button>
             </DialogFooter>
           </form>

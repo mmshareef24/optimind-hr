@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -61,10 +62,10 @@ export default function EmployeesPage() {
       queryClient.invalidateQueries(['filtered-employees']);
       setShowForm(false);
       setEditingEmployee(null);
-      toast.success('Employee created successfully');
+      toast.success(t('employee_created_success'));
     },
     onError: () => {
-      toast.error('Failed to create employee');
+      toast.error(t('failed_to_create_employee'));
     }
   });
 
@@ -74,10 +75,10 @@ export default function EmployeesPage() {
       queryClient.invalidateQueries(['filtered-employees']);
       setShowForm(false);
       setEditingEmployee(null);
-      toast.success('Employee updated successfully');
+      toast.success(t('employee_updated_success'));
     },
     onError: () => {
-      toast.error('Failed to update employee');
+      toast.error(t('failed_to_update_employee'));
     }
   });
 
@@ -107,21 +108,21 @@ export default function EmployeesPage() {
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
           <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
-            <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
+            <h1 className="text-3xl font-bold text-slate-900">{t('employees')}</h1>
             <Badge variant="outline" className="text-xs">
               {accessLevel === 'admin' ? (
-                <><Shield className="w-3 h-3 mr-1" /> Full Access</>
+                <><Shield className="w-3 h-3 mr-1" /> {t('full_access')}</>
               ) : accessLevel === 'manager' ? (
-                <><Users className="w-3 h-3 mr-1" /> My Team</>
+                <><Users className="w-3 h-3 mr-1" /> {t('my_team')}</>
               ) : (
-                <><Users className="w-3 h-3 mr-1" /> Personal View</>
+                <><Users className="w-3 h-3 mr-1" /> {t('personal_view')}</>
               )}
             </Badge>
           </div>
           <p className="text-slate-600">
-            {accessLevel === 'admin' && 'Manage all employees in the organization'}
-            {accessLevel === 'manager' && 'View and manage your direct reports'}
-            {accessLevel === 'employee' && 'View your employee information'}
+            {accessLevel === 'admin' && t('manage_all_employees')}
+            {accessLevel === 'manager' && t('view_manage_team')}
+            {accessLevel === 'employee' && t('view_your_info')}
           </p>
         </div>
         {accessLevel === 'admin' && (
@@ -130,7 +131,7 @@ export default function EmployeesPage() {
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Employee
+            {t('add_employee')}
           </Button>
         )}
       </div>
@@ -142,7 +143,7 @@ export default function EmployeesPage() {
             <div className="relative">
               <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
               <Input
-                placeholder="Search employees by name, ID, email, or department..."
+                placeholder={t('search_employees_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
@@ -155,7 +156,7 @@ export default function EmployeesPage() {
           <CardContent className="p-6">
             <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className={isRTL ? 'text-right' : ''}>
-                <p className="text-sm text-slate-600 mb-1">Total Accessible</p>
+                <p className="text-sm text-slate-600 mb-1">{t('total_accessible')}</p>
                 <p className="text-3xl font-bold text-blue-600">{employees.length}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -177,12 +178,12 @@ export default function EmployeesPage() {
             <div className="text-center py-12">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
               <p className="text-slate-500 mb-4">
-                {searchTerm ? 'No employees found matching your search' : 'No employees found'}
+                {searchTerm ? t('no_employees_found_matching_search') : t('no_employees_found')}
               </p>
               {accessLevel === 'admin' && (
                 <Button onClick={() => setShowForm(true)} variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add First Employee
+                  {t('add_first_employee')}
                 </Button>
               )}
             </div>
@@ -233,7 +234,7 @@ export default function EmployeesPage() {
                       )}
                       <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Calendar className="w-4 h-4" />
-                        <span>Joined {new Date(employee.hire_date).toLocaleDateString()}</span>
+                        <span>{t('joined')} {new Date(employee.hire_date).toLocaleDateString()}</span>
                       </div>
                     </div>
 
@@ -241,7 +242,7 @@ export default function EmployeesPage() {
                       <div className="mt-3 pt-3 border-t">
                         <Badge variant="outline" className="text-xs">
                           <Users className="w-3 h-3 mr-1" />
-                          Reports to You
+                          {t('reports_to_you')}
                         </Badge>
                       </div>
                     )}
@@ -258,7 +259,7 @@ export default function EmployeesPage() {
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+              {editingEmployee ? t('edit_employee') : t('add_employee')}
             </DialogTitle>
           </DialogHeader>
           <EmployeeFormTabs
