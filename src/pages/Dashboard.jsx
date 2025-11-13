@@ -1,23 +1,20 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText, Clock3 } from "lucide-react";
+import { useAccessControl } from '@/components/AccessControlContext';
+import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, FileText, Clock3 } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
 import ReportExporter from "../components/reports/ReportExporter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 export default function Dashboard() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
-  const [selectedCompany, setSelectedCompany] = useState('all');
+  const { selectedCompanyId, getAccessibleCompanyIds } = useAccessControl();
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ['companies'],
@@ -49,13 +46,19 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ShiftAssignment.list(),
   });
 
-  const employees = selectedCompany === 'all' 
-    ? allEmployees 
-    : allEmployees.filter(e => e.company_id === selectedCompany);
+  // Filter by accessible companies
+  const accessibleCompanyIds = getAccessibleCompanyIds();
+  const employees = selectedCompanyId === 'all' 
+    ? allEmployees.filter(e => accessibleCompanyIds.includes(e.company_id))
+    : allEmployees.filter(e => e.company_id === selectedCompanyId);
 
   const activeEmployees = employees.filter(e => e.status === 'active').length;
-  const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
-  const selectedCompanyData = companies.find(c => c.id === selectedCompany);
+  const pendingLeaves = leaveRequests.filter(l => 
+    l.status === 'pending' && 
+    employees.some(e => e.id === l.employee_id)
+  ).length;
+  
+  const selectedCompanyData = companies.find(c => c.id === selectedCompanyId);
 
   const activeShifts = shifts.filter(s => s.is_active).length;
   const employeesWithShifts = new Set(
@@ -73,36 +76,12 @@ export default function Dashboard() {
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <ReportExporter
             reportType="employees"
-            filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
+            filters={selectedCompanyId !== 'all' ? { company_id: selectedCompanyId } : {}}
             buttonText={t('export_report')}
           />
           <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
             <span className="text-slate-500">{t('today')}: </span>
             <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
-          </div>
-          <div className={`flex items-center gap-2 min-w-[280px] ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <Filter className="w-5 h-5 text-slate-400" />
-            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder={t('select_company')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <Building2 className="w-4 h-4" />
-                    <span>{t('all_companies')}</span>
-                  </div>
-                </SelectItem>
-                {companies.map(company => (
-                  <SelectItem key={company.id} value={company.id}>
-                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <Building2 className="w-4 h-4" />
-                      <span>{company.name_en}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </div>
@@ -141,9 +120,9 @@ export default function Dashboard() {
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title={selectedCompany === 'all' ? t('total_companies') : t('active_shifts')}
-          value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : activeShifts}
-          icon={selectedCompany === 'all' ? Building2 : Clock3}
+          title={selectedCompanyId === 'all' ? t('total_companies') : t('active_shifts')}
+          value={loadingCompanies ? "..." : selectedCompanyId === 'all' ? companies.filter(c => accessibleCompanyIds.includes(c.id)).length : activeShifts}
+          icon={selectedCompanyId === 'all' ? Building2 : Clock3}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
@@ -186,30 +165,33 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {leaveRequests.slice(0, 5).map((leave) => {
-                  const employee = employees.find(e => e.id === leave.employee_id);
-                  return (
-                    <div key={leave.id} className={`flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
-                        <p className="font-semibold text-slate-900 mb-1">
-                          {employee ? `${employee.first_name} ${employee.last_name}` : `Employee #${leave.employee_id?.slice(0, 8)}`}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          {leave.leave_type} • {leave.total_days} {t('days')}
-                        </p>
+                {leaveRequests
+                  .filter(leave => employees.some(e => e.id === leave.employee_id))
+                  .slice(0, 5)
+                  .map((leave) => {
+                    const employee = employees.find(e => e.id === leave.employee_id);
+                    return (
+                      <div key={leave.id} className={`flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
+                          <p className="font-semibold text-slate-900 mb-1">
+                            {employee ? `${employee.first_name} ${employee.last_name}` : `Employee #${leave.employee_id?.slice(0, 8)}`}
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            {leave.leave_type} • {leave.total_days} {t('days')}
+                          </p>
+                        </div>
+                        <Badge 
+                          className={
+                            leave.status === 'pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                            leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                            'bg-red-100 text-red-700 border-red-200'
+                          }
+                        >
+                          {leave.status}
+                        </Badge>
                       </div>
-                      <Badge 
-                        className={
-                          leave.status === 'pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                          leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          'bg-red-100 text-red-700 border-red-200'
-                        }
-                      >
-                        {leave.status}
-                      </Badge>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
           </CardContent>

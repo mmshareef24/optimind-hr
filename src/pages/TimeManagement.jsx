@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -14,10 +15,14 @@ import StatCard from "../components/hrms/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+import ProtectedModule from '@/components/ProtectedModule';
+import { useAccessControl } from '@/components/AccessControlContext';
 
-export default function TimeManagement() {
+function TimeManagementContent() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+  const { selectedCompanyId, getAccessibleCompanyIds } = useAccessControl();
+
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
@@ -25,7 +30,7 @@ export default function TimeManagement() {
 
   const queryClient = useQueryClient();
 
-  const { data: employees = [], isLoading: loadingEmployees } = useQuery({
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list(),
   });
@@ -40,8 +45,8 @@ export default function TimeManagement() {
     queryFn: () => base44.entities.ShiftAssignment.list(),
   });
 
-  const { data: attendances = [], isLoading: loadingAttendance } = useQuery({
-    queryKey: ['attendances', selectedMonth],
+  const { data: allAttendance = [], isLoading: loadingAttendance } = useQuery({
+    queryKey: ['attendance-all'],
     queryFn: () => base44.entities.Attendance.list('-date'),
   });
 
@@ -50,10 +55,20 @@ export default function TimeManagement() {
     queryFn: () => base44.entities.Timesheet.list('-period_start'),
   });
 
+  // Filter by accessible companies
+  const accessibleCompanyIds = getAccessibleCompanyIds();
+  const employees = selectedCompanyId === 'all'
+    ? allEmployees.filter(e => accessibleCompanyIds.includes(e.company_id))
+    : allEmployees.filter(e => e.company_id === selectedCompanyId);
+
+  const attendance = allAttendance.filter(att => 
+    employees.some(e => e.id === att.employee_id)
+  );
+
   const createAttendanceMutation = useMutation({
     mutationFn: (data) => base44.entities.Attendance.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['attendances']);
+      queryClient.invalidateQueries(['attendance-all']); // Invalidate the main attendance query
       toast.success(t('clocked_in_success'));
     }
   });
@@ -61,7 +76,7 @@ export default function TimeManagement() {
   const updateAttendanceMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Attendance.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['attendances']);
+      queryClient.invalidateQueries(['attendance-all']); // Invalidate the main attendance query
       toast.success(t('attendance_updated'));
     }
   });
@@ -83,7 +98,7 @@ export default function TimeManagement() {
 
   const getTodayAttendance = (employeeId) => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    return attendances.find(
+    return attendance.find(
       a => a.employee_id === employeeId && a.date === today
     );
   };
@@ -108,7 +123,7 @@ export default function TimeManagement() {
     const periodStart = startOfMonth(new Date(selectedMonth + '-01'));
     const periodEnd = endOfMonth(new Date(selectedMonth + '-01'));
     
-    const monthAttendances = attendances.filter(
+    const monthAttendances = attendance.filter(
       a => a.employee_id === employeeId &&
            a.date >= format(periodStart, 'yyyy-MM-dd') &&
            a.date <= format(periodEnd, 'yyyy-MM-dd')
@@ -148,12 +163,13 @@ export default function TimeManagement() {
     createTimesheetMutation.mutate(timesheetData);
   };
 
-  const todayAttendances = attendances.filter(
+  const todayAttendances = attendance.filter(
     a => a.date === format(new Date(), 'yyyy-MM-dd')
   );
   const presentToday = todayAttendances.filter(a => a.status === 'present').length;
-  const absentToday = employees.length - presentToday;
-  const totalOvertimeHours = attendances.reduce((sum, a) => sum + (a.overtime_hours || 0), 0);
+  // This calculates absent based on all *filtered* employees, which is correct.
+  const absentToday = employees.length - presentToday; 
+  const totalOvertimeHours = attendance.reduce((sum, a) => sum + (a.overtime_hours || 0), 0);
   const lateToday = todayAttendances.filter(a => a.late_by > 0).length;
 
   return (
@@ -256,7 +272,7 @@ export default function TimeManagement() {
               <OvertimeCalculator
                 employee={selectedEmployee}
                 overtimeHours={
-                  attendances
+                  attendance
                     .filter(a => a.employee_id === selectedEmployee.id)
                     .reduce((sum, a) => sum + (a.overtime_hours || 0), 0)
                 }
@@ -277,17 +293,17 @@ export default function TimeManagement() {
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
                 </div>
-              ) : attendances.length === 0 ? (
+              ) : attendance.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <p className="text-slate-500">{t('no_attendance_records')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {attendances.slice(0, 20).map((attendance) => {
-                    const employee = employees.find(e => e.id === attendance.employee_id);
+                  {attendance.slice(0, 20).map((att) => { // Renamed attendance to att to avoid conflict
+                    const employee = employees.find(e => e.id === att.employee_id);
                     return (
-                      <Card key={attendance.id} className="border border-slate-200 hover:shadow-md transition-all">
+                      <Card key={att.id} className="border border-slate-200 hover:shadow-md transition-all">
                         <CardContent className="p-4">
                           <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
                             <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
@@ -296,32 +312,32 @@ export default function TimeManagement() {
                                   {employee?.first_name} {employee?.last_name}
                                 </h3>
                                 <span className="text-sm text-slate-500">
-                                  {format(new Date(attendance.date), 'MMM dd, yyyy')}
+                                  {format(new Date(att.date), 'MMM dd, yyyy')}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                 <div>
                                   <span className="text-slate-500">{t('clock_in')}:</span>
                                   <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-emerald-600`}>
-                                    {attendance.clock_in || '-'}
+                                    {att.clock_in || '-'}
                                   </span>
                                 </div>
                                 <div>
                                   <span className="text-slate-500">{t('clock_out')}:</span>
                                   <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-slate-600`}>
-                                    {attendance.clock_out || '-'}
+                                    {att.clock_out || '-'}
                                   </span>
                                 </div>
                                 <div>
                                   <span className="text-slate-500">{t('hours')}:</span>
                                   <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-blue-600`}>
-                                    {attendance.actual_hours?.toFixed(2) || 0}h
+                                    {att.actual_hours?.toFixed(2) || 0}h
                                   </span>
                                 </div>
                                 <div>
                                   <span className="text-slate-500">{t('overtime')}:</span>
                                   <span className={`${isRTL ? 'mr-2' : 'ml-2'} font-semibold text-purple-600`}>
-                                    {attendance.overtime_hours?.toFixed(2) || 0}h
+                                    {att.overtime_hours?.toFixed(2) || 0}h
                                   </span>
                                 </div>
                               </div>
@@ -456,5 +472,13 @@ export default function TimeManagement() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function TimeManagement() {
+  return (
+    <ProtectedModule moduleName="TimeManagement">
+      <TimeManagementContent />
+    </ProtectedModule>
   );
 }
