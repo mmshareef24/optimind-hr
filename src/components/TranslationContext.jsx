@@ -37,7 +37,7 @@ const translations = {
     total_employees: "Total Employees", total_companies: "Total Companies",
     pending_leaves: "Pending Leaves", attendance_today: "Attendance Today",
     recent_leave_requests: "Recent Leave Requests", hr_metrics: "HR Metrics",
-    active_status: "Active Status", pending_actions: "Pending Actions",
+    active_status: "Active Status", pending_actions_stat: "Pending Actions",
     payroll_status: "Payroll Status", all_processed: "All Processed",
     shift_coverage: "Shift Coverage", department_distribution: "Department Distribution",
     no_leave_requests_yet: "No leave requests yet", today: "Today",
@@ -89,7 +89,7 @@ const translations = {
     no_attendance_records: "No attendance records yet", no_timesheets_yet: "No timesheets generated yet",
     period: "Period", present: "Present", total_hours: "Total Hours",
     overtime: "Overtime", ot_pay: "OT Pay", clock_in_slash_out: "Clock In/Out",
-    timing: "Timing", hours: "Hours", break: "Break", employees: "employees", days: "days",
+    timing: "Timing", hours: "Hours", break: "Break", employees_count: "employees", days: "days",
     
     // Clock In/Out
     attendance_clock: "Attendance Clock", clock_in: "Clock In", clock_out: "Clock Out",
@@ -167,7 +167,7 @@ const translations = {
     // GOSI Reporting
     gosi_reporting: "GOSI Reporting", gosi_desc: "Manage GOSI contributions and compliance reporting",
     current_month_status: "Current Month Status", total_contributions_ytd: "Total Contributions (YTD)",
-    submitted_reports: "Submitted Reports", pending_actions: "Pending Actions",
+    submitted_reports: "Submitted Reports", pending_actions_gosi: "Pending Actions",
     generate_report: "Generate Report", report_history: "Report History",
     submit_to_gosi: "Submit to GOSI Portal",
     
@@ -212,7 +212,7 @@ const translations = {
     total_employees: "إجمالي الموظفين", total_companies: "إجمالي الشركات",
     pending_leaves: "إجازات قيد الانتظار", attendance_today: "الحضور اليوم",
     recent_leave_requests: "طلبات الإجازة الأخيرة", hr_metrics: "مقاييس الموارد البشرية",
-    active_status: "الحالة النشطة", pending_actions: "إجراءات قيد الانتظار",
+    active_status: "الحالة النشطة", pending_actions_stat: "إجراءات قيد الانتظار",
     payroll_status: "حالة الرواتب", all_processed: "تمت المعالجة",
     shift_coverage: "تغطية الورديات", department_distribution: "توزيع الأقسام",
     no_leave_requests_yet: "لا توجد طلبات إجازة بعد", today: "اليوم",
@@ -280,7 +280,7 @@ const translations = {
     timing: "التوقيت",
     hours: "ساعات",
     break: "استراحة",
-    employees: "موظفين",
+    employees_count: "موظفين",
     days: "أيام",
     
     // Shifts - Arabic
@@ -424,7 +424,7 @@ const translations = {
     current_month_status: "حالة الشهر الحالي",
     total_contributions_ytd: "إجمالي المساهمات (منذ بداية العام)",
     submitted_reports: "التقارير المقدمة",
-    pending_actions: "إجراءات قيد الانتظار",
+    pending_actions_gosi: "إجراءات قيد الانتظار",
     generate_report: "إنشاء تقرير",
     report_history: "سجل التقارير",
     submit_to_gosi: "إرسال إلى بوابة التأمينات",
