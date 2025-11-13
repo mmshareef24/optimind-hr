@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -26,6 +26,8 @@ export function AccessControlProvider({ children }) {
   const [selectedCompanyId, setSelectedCompanyId] = useState(() => {
     return localStorage.getItem('selectedCompanyId') || 'all';
   });
+  
+  const isInitialMount = useRef(true);
 
   // Fetch current user
   const { data: baseUser, isLoading: loadingUser } = useQuery({
@@ -73,17 +75,24 @@ export function AccessControlProvider({ children }) {
     return [];
   }, [baseUser, userData, employee, companies]);
 
-  // Update selected company if it's not accessible
+  // Validate and fix selected company on mount or when accessible companies change
   useEffect(() => {
-    if (accessibleCompanies.length > 0 && selectedCompanyId !== 'all') {
-      const isAccessible = accessibleCompanies.some(c => c.id === selectedCompanyId);
-      if (!isAccessible) {
-        const newCompanyId = accessibleCompanies[0]?.id || 'all';
-        setSelectedCompanyId(newCompanyId);
-        localStorage.setItem('selectedCompanyId', newCompanyId);
+    if (accessibleCompanies.length === 0) return;
+    
+    // Only run this logic once on initial mount or when accessible companies first load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      
+      if (selectedCompanyId !== 'all') {
+        const isAccessible = accessibleCompanies.some(c => c.id === selectedCompanyId);
+        if (!isAccessible) {
+          const newCompanyId = accessibleCompanies[0]?.id || 'all';
+          setSelectedCompanyId(newCompanyId);
+          localStorage.setItem('selectedCompanyId', newCompanyId);
+        }
       }
     }
-  }, [accessibleCompanies, selectedCompanyId]);
+  }, [accessibleCompanies.length]); // Only depend on length to avoid infinite loops
 
   const changeSelectedCompany = (companyId) => {
     setSelectedCompanyId(companyId);
@@ -128,6 +137,9 @@ export function AccessControlProvider({ children }) {
   const getAccessibleCompanyIds = () => {
     if (selectedCompanyId !== 'all') {
       return [selectedCompanyId];
+    }
+    if (baseUser?.role === 'admin') {
+      return companies.map(c => c.id);
     }
     return accessibleCompanies.map(c => c.id);
   };
