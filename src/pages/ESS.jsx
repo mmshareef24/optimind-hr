@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { User, FileText, Settings, BookOpen, Calendar, Clock, TrendingUp, AlertCircle, DollarSign, Plane, Mail, Gift, UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,10 +23,11 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function ESS() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch current user
   const { data: user, isLoading: loadingUser } = useQuery({
     queryKey: ['current-user-ess'],
     queryFn: async () => {
@@ -37,14 +39,12 @@ export default function ESS() {
     }
   });
 
-  // Fetch employee's payrolls
   const { data: payrolls = [], isLoading: loadingPayrolls } = useQuery({
     queryKey: ['my-payrolls', currentUser?.id],
     queryFn: () => base44.entities.Payroll.filter({ employee_id: currentUser.id }, '-month'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch employee's leave balance
   const { data: leaveBalances = [] } = useQuery({
     queryKey: ['my-leave-balances', currentUser?.id],
     queryFn: () => base44.entities.LeaveBalance.filter({ 
@@ -54,48 +54,41 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
-  // Fetch employee's leave requests
   const { data: leaveRequests = [] } = useQuery({
     queryKey: ['my-leaves', currentUser?.id],
     queryFn: () => base44.entities.LeaveRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch loan requests
   const { data: loanRequests = [] } = useQuery({
     queryKey: ['my-loans', currentUser?.id],
     queryFn: () => base44.entities.LoanRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch travel requests
   const { data: travelRequests = [] } = useQuery({
     queryKey: ['my-travel', currentUser?.id],
     queryFn: () => base44.entities.TravelRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch company policies
   const { data: policies = [], isLoading: loadingPolicies } = useQuery({
     queryKey: ['company-policies'],
     queryFn: () => base44.entities.CompanyPolicy.filter({ is_active: true }, '-created_date')
   });
 
-  // Fetch ESS requests
   const { data: essRequests = [] } = useQuery({
     queryKey: ['my-ess-requests', currentUser?.id],
     queryFn: () => base44.entities.ESSRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch profile change requests
   const { data: profileChangeRequests = [] } = useQuery({
     queryKey: ['profile-change-requests', currentUser?.id],
     queryFn: () => base44.entities.ProfileChangeRequest.filter({ employee_id: currentUser.id }, '-created_date'),
     enabled: !!currentUser?.id
   });
 
-  // Fetch onboarding tasks
   const { data: onboardingTasks = [] } = useQuery({
     queryKey: ['my-onboarding-tasks', currentUser?.id],
     queryFn: () => base44.entities.OnboardingTask.filter({ 
@@ -105,7 +98,6 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
-  // Fetch today's attendance
   const { data: todayAttendance, refetch: refetchAttendance } = useQuery({
     queryKey: ['my-attendance-today', currentUser?.id],
     queryFn: async () => {
@@ -119,7 +111,6 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
-  // Fetch employee's shift
   const { data: myShift } = useQuery({
     queryKey: ['my-shift', currentUser?.id],
     queryFn: async () => {
@@ -135,7 +126,6 @@ export default function ESS() {
     enabled: !!currentUser?.id
   });
 
-  // Clock In Mutation
   const clockInMutation = useMutation({
     mutationFn: (data) => base44.entities.Attendance.create(data),
     onSuccess: () => {
@@ -145,7 +135,6 @@ export default function ESS() {
     onError: () => toast.error('Failed to clock in')
   });
 
-  // Clock Out Mutation
   const clockOutMutation = useMutation({
     mutationFn: (data) => base44.entities.Attendance.update(data.id, data),
     onSuccess: () => {
@@ -155,7 +144,6 @@ export default function ESS() {
     onError: () => toast.error('Failed to clock out')
   });
 
-  // Break Mutations
   const breakStartMutation = useMutation({
     mutationFn: (data) => base44.entities.Attendance.update(data.id, data),
     onSuccess: () => {
@@ -174,7 +162,6 @@ export default function ESS() {
     onError: () => toast.error('Failed to end break')
   });
 
-  // Calculate statistics
   const totalLeaveBalance = leaveBalances.reduce((sum, lb) => sum + (lb.remaining || 0), 0);
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
   const pendingLoans = loanRequests.filter(l => l.status === 'pending').length;
@@ -186,7 +173,6 @@ export default function ESS() {
   const totalPendingRequests = pendingLeaves + pendingLoans + pendingTravel + pendingLetters;
   const lastPayroll = payrolls[0];
   
-  // Check if employee is newly hired (within 90 days)
   const isNewHire = currentUser && (() => {
     const hireDate = new Date(currentUser.hire_date);
     const now = new Date();
@@ -230,15 +216,15 @@ export default function ESS() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Welcome, {currentUser.first_name}!
           </h1>
           <p className="text-slate-600">Your Employee Self-Service Portal</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={isRTL ? 'text-left' : 'text-right'}>
             <p className="text-sm text-slate-500">Employee ID</p>
             <p className="font-semibold text-slate-900">{currentUser.employee_id}</p>
           </div>
@@ -280,9 +266,9 @@ export default function ESS() {
       {totalPendingRequests > 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Clock className="w-5 h-5 text-amber-600" />
-              <div>
+              <div className={isRTL ? 'text-right' : ''}>
                 <p className="font-semibold text-amber-900">You have {totalPendingRequests} pending request{totalPendingRequests > 1 ? 's' : ''}</p>
                 <p className="text-sm text-amber-700">
                   {pendingLeaves > 0 && `${pendingLeaves} Leave • `}
@@ -299,11 +285,11 @@ export default function ESS() {
       {/* Profile Summary */}
       <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 via-blue-50 to-white">
         <CardContent className="p-6">
-          <div className="flex items-start gap-4">
+          <div className={`flex items-start gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg">
               <User className="w-8 h-8 text-white" />
             </div>
-            <div className="flex-1">
+            <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 {currentUser.first_name} {currentUser.last_name}
               </h3>
@@ -389,7 +375,6 @@ export default function ESS() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Onboarding Tab (for new hires) */}
         {isNewHire && onboardingTasks.length > 0 && (
           <TabsContent value="onboarding">
             <NewHirePortal
@@ -399,7 +384,6 @@ export default function ESS() {
           </TabsContent>
         )}
 
-        {/* Attendance Clock Tab */}
         <TabsContent value="attendance">
           <ClockInOut
             employee={currentUser}
@@ -412,13 +396,11 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Dashboard Tab */}
         <TabsContent value="dashboard">
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Quick Actions */}
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
+                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Quick Actions</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
@@ -456,17 +438,16 @@ export default function ESS() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Requests</h3>
+                <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Recent Requests</h3>
                 <div className="space-y-3">
                   {[...leaveRequests.slice(0, 2), ...loanRequests.slice(0, 2), ...travelRequests.slice(0, 1)]
                     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
                     .slice(0, 5)
                     .map((req, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
+                      <div key={idx} className={`flex items-center justify-between p-3 border rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className={isRTL ? 'text-right' : ''}>
                           <p className="text-sm font-medium text-slate-900">
                             {req.leave_type ? 'Leave Request' : req.loan_type ? 'Loan Request' : 'Travel Request'}
                           </p>
@@ -493,17 +474,14 @@ export default function ESS() {
           </div>
         </TabsContent>
 
-        {/* My Profile Tab */}
         <TabsContent value="profile">
           <MyProfile employee={currentUser} changeRequests={profileChangeRequests} />
         </TabsContent>
 
-        {/* Benefits Tab */}
         <TabsContent value="benefits">
           <MyBenefits employee={currentUser} />
         </TabsContent>
 
-        {/* Leave Requests Tab */}
         <TabsContent value="leave">
           <LeaveRequestsESS
             employee={currentUser}
@@ -512,7 +490,6 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Loan Requests Tab */}
         <TabsContent value="loan">
           <LoanRequestsESS
             employee={currentUser}
@@ -520,7 +497,6 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Travel Requests Tab */}
         <TabsContent value="travel">
           <TravelRequestsESS
             employee={currentUser}
@@ -528,7 +504,6 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Letter Requests Tab */}
         <TabsContent value="letters">
           <LetterRequestsESS
             employee={currentUser}
@@ -538,7 +513,6 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Payslips Tab */}
         <TabsContent value="payslips">
           <PayslipViewer
             employee={currentUser}
@@ -547,7 +521,6 @@ export default function ESS() {
           />
         </TabsContent>
 
-        {/* Policies Tab */}
         <TabsContent value="policies">
           <CompanyPolicies
             policies={policies}

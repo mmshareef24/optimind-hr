@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText, Clock3 } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
 import ReportExporter from "../components/reports/ReportExporter";
@@ -13,6 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 export default function Dashboard() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [selectedCompany, setSelectedCompany] = useState('all');
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
@@ -45,7 +48,6 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ShiftAssignment.list(),
   });
 
-  // Filter employees by selected company
   const employees = selectedCompany === 'all' 
     ? allEmployees 
     : allEmployees.filter(e => e.company_id === selectedCompany);
@@ -54,7 +56,6 @@ export default function Dashboard() {
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending').length;
   const selectedCompanyData = companies.find(c => c.id === selectedCompany);
 
-  // Calculate shift statistics
   const activeShifts = shifts.filter(s => s.is_active).length;
   const employeesWithShifts = new Set(
     shiftAssignments.filter(a => a.status === 'active').map(a => a.employee_id)
@@ -62,13 +63,13 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
-      {/* Header with Company Filter */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
+      {/* Header */}
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
           <p className="text-slate-600">Welcome back, here's your HR overview</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <ReportExporter
             reportType="employees"
             filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
@@ -78,7 +79,7 @@ export default function Dashboard() {
             <span className="text-slate-500">Today: </span>
             <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
           </div>
-          <div className="flex items-center gap-2 min-w-[280px]">
+          <div className={`flex items-center gap-2 min-w-[280px] ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Filter className="w-5 h-5 text-slate-400" />
             <Select value={selectedCompany} onValueChange={setSelectedCompany}>
               <SelectTrigger className="bg-white">
@@ -86,14 +87,14 @@ export default function Dashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Building2 className="w-4 h-4" />
                     <span>All Companies</span>
                   </div>
                 </SelectItem>
                 {companies.map(company => (
                   <SelectItem key={company.id} value={company.id}>
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <Building2 className="w-4 h-4" />
                       <span>{company.name_en}</span>
                     </div>
@@ -109,17 +110,17 @@ export default function Dashboard() {
       {selectedCompanyData && (
         <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
+              <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
                 <h3 className="font-bold text-slate-900">{selectedCompanyData.name_en}</h3>
                 <p className="text-sm text-slate-600">
                   {selectedCompanyData.industry} • CR: {selectedCompanyData.cr_number}
                 </p>
               </div>
-              <div className="text-right">
+              <div className={isRTL ? 'text-left' : 'text-right'}>
                 <p className="text-sm text-slate-500">Total Employees</p>
                 <p className="text-2xl font-bold text-blue-600">{employees.length}</p>
               </div>
@@ -167,7 +168,7 @@ export default function Dashboard() {
         {/* Recent Leave Requests */}
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-emerald-50/30">
-            <CardTitle className="flex items-center gap-2 text-slate-900">
+            <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="w-5 h-5 text-emerald-600" />
               Recent Leave Requests
             </CardTitle>
@@ -187,8 +188,8 @@ export default function Dashboard() {
                 {leaveRequests.slice(0, 5).map((leave) => {
                   const employee = employees.find(e => e.id === leave.employee_id);
                   return (
-                    <div key={leave.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100">
-                      <div className="flex-1">
+                    <div key={leave.id} className={`flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors border border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
                         <p className="font-semibold text-slate-900 mb-1">
                           {employee ? `${employee.first_name} ${employee.last_name}` : `Employee #${leave.employee_id?.slice(0, 8)}`}
                         </p>
@@ -216,55 +217,55 @@ export default function Dashboard() {
         {/* Quick Stats */}
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-blue-50/30">
-            <CardTitle className="flex items-center gap-2 text-slate-900">
+            <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <TrendingUp className="w-5 h-5 text-blue-600" />
               HR Metrics
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent border border-emerald-100">
-                <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent border border-emerald-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="p-2 rounded-lg bg-emerald-100">
                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <div>
+                  <div className={isRTL ? 'text-right' : ''}>
                     <p className="text-sm text-slate-500">Active Status</p>
                     <p className="text-lg font-bold text-slate-900">{activeEmployees} Employees</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-50 to-transparent border border-amber-100">
-                <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-50 to-transparent border border-amber-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="p-2 rounded-lg bg-amber-100">
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                   </div>
-                  <div>
+                  <div className={isRTL ? 'text-right' : ''}>
                     <p className="text-sm text-slate-500">Pending Actions</p>
                     <p className="text-lg font-bold text-slate-900">{pendingLeaves} Leave Approvals</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-50 to-transparent border border-blue-100">
-                <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-50 to-transparent border border-blue-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="p-2 rounded-lg bg-blue-100">
                     <DollarSign className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
+                  <div className={isRTL ? 'text-right' : ''}>
                     <p className="text-sm text-slate-500">Payroll Status</p>
                     <p className="text-lg font-bold text-slate-900">All Processed</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-transparent border border-purple-100">
-                <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-transparent border border-purple-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="p-2 rounded-lg bg-purple-100">
                     <Clock3 className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div>
+                  <div className={isRTL ? 'text-right' : ''}>
                     <p className="text-sm text-slate-500">Shift Coverage</p>
                     <p className="text-lg font-bold text-slate-900">{employeesWithShifts} Assigned</p>
                   </div>
@@ -278,7 +279,7 @@ export default function Dashboard() {
       {/* Department Overview */}
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-purple-50/30">
-          <CardTitle className="flex items-center gap-2 text-slate-900">
+          <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Users className="w-5 h-5 text-purple-600" />
             Department Distribution
           </CardTitle>

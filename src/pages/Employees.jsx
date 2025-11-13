@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,13 +17,14 @@ import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
 import { toast } from "sonner";
 
 export default function EmployeesPage() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch current user to understand their access level
   const { data: user } = useQuery({
     queryKey: ['current-user-employees'],
     queryFn: async () => {
@@ -32,7 +34,6 @@ export default function EmployeesPage() {
     }
   });
 
-  // Fetch employees using secure backend function
   const { data: employeesData, isLoading } = useQuery({
     queryKey: ['filtered-employees', searchTerm],
     queryFn: async () => {
@@ -49,7 +50,6 @@ export default function EmployeesPage() {
   const employees = employeesData?.employees || [];
   const accessLevel = employeesData?.access_level || 'employee';
 
-  // Fetch shifts for the form
   const { data: shifts = [] } = useQuery({
     queryKey: ['shifts'],
     queryFn: () => base44.entities.Shift.list(),
@@ -82,7 +82,6 @@ export default function EmployeesPage() {
   });
 
   const handleSubmit = (data) => {
-    // Extract employee data from the form submission
     const employeeData = data.employee || data;
     
     if (editingEmployee) {
@@ -105,9 +104,9 @@ export default function EmployeesPage() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
             <Badge variant="outline" className="text-xs">
               {accessLevel === 'admin' ? (
@@ -141,12 +140,12 @@ export default function EmployeesPage() {
         <Card className="lg:col-span-3 border-0 shadow-lg">
           <CardContent className="p-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
               <Input
                 placeholder="Search employees by name, ID, email, or department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 text-base"
+                className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
               />
             </div>
           </CardContent>
@@ -154,8 +153,8 @@ export default function EmployeesPage() {
 
         <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-white">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={isRTL ? 'text-right' : ''}>
                 <p className="text-sm text-slate-600 mb-1">Total Accessible</p>
                 <p className="text-3xl font-bold text-blue-600">{employees.length}</p>
               </div>
@@ -196,12 +195,12 @@ export default function EmployeesPage() {
                   onClick={() => { setEditingEmployee(employee); setShowForm(true); }}
                 >
                   <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-start gap-3">
+                    <div className={`flex items-start justify-between mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-lg">
                           {employee.first_name?.charAt(0)}{employee.last_name?.charAt(0)}
                         </div>
-                        <div>
+                        <div className={isRTL ? 'text-right' : ''}>
                           <h3 className="font-semibold text-slate-900">
                             {employee.first_name} {employee.last_name}
                           </h3>
@@ -214,25 +213,25 @@ export default function EmployeesPage() {
                     </div>
 
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
+                      <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Briefcase className="w-4 h-4" />
                         <span>{employee.job_title}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-slate-600">
+                      <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Building2 className="w-4 h-4" />
                         <span>{employee.department}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-slate-600">
+                      <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Mail className="w-4 h-4" />
                         <span className="truncate">{employee.email}</span>
                       </div>
                       {employee.phone && (
-                        <div className="flex items-center gap-2 text-slate-600">
+                        <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Phone className="w-4 h-4" />
                           <span>{employee.phone}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-slate-600">
+                      <div className={`flex items-center gap-2 text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Calendar className="w-4 h-4" />
                         <span>Joined {new Date(employee.hire_date).toLocaleDateString()}</span>
                       </div>
