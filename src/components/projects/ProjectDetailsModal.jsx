@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
@@ -12,8 +11,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Calendar, DollarSign, Users, Target, AlertTriangle, Info,
   CheckCircle2, Clock, TrendingUp, Edit, UserPlus, UsersRound,
-  ListTodo, Flag, GanttChartSquare
+  ListTodo, Flag, GanttChartSquare, Trash2, PlayCircle, XCircle
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
 import TaskManagement from './TaskManagement';
 import TaskForm from './TaskForm';
@@ -28,9 +28,14 @@ export default function ProjectDetailsModal({
   employees = [],
   tasks = [],
   milestones = [],
+  currentUser,
+  isUserManager,
   isOpen, 
   onClose,
   onEdit,
+  onDelete,
+  onExecute,
+  onCancel,
   onAddTeamMember,
   onBulkAddTeamMembers,
   onTaskCreate,
@@ -57,12 +62,13 @@ export default function ProjectDetailsModal({
   const isOverBudget = project.actual_cost > project.budget;
   const budgetUsed = project.budget > 0 ? (project.actual_cost / project.budget) * 100 : 0;
   const isOverdue = new Date(project.end_date) < new Date() && project.status !== 'completed';
+  const canDelete = !project.is_executed && project.status === 'planning';
+  const canExecute = project.status === 'planning' && !project.is_executed;
+  const canCancel = project.is_executed && project.status !== 'cancelled' && project.status !== 'completed' && isUserManager;
 
-  // Filter project tasks and milestones
   const projectTasks = tasks.filter(t => t.project_id === project.id);
   const projectMilestones = milestones.filter(m => m.project_id === project.id);
 
-  // Get team members assigned to this project
   const projectAssignments = assignments.filter(a => a.project_id === project.id);
   const assignedEmployeeIds = projectAssignments.map(a => a.employee_id);
   const teamMembers = employees.filter(e => assignedEmployeeIds.includes(e.id));
@@ -125,14 +131,73 @@ export default function ProjectDetailsModal({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Project Details</span>
-            <Button onClick={() => onEdit(project)} variant="outline" size="sm">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+            <div className="flex gap-2">
+              {canExecute && (
+                <Button 
+                  onClick={() => onExecute(project)} 
+                  size="sm"
+                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  Execute Project
+                </Button>
+              )}
+              {canCancel && (
+                <Button 
+                  onClick={() => onCancel(project)} 
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel Project
+                </Button>
+              )}
+              {canDelete && (
+                <Button 
+                  onClick={() => onDelete(project)} 
+                  size="sm"
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+              <Button onClick={() => onEdit(project)} variant="outline" size="sm">
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Execution Status Alert */}
+          {project.is_executed && (
+            <Alert className="border-emerald-200 bg-emerald-50">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertDescription className="text-emerald-900">
+                <strong>Executed Project:</strong> This project was executed on {project.executed_date ? format(new Date(project.executed_date), 'MMM dd, yyyy') : 'N/A'}. 
+                All modules are integrated and active.
+                {canCancel && ' Only managers can cancel this project.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Cancellation Info */}
+          {project.status === 'cancelled' && (
+            <Alert className="border-red-200 bg-red-50">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-900">
+                <strong>Project Cancelled</strong>
+                {project.cancellation_reason && (
+                  <p className="mt-1 text-sm">Reason: {project.cancellation_reason}</p>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Header Section */}
           <Card className="border-0 bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50">
             <CardContent className="p-6">
@@ -141,6 +206,7 @@ export default function ProjectDetailsModal({
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-bold text-slate-900">{project.project_name}</h2>
                     {isOverdue && <AlertTriangle className="w-5 h-5 text-red-500" />}
+                    {project.is_executed && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
                   </div>
                   <p className="text-slate-600 mb-2">{project.description}</p>
                   <p className="text-sm text-slate-500">Code: {project.project_code}</p>
@@ -273,6 +339,23 @@ export default function ProjectDetailsModal({
                     />
                   </div>
 
+                  {project.is_executed && (
+                    <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <h4 className="font-semibold text-emerald-900 mb-2 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Execution Details
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                        <p className="text-emerald-800">
+                          <span className="font-medium">Executed Date:</span> {project.executed_date ? format(new Date(project.executed_date), 'MMM dd, yyyy') : 'N/A'}
+                        </p>
+                        <p className="text-emerald-800">
+                          <span className="font-medium">Executed By:</span> {project.executed_by || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {project.notes && (
                     <div className="mt-6 p-4 bg-slate-50 rounded-lg">
                       <h4 className="font-semibold text-slate-900 mb-2">Notes</h4>
@@ -357,7 +440,7 @@ export default function ProjectDetailsModal({
               </Card>
             </TabsContent>
 
-            {/* NEW: Tasks Tab */}
+            {/* Tasks Tab */}
             <TabsContent value="tasks">
               <Card>
                 <CardContent className="p-6">
@@ -368,7 +451,6 @@ export default function ProjectDetailsModal({
                     onEditTask={handleEditTask}
                     onDeleteTask={onTaskDelete}
                     onUpdateTaskStatus={(task) => {
-                      // Cycle through statuses
                       const statuses = ['todo', 'in_progress', 'review', 'completed'];
                       const currentIndex = statuses.indexOf(task.status);
                       const nextStatus = statuses[(currentIndex + 1) % statuses.length];
@@ -379,7 +461,7 @@ export default function ProjectDetailsModal({
               </Card>
             </TabsContent>
 
-            {/* NEW: Milestones Tab */}
+            {/* Milestones Tab */}
             <TabsContent value="milestones">
               <Card>
                 <CardContent className="p-6">
@@ -392,13 +474,13 @@ export default function ProjectDetailsModal({
               </Card>
             </TabsContent>
 
-            {/* NEW: Gantt Chart Tab */}
+            {/* Gantt Chart Tab */}
             <TabsContent value="gantt">
               <GanttChart
                 project={project}
                 tasks={projectTasks}
                 milestones={projectMilestones}
-                employees={employees} // Use all employees as tasks can be assigned to anyone, not just project team members
+                employees={employees}
               />
             </TabsContent>
 
