@@ -1,6 +1,8 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +14,9 @@ import LoanApprovalsPanel from "../components/approvals/LoanApprovalsPanel";
 import StatCard from "../components/hrms/StatCard";
 
 export default function Approvals() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+  
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEmployee, setCurrentEmployee] = useState(null);
 
@@ -117,8 +122,8 @@ export default function Approvals() {
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-12 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-amber-600" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Restricted</h2>
-            <p className="text-slate-600">You don't have permission to access approvals.</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('access_restricted')}</h2>
+            <p className="text-slate-600">{t('no_permission_approvals')}</p>
           </CardContent>
         </Card>
       </div>
@@ -128,29 +133,29 @@ export default function Approvals() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Approvals Dashboard</h1>
+      <div className={isRTL ? 'text-right' : ''}>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('approvals_dashboard')}</h1>
         <p className="text-slate-600">
-          {currentUser.role === 'admin' ? 'HR & Finance Approvals' : 'Manager Approvals'}
+          {currentUser.role === 'admin' ? t('hr_finance_approvals') : t('manager_approvals')}
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid md:grid-cols-3 gap-6">
         <StatCard
-          title="Leave Requests"
+          title={t('leave_requests')}
           value={myLeaveApprovals.length}
           icon={Calendar}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Travel Requests"
+          title={t('travel_requests')}
           value={myTravelApprovals.length}
           icon={Plane}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Loan Requests"
+          title={t('loan_requests')}
           value={myLoanApprovals.length}
           icon={DollarSign}
           bgColor="from-emerald-500 to-emerald-600"
@@ -161,16 +166,16 @@ export default function Approvals() {
       {totalPendingApprovals > 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <AlertCircle className="w-5 h-5 text-amber-600" />
-              <div>
+              <div className={isRTL ? 'text-right' : ''}>
                 <p className="font-semibold text-amber-900">
-                  You have {totalPendingApprovals} pending approval{totalPendingApprovals > 1 ? 's' : ''}
+                  {t('you_have_pending')} {totalPendingApprovals} {totalPendingApprovals > 1 ? t('pending_approvals_plural') : t('pending_approval')}
                 </p>
                 <p className="text-sm text-amber-700">
-                  {myLeaveApprovals.length > 0 && `${myLeaveApprovals.length} Leave • `}
-                  {myTravelApprovals.length > 0 && `${myTravelApprovals.length} Travel • `}
-                  {myLoanApprovals.length > 0 && `${myLoanApprovals.length} Loan`}
+                  {myLeaveApprovals.length > 0 && `${myLeaveApprovals.length} ${t('leave')} • `}
+                  {myTravelApprovals.length > 0 && `${myTravelApprovals.length} ${t('travel')} • `}
+                  {myLoanApprovals.length > 0 && `${myLoanApprovals.length} ${t('loans')}`}
                 </p>
               </div>
             </div>
@@ -186,7 +191,7 @@ export default function Approvals() {
             className="data-[state=active]:bg-blue-600 data-[state=active]:text-white relative"
           >
             <Calendar className="w-4 h-4 mr-2" />
-            Leave
+            {t('leave')}
             {myLeaveApprovals.length > 0 && (
               <Badge className="ml-2 bg-amber-500 text-white">{myLeaveApprovals.length}</Badge>
             )}
@@ -196,7 +201,7 @@ export default function Approvals() {
             className="data-[state=active]:bg-purple-600 data-[state=active]:text-white relative"
           >
             <Plane className="w-4 h-4 mr-2" />
-            Travel
+            {t('travel')}
             {myTravelApprovals.length > 0 && (
               <Badge className="ml-2 bg-amber-500 text-white">{myTravelApprovals.length}</Badge>
             )}
@@ -206,7 +211,7 @@ export default function Approvals() {
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white relative"
           >
             <DollarSign className="w-4 h-4 mr-2" />
-            Loans
+            {t('loans')}
             {myLoanApprovals.length > 0 && (
               <Badge className="ml-2 bg-amber-500 text-white">{myLoanApprovals.length}</Badge>
             )}

@@ -1,6 +1,8 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function OrgStructure() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+  
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReportingModal, setShowReportingModal] = useState(false);
@@ -217,19 +222,19 @@ export default function OrgStructure() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Organization Structure</h1>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('organization_structure')}</h1>
           <p className="text-slate-600">
             {selectedCompany === 'all' 
-              ? `Multi-company hierarchy visualization • ${companies.length} companies, ${employees.length} employees`
-              : `${companies.find(c => c.id === selectedCompany)?.name_en || 'Company'} organizational structure`
+              ? `${t('org_desc')} • ${companies.length} ${t('companies')}, ${employees.length} ${t('employees')}`
+              : `${companies.find(c => c.id === selectedCompany)?.name_en || t('companies')} ${t('organization_structure')}`
             }
           </p>
         </div>
         
         {/* View Type Toggle */}
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
             <button
               onClick={() => setViewType('unified')}
@@ -240,7 +245,7 @@ export default function OrgStructure() {
               }`}
             >
               <Crown className="w-4 h-4 inline mr-2" />
-              Unified View
+              {t('unified_view')}
             </button>
             <button
               onClick={() => setViewType('by-company')}
@@ -251,7 +256,7 @@ export default function OrgStructure() {
               }`}
             >
               <Building2 className="w-4 h-4 inline mr-2" />
-              By Company
+              {t('by_company')}
             </button>
           </div>
         </div>
@@ -260,25 +265,25 @@ export default function OrgStructure() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Employees"
+          title={t('total_employees')}
           value={totalEmployees}
           icon={Users}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Managers"
+          title={t('managers')}
           value={managers}
           icon={TrendingUp}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Departments"
+          title={t('departments')}
           value={departments.length}
           icon={Layers}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Companies"
+          title={t('companies')}
           value={selectedCompany === 'all' ? companies.length : 1}
           icon={Building2}
           bgColor="from-amber-500 to-amber-600"
@@ -288,27 +293,27 @@ export default function OrgStructure() {
       {/* Hierarchy Level Stats */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-slate-50 to-white">
         <CardContent className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Hierarchy Distribution</h3>
+          <h3 className={`text-lg font-bold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>{t('hierarchy_distribution')}</h3>
           <div className="grid md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
               <Crown className="w-6 h-6 mx-auto mb-2 text-purple-600" />
               <p className="text-2xl font-bold text-purple-900">{hierarchyLevels.executives}</p>
-              <p className="text-sm text-purple-700">Executive Level</p>
+              <p className="text-sm text-purple-700">{t('executive_level')}</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
               <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
               <p className="text-2xl font-bold text-blue-900">{hierarchyLevels.seniorManagers}</p>
-              <p className="text-sm text-blue-700">Senior Managers</p>
+              <p className="text-sm text-blue-700">{t('senior_managers')}</p>
             </div>
             <div className="text-center p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200">
               <Briefcase className="w-6 h-6 mx-auto mb-2 text-emerald-600" />
               <p className="text-2xl font-bold text-emerald-900">{hierarchyLevels.managers}</p>
-              <p className="text-sm text-emerald-700">Managers</p>
+              <p className="text-sm text-emerald-700">{t('managers')}</p>
             </div>
             <div className="text-center p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
               <Users className="w-6 h-6 mx-auto mb-2 text-slate-600" />
               <p className="text-2xl font-bold text-slate-900">{hierarchyLevels.staff}</p>
-              <p className="text-sm text-slate-700">Staff</p>
+              <p className="text-sm text-slate-700">{t('staff')}</p>
             </div>
           </div>
         </CardContent>
@@ -350,7 +355,7 @@ export default function OrgStructure() {
               <div className="text-center py-12">
                 <Network className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                 <p className="text-slate-500">
-                  {searchTerm ? 'No employees found matching your search' : 'No employees to display'}
+                  {searchTerm ? t('no_employees_found_search') : t('no_employees_display')}
                 </p>
               </div>
             ) : viewMode === 'chart' ? (

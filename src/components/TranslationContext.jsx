@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
@@ -179,13 +180,114 @@ const translations = {
     employer_gosi: "Employer GOSI", benefits_rewards: "Benefits & Rewards",
     benefits_desc: "Manage employee benefits and recognition programs",
     
+    // Performance Management
+    performance_management: "Performance Management", performance_desc: "Track goals, reviews, and employee performance",
+    set_new_goal: "Set New Goal", total_goals: "Total Goals", completed_goals: "Completed Goals",
+    in_progress: "In Progress", avg_progress: "Avg Progress", last_performance_review: "Last Performance Review",
+    overall_rating: "Overall Rating", my_goals: "My Goals", all_goals: "All Goals",
+    reviews: "Reviews", conduct_review: "Conduct Review", no_goals_set: "No goals set yet",
+    manager_will_assign: "Your manager will assign goals for you to track",
+    search_goals: "Search goals by title, description, or employee...",
+    filter_goals: "Filter Goals", all_employees: "All Employees",
+    search_reviews: "Search reviews by employee or period...",
+    filter_reviews: "Filter Reviews", all_periods: "All Periods",
+    review_period: "Review Period", review_type: "Review Type", all_review_types: "All Types",
+    select_employee_to_review: "Select Employee to Review", start_review: "Start Review",
+    goals: "Goals", completed: "Completed", performance_review: "Performance Review",
+    
+    // Health & Safety
+    health_safety: "Health & Safety", health_safety_desc: "Incident reporting and safety protocols",
+    
+    // Employee Relations
+    employee_relations: "Employee Relations", employee_relations_desc: "Handle grievances and employee communications",
+    
+    // Org Structure
+    organization_structure: "Organization Structure", org_desc: "Multi-company hierarchy visualization",
+    unified_view: "Unified View", by_company: "By Company", managers: "Managers",
+    hierarchy_distribution: "Hierarchy Distribution", executive_level: "Executive Level",
+    senior_managers: "Senior Managers", staff: "Staff", no_employees_display: "No employees to display",
+    no_employees_found_search: "No employees found matching your search",
+    
+    // Departments
+    department_management: "Department Management", departments_desc: "Manage organizational departments and their structure",
+    add_department: "Add Department", total_departments: "Total Departments",
+    avg_department_size: "Avg Department Size", with_managers: "With Managers",
+    all_departments: "All Departments", no_departments_found: "No departments found",
+    departments_auto_created: "Departments are created automatically when employees are assigned to them",
+    department_head: "Department Head", total_staff: "Total Staff", active: "Active",
+    avg_salary: "Avg Salary", top_roles: "TOP ROLES", edit_department: "Edit Department",
+    add_new_department: "Add New Department", department_name: "Department Name",
+    department_code: "Department Code", parent_department: "Parent Department",
+    cost_center: "Cost Center", location: "Location", departments_note: "Currently, departments are automatically created from employee data. To create a new department, assign an employee to it in the Employee Management page.",
+    
+    // Documents
+    documents: "Documents", documents_desc: "Manage employee documents and company policies",
+    upload_document: "Upload Document", all_documents: "All Documents",
+    no_documents_uploaded: "No documents uploaded yet",
+    
+    // User Management
+    user_access_management: "User Access Management", user_management_desc: "Configure user roles, permissions, and access levels for employees, managers, and departments",
+    access_denied: "Access Denied", no_permission_user_mgmt: "You don't have permission to access user management. Only administrators can manage user access.",
+    how_user_access_works: "How User Access Works",
+    
+    // Master Data
+    master_data_management: "Master Data Management", master_data_desc: "Bulk upload and export data for employees, companies, assets, and other entities",
+    no_permission_master_data: "You don't have permission to access master data management. Only administrators can upload and export data.",
+    data_management_tools: "Data Management Tools", upload_data: "Upload Data",
+    export_data: "Export Data", quick_guide: "📖 Quick Guide", uploading_data: "Uploading Data",
+    exporting_data: "Exporting Data",
+    
+    // Leave Accrual
+    leave_accrual_management: "Leave Accrual Management", leave_accrual_desc: "Automate monthly leave accruals and manage policies",
+    process_accrual: "Process Accrual", initialize_default_policies: "Initialize Default Policies",
+    no_accrual_policies: "No accrual policies configured.", click_initialize: "Click \"Initialize Default Policies\" to set up standard Saudi labor law policies, or create custom policies.",
+    active_policies: "Active Policies", accruals_this_month: "Accruals This Month",
+    days_accrued_month: "Days Accrued (Month)", scheduler: "Scheduler", policies_count: "Policies",
+    history: "History", how_it_works: "How It Works", monthly_processing: "Monthly Processing",
+    runs_automatically: "Runs automatically on the 1st of each month", policy_application: "Policy Application",
+    applied_to_eligible: "Each active policy is applied to eligible employees",
+    balance_updates: "Balance Updates", balances_auto_updated: "Leave balances are automatically updated",
+    audit_trail: "Audit Trail", accruals_logged: "All accruals are logged for compliance",
+    accrual_policies: "Accrual Policies", add_policy: "Add Policy", no_policies_configured: "No policies configured",
+    processing_history: "Processing History", no_accrual_history: "No accrual history yet",
+    process_first_accrual: "Process First Accrual", process_monthly_leave_accrual: "Process Monthly Leave Accrual",
+    will_process_accruals: "This will process leave accruals for all active employees based on configured policies.",
+    accrual_period: "Accrual Period", force_reprocess: "Force reprocess (if already processed)",
+    reprocess_warning: "Warning: Reprocessing will create duplicate accrual records. Use with caution.",
+    processing: "Processing...", create_policy: "Create", edit_policy: "Edit",
+    
+    // Public Holidays
+    public_holidays: "Public Holidays", public_holidays_desc: "Manage Saudi Arabian national and Islamic holidays",
+    initialize_year: "Initialize", add_holiday: "Add Holiday", today_is: "Today is",
+    total_holidays: "Total Holidays", national_days: "National Days",
+    islamic_holidays: "Islamic Holidays", upcoming: "Upcoming", all_holidays: "All Holidays",
+    national: "National", islamic: "Islamic", no_holidays_found: "No holidays found",
+    holiday_name_en: "Holiday Name (English)", holiday_name_ar: "Holiday Name (Arabic)",
+    holiday_type: "Holiday Type", recurring_annually: "Recurring Annually",
+    islamic_calendar: "Islamic Calendar", paid_holiday: "Paid Holiday",
+    update_holiday: "Update", create_holiday: "Create",
+    
+    // AI Assistant
+    ai_assistant: "AI Assistant", ai_desc: "Your intelligent HR companion for drafting, summarizing, and generating content",
+    draft_emails: "Draft Emails", summarize: "Summarize", review_feedback: "Review Feedback",
+    goal_descriptions: "Goal Descriptions", ai_powered_hr: "✨ AI-Powered HR Assistant",
+    ai_description: "Our AI assistant helps you draft professional communications, summarize complex documents, generate meaningful performance feedback, and create SMART goals. Simply provide the context or data, and let AI do the heavy lifting while maintaining your organization's tone and standards.",
+    
+    // Approvals
+    approvals_dashboard: "Approvals Dashboard", hr_finance_approvals: "HR & Finance Approvals",
+    manager_approvals: "Manager Approvals", leave_requests: "Leave Requests",
+    travel_requests: "Travel Requests", loan_requests: "Loan Requests",
+    you_have_pending: "You have", pending_approval: "pending approval",
+    pending_approvals_plural: "pending approvals", access_restricted: "Access Restricted",
+    no_permission_approvals: "You don't have permission to access approvals.",
+    
     // Messages
     clocked_in_success: "Clocked in successfully!",
     clocked_out_success: "Clocked out successfully!",
     attendance_updated: "Attendance updated",
   },
   ar: {
-    // Common
+    // Common - Arabic
     welcome: "مرحباً", loading: "جاري التحميل...", save: "حفظ", cancel: "إلغاء", edit: "تعديل",
     delete: "حذف", search: "بحث", filter: "تصفية", export: "تصدير", submit: "إرسال",
     close: "إغلاق", choose: "اختر", select: "اختيار", create: "إنشاء", update: "تحديث",
@@ -196,7 +298,7 @@ const translations = {
     app_name: "أوبتي مايند",
     app_tagline: "ربط العقول من خلال الذكاء الذكي",
     
-    // Navigation
+    // Navigation - Arabic
     nav_main: "الرئيسية", nav_dashboard: "لوحة القيادة", nav_ai_assistant: "المساعد الذكي",
     nav_organization: "المؤسسة", nav_companies: "الشركات", nav_org_structure: "الهيكل التنظيمي",
     nav_departments: "الأقسام", nav_employee_lifecycle: "دورة حياة الموظف",
@@ -447,6 +549,189 @@ const translations = {
     employer_gosi: "تأمينات صاحب العمل",
     benefits_rewards: "المزايا والمكافآت",
     benefits_desc: "إدارة مزايا الموظفين وبرامج التقدير",
+    
+    // Performance Management - Arabic
+    performance_management: "إدارة الأداء",
+    performance_desc: "تتبع الأهداف والمراجعات وأداء الموظفين",
+    set_new_goal: "تعيين هدف جديد",
+    total_goals: "إجمالي الأهداف",
+    completed_goals: "أهداف مكتملة",
+    in_progress: "قيد التنفيذ",
+    avg_progress: "متوسط التقدم",
+    last_performance_review: "آخر مراجعة أداء",
+    overall_rating: "التقييم الإجمالي",
+    my_goals: "أهدافي",
+    all_goals: "جميع الأهداف",
+    reviews: "المراجعات",
+    conduct_review: "إجراء مراجعة",
+    no_goals_set: "لم يتم تعيين أهداف بعد",
+    manager_will_assign: "سيقوم مديرك بتعيين أهداف لك لتتبعها",
+    search_goals: "البحث عن الأهداف بالعنوان أو الوصف أو الموظف...",
+    filter_goals: "تصفية الأهداف",
+    all_employees: "جميع الموظفين",
+    search_reviews: "البحث عن المراجعات بالموظف أو الفترة...",
+    filter_reviews: "تصفية المراجعات",
+    all_periods: "جميع الفترات",
+    review_period: "فترة المراجعة",
+    review_type: "نوع المراجعة",
+    all_review_types: "جميع الأنواع",
+    select_employee_to_review: "اختر موظفاً للمراجعة",
+    start_review: "بدء المراجعة",
+    goals: "أهداف",
+    completed: "مكتمل",
+    performance_review: "مراجعة الأداء",
+    
+    // Health & Safety - Arabic
+    health_safety: "الصحة والسلامة",
+    health_safety_desc: "الإبلاغ عن الحوادث وبروتوكولات السلامة",
+    
+    // Employee Relations - Arabic
+    employee_relations: "علاقات الموظفين",
+    employee_relations_desc: "معالجة الشكاوى والاتصالات مع الموظفين",
+    
+    // Org Structure - Arabic
+    organization_structure: "الهيكل التنظيمي",
+    org_desc: "تصور التسلسل الهرمي متعدد الشركات",
+    unified_view: "العرض الموحد",
+    by_company: "حسب الشركة",
+    managers: "المدراء",
+    hierarchy_distribution: "توزيع التسلسل الهرمي",
+    executive_level: "المستوى التنفيذي",
+    senior_managers: "كبار المدراء",
+    staff: "الموظفون",
+    no_employees_display: "لا يوجد موظفين للعرض",
+    no_employees_found_search: "لم يتم العثور على موظفين مطابقين للبحث",
+    
+    // Departments - Arabic
+    department_management: "إدارة الأقسام",
+    departments_desc: "إدارة أقسام المؤسسة وهيكلها",
+    add_department: "إضافة قسم",
+    total_departments: "إجمالي الأقسام",
+    avg_department_size: "متوسط حجم القسم",
+    with_managers: "مع مدراء",
+    all_departments: "جميع الأقسام",
+    no_departments_found: "لم يتم العثور على أقسام",
+    departments_auto_created: "يتم إنشاء الأقسام تلقائياً عند تعيين الموظفين لها",
+    department_head: "رئيس القسم",
+    total_staff: "إجمالي الموظفين",
+    active: "نشط",
+    avg_salary: "متوسط الراتب",
+    top_roles: "أهم الأدوار",
+    edit_department: "تعديل القسم",
+    add_new_department: "إضافة قسم جديد",
+    department_name: "اسم القسم",
+    department_code: "رمز القسم",
+    parent_department: "القسم الرئيسي",
+    cost_center: "مركز التكلفة",
+    location: "الموقع",
+    departments_note: "حالياً، يتم إنشاء الأقسام تلقائياً من بيانات الموظفين. لإنشاء قسم جديد، قم بتعيين موظف له في صفحة إدارة الموظفين.",
+    
+    // Documents - Arabic
+    documents: "المستندات",
+    documents_desc: "إدارة مستندات الموظفين وسياسات الشركة",
+    upload_document: "رفع مستند",
+    all_documents: "جميع المستندات",
+    no_documents_uploaded: "لم يتم رفع مستندات بعد",
+    
+    // User Management - Arabic
+    user_access_management: "إدارة وصول المستخدمين",
+    user_management_desc: "تكوين أدوار المستخدمين والأذونات ومستويات الوصول للموظفين والمدراء والأقسام",
+    access_denied: "تم رفض الوصول",
+    no_permission_user_mgmt: "ليس لديك إذن للوصول إلى إدارة المستخدمين. يمكن للمسؤولين فقط إدارة وصول المستخدمين.",
+    how_user_access_works: "كيفية عمل وصول المستخدمين",
+    
+    // Master Data - Arabic
+    master_data_management: "إدارة البيانات الرئيسية",
+    master_data_desc: "رفع جماعي وتصدير البيانات للموظفين والشركات والأصول والكيانات الأخرى",
+    no_permission_master_data: "ليس لديك إذن للوصول إلى إدارة البيانات الرئيسية. يمكن للمسؤولين فقط رفع وتصدير البيانات.",
+    data_management_tools: "أدوات إدارة البيانات",
+    upload_data: "رفع البيانات",
+    export_data: "تصدير البيانات",
+    quick_guide: "📖 دليل سريع",
+    uploading_data: "رفع البيانات",
+    exporting_data: "تصدير البيانات",
+    
+    // Leave Accrual - Arabic
+    leave_accrual_management: "إدارة استحقاق الإجازات",
+    leave_accrual_desc: "أتمتة استحقاقات الإجازات الشهرية وإدارة السياسات",
+    process_accrual: "معالجة الاستحقاق",
+    initialize_default_policies: "تهيئة السياسات الافتراضية",
+    no_accrual_policies: "لم يتم تكوين سياسات الاستحقاق.",
+    click_initialize: "انقر \"تهيئة السياسات الافتراضية\" لإعداد سياسات قانون العمل السعودي القياسية، أو قم بإنشاء سياسات مخصصة.",
+    active_policies: "السياسات النشطة",
+    accruals_this_month: "الاستحقاقات هذا الشهر",
+    days_accrued_month: "أيام مستحقة (شهر)",
+    scheduler: "الجدولة",
+    policies_count: "سياسات",
+    history: "السجل",
+    how_it_works: "كيف يعمل",
+    monthly_processing: "المعالجة الشهرية",
+    runs_automatically: "يعمل تلقائياً في اليوم الأول من كل شهر",
+    policy_application: "تطبيق السياسة",
+    applied_to_eligible: "يتم تطبيق كل سياسة نشطة على الموظفين المؤهلين",
+    balance_updates: "تحديثات الرصيد",
+    balances_auto_updated: "يتم تحديث أرصدة الإجازات تلقائياً",
+    audit_trail: "سجل المراجعة",
+    accruals_logged: "يتم تسجيل جميع الاستحقاقات للامتثال",
+    accrual_policies: "سياسات الاستحقاق",
+    add_policy: "إضافة سياسة",
+    no_policies_configured: "لا توجد سياسات مكونة",
+    processing_history: "سجل المعالجة",
+    no_accrual_history: "لا يوجد سجل استحقاق بعد",
+    process_first_accrual: "معالجة أول استحقاق",
+    process_monthly_leave_accrual: "معالجة استحقاق الإجازة الشهرية",
+    will_process_accruals: "سيؤدي هذا إلى معالجة استحقاقات الإجازات لجميع الموظفين النشطين بناءً على السياسات المكونة.",
+    accrual_period: "فترة الاستحقاق",
+    force_reprocess: "فرض إعادة المعالجة (إذا تمت المعالجة بالفعل)",
+    reprocess_warning: "تحذير: ستؤدي إعادة المعالجة إلى إنشاء سجلات استحقاق مكررة. استخدم بحذر.",
+    processing: "جاري المعالجة...",
+    create_policy: "إنشاء",
+    edit_policy: "تعديل",
+    
+    // Public Holidays - Arabic
+    public_holidays: "العطلات الرسمية",
+    public_holidays_desc: "إدارة العطلات الوطنية والإسلامية في المملكة العربية السعودية",
+    initialize_year: "تهيئة",
+    add_holiday: "إضافة عطلة",
+    today_is: "اليوم هو",
+    total_holidays: "إجمالي العطلات",
+    national_days: "الأيام الوطنية",
+    islamic_holidays: "العطلات الإسلامية",
+    upcoming: "القادمة",
+    all_holidays: "جميع العطلات",
+    national: "وطني",
+    islamic: "إسلامي",
+    no_holidays_found: "لم يتم العثور على عطلات",
+    holiday_name_en: "اسم العطلة (بالإنجليزية)",
+    holiday_name_ar: "اسم العطلة (بالعربية)",
+    holiday_type: "نوع العطلة",
+    recurring_annually: "متكرر سنوياً",
+    islamic_calendar: "التقويم الهجري",
+    paid_holiday: "عطلة مدفوعة",
+    update_holiday: "تحديث",
+    create_holiday: "إنشاء",
+    
+    // AI Assistant - Arabic
+    ai_assistant: "المساعد الذكي",
+    ai_desc: "رفيقك الذكي في الموارد البشرية للصياغة والتلخيص وإنشاء المحتوى",
+    draft_emails: "صياغة رسائل البريد",
+    summarize: "تلخيص",
+    review_feedback: "ملاحظات المراجعة",
+    goal_descriptions: "أوصاف الأهداف",
+    ai_powered_hr: "✨ مساعد الموارد البشرية بالذكاء الاصطناعي",
+    ai_description: "يساعدك مساعدنا الذكي في صياغة اتصالات مهنية، وتلخيص المستندات المعقدة، وإنشاء ملاحظات أداء ذات مغزى، وإنشاء أهداف SMART. ما عليك سوى تقديم السياق أو البيانات، ودع الذكاء الاصطناعي يقوم بالعمل الشاق مع الحفاظ على نبرة ومعايير مؤسستك.",
+    
+    // Approvals - Arabic
+    approvals_dashboard: "لوحة الموافقات",
+    hr_finance_approvals: "موافقات الموارد البشرية والمالية",
+    manager_approvals: "موافقات المدير",
+    leave_requests: "طلبات الإجازة",
+    travel_requests: "طلبات السفر",
+    loan_requests: "طلبات القروض",
+    pending_approval: "موافقة معلقة",
+    pending_approvals_plural: "موافقات معلقة",
+    access_restricted: "وصول مقيد",
+    no_permission_approvals: "ليس لديك إذن للوصول إلى الموافقات.",
     
     // Messages - Arabic
     clocked_in_success: "تم تسجيل الحضور بنجاح!",
