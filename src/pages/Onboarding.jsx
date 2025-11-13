@@ -20,18 +20,16 @@ import NewHiresList from "../components/onboarding/NewHiresList";
 import ChecklistManager from "../components/onboarding/ChecklistManager";
 import TaskBoard from "../components/onboarding/TaskBoard";
 import DocumentCenter from "../components/onboarding/DocumentCenter";
+import OnboardingProgress from "../components/onboarding/OnboardingProgress";
 import OnboardingDashboard from "../components/onboarding/OnboardingDashboard";
 import ChecklistForm from "../components/onboarding/ChecklistForm";
 import AssignChecklistModal from "../components/onboarding/AssignChecklistModal";
 import { toast } from "sonner";
-import ProtectedModule from '@/components/ProtectedModule';
-import { useAccessControl } from '@/components/AccessControlContext';
 
-function OnboardingContent() {
+export default function Onboarding() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
-  const { selectedCompanyId, setSelectedCompanyId, getAccessibleCompanyIds, hasRole } = useAccessControl();
-
+  
   const [showChecklistForm, setShowChecklistForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
@@ -41,8 +39,8 @@ function OnboardingContent() {
   const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState(null);
   const [selectedChecklistId, setSelectedChecklistId] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-
-  const canManageOnboarding = hasRole('onboarding_specialist') || hasRole('super_admin');
+  const [userRole, setUserRole] = useState('user');
+  const [selectedCompany, setSelectedCompany] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -51,68 +49,43 @@ function OnboardingContent() {
     queryKey: ['current-user-onboarding'],
     queryFn: async () => {
       const userData = await base44.auth.me();
-      const employees = await base44.entities.Employee.list(); // Fetch all to find current user's employee record
+      setUserRole(userData.role || 'user');
+      const employees = await base44.entities.Employee.list();
       const employee = employees.find(e => e.email === userData.email);
       setCurrentUser(employee);
       return userData;
     }
   });
 
-  // Get accessible company IDs for filtering
-  const accessibleCompanyIds = getAccessibleCompanyIds();
-
-  // Fetch data for companies
-  const { data: allCompanies = [] } = useQuery({
+  // Fetch data
+  const { data: companies = [] } = useQuery({
     queryKey: ['companies'],
     queryFn: () => base44.entities.Company.list(),
   });
-  // Filter companies available for selection based on access
-  const availableCompaniesForSelect = allCompanies.filter(c => accessibleCompanyIds.includes(c.id));
 
-  // Fetch all employees
-  const { data: rawEmployees = [], isLoading: loadingEmployees } = useQuery({
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list(),
   });
-  // Filter employees based on access control and current company selection
-  const employees = rawEmployees.filter(e => {
-    const isAccessible = accessibleCompanyIds.includes(e.company_id);
-    const matchesSelectedCompany = selectedCompanyId === 'all' || e.company_id === selectedCompanyId;
-    return isAccessible && matchesSelectedCompany;
-  });
+  
+  const employees = selectedCompany === 'all' 
+    ? allEmployees 
+    : allEmployees.filter(e => e.company_id === selectedCompany);
 
-  // Get employee IDs in the current view for filtering tasks/documents
-  const employeeIdsInView = employees.map(e => e.id);
-
-  // Fetch all checklists
-  const { data: rawChecklists = [], isLoading: loadingChecklists } = useQuery({
+  const { data: checklists = [], isLoading: loadingChecklists } = useQuery({
     queryKey: ['onboarding-checklists'],
     queryFn: () => base44.entities.OnboardingChecklist.list('-created_date'),
   });
-  // Filter checklists (assuming checklists might have a company_id, and global ones don't)
-  const checklists = rawChecklists.filter(c => {
-    const isAccessible = !c.company_id || accessibleCompanyIds.includes(c.company_id);
-    const matchesSelectedCompany = selectedCompanyId === 'all' || c.company_id === selectedCompanyId;
-    return isAccessible && matchesSelectedCompany;
-  });
 
-  // Fetch all tasks
-  const { data: allTasks = [], isLoading: loadingTasks } = useQuery({
+  const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['onboarding-tasks'],
     queryFn: () => base44.entities.OnboardingTask.list('-created_date'),
   });
-  // Filter tasks relevant to employees in the current view
-  const tasks = allTasks.filter(task => employeeIdsInView.includes(task.employee_id));
 
-
-  // Fetch all documents
-  const { data: allDocuments = [] } = useQuery({
+  const { data: documents = [] } = useQuery({
     queryKey: ['onboarding-documents'],
     queryFn: () => base44.entities.OnboardingDocument.list('-created_date'),
   });
-  // Filter documents relevant to employees in the current view
-  const documents = allDocuments.filter(doc => employeeIdsInView.includes(doc.employee_id));
-
 
   // Mutations
   const createChecklistMutation = useMutation({
@@ -121,9 +94,9 @@ function OnboardingContent() {
       queryClient.invalidateQueries(['onboarding-checklists']);
       setShowChecklistForm(false);
       setEditingChecklist(null);
-      toast.success(t('checklist_created_successfully'));
+      toast.success('Checklist created successfully');
     },
-    onError: () => toast.error(t('failed_to_create_checklist'))
+    onError: () => toast.error('Failed to create checklist')
   });
 
   const updateChecklistMutation = useMutation({
@@ -132,9 +105,9 @@ function OnboardingContent() {
       queryClient.invalidateQueries(['onboarding-checklists']);
       setShowChecklistForm(false);
       setEditingChecklist(null);
-      toast.success(t('checklist_updated_successfully'));
+      toast.success('Checklist updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_checklist'))
+    onError: () => toast.error('Failed to update checklist')
   });
 
   const assignChecklistMutation = useMutation({
@@ -143,7 +116,7 @@ function OnboardingContent() {
       const taskPromises = tasks.map((task, index) => {
         const dueDate = new Date(startDate);
         dueDate.setDate(dueDate.getDate() + (task.day_number || index));
-
+        
         return base44.entities.OnboardingTask.create({
           ...task,
           employee_id: employeeId,
@@ -152,34 +125,34 @@ function OnboardingContent() {
           order: index
         });
       });
-
+      
       await Promise.all(taskPromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['onboarding-tasks']);
       setShowAssignModal(false);
       setSelectedEmployee(null);
-      toast.success(t('checklist_assigned_successfully'));
+      toast.success('Checklist assigned successfully');
     },
-    onError: () => toast.error(t('failed_to_assign_checklist'))
+    onError: () => toast.error('Failed to assign checklist')
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.OnboardingTask.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['onboarding-tasks']);
-      toast.success(t('task_updated_successfully'));
+      toast.success('Task updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_task'))
+    onError: () => toast.error('Failed to update task')
   });
 
   const uploadDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.OnboardingDocument.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['onboarding-documents']);
-      toast.success(t('document_uploaded_successfully'));
+      toast.success('Document uploaded successfully');
     },
-    onError: () => toast.error(t('failed_to_upload_document'))
+    onError: () => toast.error('Failed to upload document')
   });
 
   // Auto-assign onboarding mutation
@@ -197,10 +170,10 @@ function OnboardingContent() {
       setShowAssignDialog(false);
       setSelectedEmployeeForAssign(null);
       setSelectedChecklistId(null);
-      toast.success(t('onboarding_assigned_tasks', { count: result.data.total_tasks }));
+      toast.success(`Onboarding assigned: ${result.data.total_tasks} tasks created`);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || t('failed_to_assign_onboarding'));
+      toast.error(error.response?.data?.error || 'Failed to assign onboarding');
     }
   });
 
@@ -212,17 +185,17 @@ function OnboardingContent() {
     },
     onSuccess: (result) => {
       setShowRemindersDialog(false);
-      toast.success(t('sent_reminders', { count: result.data.reminders_sent }));
+      toast.success(`Sent ${result.data.reminders_sent} reminder${result.data.reminders_sent !== 1 ? 's' : ''}`);
     },
     onError: () => {
-      toast.error(t('failed_to_send_reminders'));
+      toast.error('Failed to send reminders');
     }
   });
 
   // Filter new hires (hired in last 90 days)
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
+  
   const newHires = employees.filter(emp => {
     const hireDate = new Date(emp.hire_date);
     return hireDate >= ninetyDaysAgo;
@@ -232,14 +205,14 @@ function OnboardingContent() {
   const activeOnboarding = newHires.length;
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  // const overdueTasks = tasks.filter(t => t.status === 'overdue').length; // Overdue tasks are often computed on-the-fly or by backend
+  const overdueTasks = tasks.filter(t => t.status === 'overdue').length;
   const pendingDocuments = documents.filter(d => d.status === 'pending' || d.status === 'submitted').length;
 
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Get tasks for current user
-  const myTasks = currentUser ? tasks.filter(t =>
-    t.employee_id === currentUser.id ||
+  const myTasks = currentUser ? tasks.filter(t => 
+    t.employee_id === currentUser.id || 
     t.assigned_user_id === currentUser.id
   ) : [];
 
@@ -263,7 +236,7 @@ function OnboardingContent() {
 
   const handleConfirmQuickAssign = () => {
     if (!selectedEmployeeForAssign) {
-      toast.error(t('please_select_employee'));
+      toast.error('Please select an employee');
       return;
     }
     autoAssignMutation.mutate({
@@ -294,7 +267,7 @@ function OnboardingContent() {
         uploaded_date: new Date().toISOString().split('T')[0]
       });
     } catch (error) {
-      toast.error(t('failed_to_upload_file'));
+      toast.error('Failed to upload file');
     }
   };
 
@@ -319,7 +292,7 @@ function OnboardingContent() {
           <p className="text-slate-600">{t('streamline_new_hire')}</p>
         </div>
         <div className={`flex flex-wrap gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          {canManageOnboarding && (
+          {userRole === 'admin' && (
             <>
               <Button
                 onClick={() => setShowRemindersDialog(true)}
@@ -329,20 +302,20 @@ function OnboardingContent() {
                 <Bell className="w-4 h-4" />
                 {t('send_reminders')}
               </Button>
-              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                 <SelectTrigger className="w-[180px] bg-white">
                   <SelectValue placeholder={t('all_companies')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('all_companies')}</SelectItem>
-                  {availableCompaniesForSelect.map(company => (
+                  {companies.map(company => (
                     <SelectItem key={company.id} value={company.id}>
                       {company.name_en}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
+              <Button 
                 onClick={() => { setEditingChecklist(null); setShowChecklistForm(true); }}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
               >
@@ -382,7 +355,7 @@ function OnboardingContent() {
       </div>
 
       {/* My Tasks Alert (for non-admin users) */}
-      {!canManageOnboarding && myTasks.filter(t => t.status !== 'completed').length > 0 && (
+      {userRole !== 'admin' && myTasks.filter(t => t.status !== 'completed').length > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-6">
             <div className={`flex items-start gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -399,9 +372,9 @@ function OnboardingContent() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue={canManageOnboarding ? 'dashboard' : 'my-tasks'} className="space-y-6">
+      <Tabs defaultValue={userRole === 'admin' ? 'dashboard' : 'my-tasks'} className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
-          {canManageOnboarding && (
+          {userRole === 'admin' && (
             <>
               <TabsTrigger
                 value="dashboard"
@@ -448,7 +421,7 @@ function OnboardingContent() {
         </TabsList>
 
         {/* Dashboard Tab */}
-        {canManageOnboarding && (
+        {userRole === 'admin' && (
           <TabsContent value="dashboard">
             <OnboardingDashboard
               employees={employees}
@@ -459,7 +432,7 @@ function OnboardingContent() {
         )}
 
         {/* New Hires Tab */}
-        {canManageOnboarding && (
+        {userRole === 'admin' && (
           <TabsContent value="new-hires">
             <NewHiresList
               newHires={newHires}
@@ -471,7 +444,7 @@ function OnboardingContent() {
         )}
 
         {/* Checklists Tab */}
-        {canManageOnboarding && (
+        {userRole === 'admin' && (
           <TabsContent value="checklists">
             <ChecklistManager
               checklists={checklists}
@@ -480,10 +453,10 @@ function OnboardingContent() {
                 setShowChecklistForm(true);
               }}
               onDelete={(id) => {
-                if (confirm(t('confirm_delete_checklist'))) {
+                if (confirm('Are you sure you want to delete this checklist?')) { // Confirmation message still hardcoded for now, assuming base44 client will be extended for translation on confirmation dialogs.
                   base44.entities.OnboardingChecklist.delete(id).then(() => {
                     queryClient.invalidateQueries(['onboarding-checklists']);
-                    toast.success(t('checklist_deleted'));
+                    toast.success('Checklist deleted');
                   });
                 }
               }}
@@ -495,7 +468,7 @@ function OnboardingContent() {
         <TabsContent value="my-tasks">
           <TaskBoard
             tasks={myTasks}
-            employees={rawEmployees} // Pass all employees to TaskBoard for names, as it might render tasks for other assigned users
+            employees={employees}
             currentUser={currentUser}
             onCompleteTask={handleCompleteTask}
             onUpdateTask={(taskId, data) => {
@@ -508,10 +481,10 @@ function OnboardingContent() {
         {/* Documents Tab */}
         <TabsContent value="documents">
           <DocumentCenter
-            documents={canManageOnboarding ? documents : documents.filter(d => d.employee_id === currentUser?.id)}
+            documents={userRole === 'admin' ? documents : documents.filter(d => d.employee_id === currentUser?.id)}
             tasks={tasks}
             currentUser={currentUser}
-            userRole={canManageOnboarding ? 'admin' : 'user'}
+            userRole={userRole}
             onUploadDocument={handleUploadDocument}
             onSignDocument={(docId, signatureData) => {
               const doc = documents.find(d => d.id === docId);
@@ -523,7 +496,7 @@ function OnboardingContent() {
                 signed_by: currentUser?.id
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success(t('document_signed_successfully'));
+                toast.success('Document signed successfully');
               });
             }}
             onApproveDocument={(docId) => {
@@ -535,7 +508,7 @@ function OnboardingContent() {
                 reviewed_date: new Date().toISOString().split('T')[0]
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success(t('document_approved'));
+                toast.success('Document approved');
               });
             }}
             onRejectDocument={(docId, reason) => {
@@ -548,7 +521,7 @@ function OnboardingContent() {
                 rejection_reason: reason
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success(t('document_rejected'));
+                toast.success('Document rejected');
               });
             }}
           />
@@ -598,7 +571,7 @@ function OnboardingContent() {
           <DialogHeader>
             <DialogTitle className={isRTL ? 'text-right' : ''}>{t('assign_automated_onboarding')}</DialogTitle>
           </DialogHeader>
-
+          
           <div className="space-y-4">
             <p className={`text-sm text-slate-600 ${isRTL ? 'text-right' : ''}`}>
               {t('assign_onboarding_to')}{' '}
@@ -660,7 +633,7 @@ function OnboardingContent() {
           <DialogHeader>
             <DialogTitle className={isRTL ? 'text-right' : ''}>{t('send_onboarding_reminders')}</DialogTitle>
           </DialogHeader>
-
+          
           <div className="space-y-4">
             <p className={`text-sm text-slate-600 ${isRTL ? 'text-right' : ''}`}>
               {t('will_send_reminders_to')}
@@ -694,13 +667,5 @@ function OnboardingContent() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-export default function Onboarding() {
-  return (
-    <ProtectedModule moduleName="Onboarding">
-      <OnboardingContent />
-    </ProtectedModule>
   );
 }

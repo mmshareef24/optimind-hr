@@ -1,9 +1,8 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { useAccessControl } from '@/components/AccessControlContext';
-import ProtectedModule from '@/components/ProtectedModule';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,43 +17,39 @@ import {
 import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
 import { toast } from "sonner";
 
-function EmployeesPageContent() {
+export default function EmployeesPage() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
-  const { selectedCompanyId, getAccessibleCompanyIds, hasRole, hasPermission } = useAccessControl();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
-
-  const canManageEmployees = hasRole('employee_manager') || hasRole('super_admin') || hasPermission('can_view_all_employees');
-
-  const { data: allEmployees = [], isLoading: loadingEmployees } = useQuery({
-    queryKey: ['all-employees'],
-    queryFn: () => base44.entities.Employee.list(),
-  });
 
   const { data: user } = useQuery({
     queryKey: ['current-user-employees'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      const userData = await base44.auth.me();
+      setCurrentUser(userData);
+      return userData;
+    }
   });
 
-  // Filter employees by accessible companies and search
-  const accessibleCompanyIds = getAccessibleCompanyIds();
-  const employees = allEmployees.filter(emp => {
-    const companyMatch = selectedCompanyId === 'all' 
-      ? accessibleCompanyIds.includes(emp.company_id)
-      : emp.company_id === selectedCompanyId;
-    
-    const searchMatch = !searchTerm || 
-      emp.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.department?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return companyMatch && searchMatch;
+  const { data: employeesData, isLoading } = useQuery({
+    queryKey: ['filtered-employees', searchTerm],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getFilteredEmployees', {
+        filters: {
+          search: searchTerm
+        }
+      });
+      return response.data;
+    },
+    enabled: !!user
   });
+
+  const employees = employeesData?.employees || [];
+  const accessLevel = employeesData?.access_level || 'employee';
 
   const { data: shifts = [] } = useQuery({
     queryKey: ['shifts'],
@@ -64,36 +59,31 @@ function EmployeesPageContent() {
   const createEmployeeMutation = useMutation({
     mutationFn: (data) => base44.entities.Employee.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['all-employees']);
+      queryClient.invalidateQueries(['filtered-employees']);
       setShowForm(false);
       setEditingEmployee(null);
-      toast.success('Employee created successfully');
+      toast.success(t('employee_created_success'));
     },
     onError: () => {
-      toast.error('Failed to create employee');
+      toast.error(t('failed_to_create_employee'));
     }
   });
 
   const updateEmployeeMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['all-employees']);
+      queryClient.invalidateQueries(['filtered-employees']);
       setShowForm(false);
       setEditingEmployee(null);
-      toast.success('Employee updated successfully');
+      toast.success(t('employee_updated_success'));
     },
     onError: () => {
-      toast.error('Failed to update employee');
+      toast.error(t('failed_to_update_employee'));
     }
   });
 
   const handleSubmit = (data) => {
     const employeeData = data.employee || data;
-    
-    // Ensure company_id is set
-    if (selectedCompanyId !== 'all') {
-      employeeData.company_id = selectedCompanyId;
-    }
     
     if (editingEmployee) {
       updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData });
@@ -119,15 +109,23 @@ function EmployeesPageContent() {
         <div className={isRTL ? 'text-right' : ''}>
           <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <h1 className="text-3xl font-bold text-slate-900">{t('employees')}</h1>
-            {canManageEmployees && (
-              <Badge variant="outline" className="text-xs">
-                <Shield className="w-3 h-3 mr-1" /> {t('full_access')}
-              </Badge>
-            )}
+            <Badge variant="outline" className="text-xs">
+              {accessLevel === 'admin' ? (
+                <><Shield className="w-3 h-3 mr-1" /> {t('full_access')}</>
+              ) : accessLevel === 'manager' ? (
+                <><Users className="w-3 h-3 mr-1" /> {t('my_team')}</>
+              ) : (
+                <><Users className="w-3 h-3 mr-1" /> {t('personal_view')}</>
+              )}
+            </Badge>
           </div>
-          <p className="text-slate-600">{t('manage_all_employees')}</p>
+          <p className="text-slate-600">
+            {accessLevel === 'admin' && t('manage_all_employees')}
+            {accessLevel === 'manager' && t('view_manage_team')}
+            {accessLevel === 'employee' && t('view_your_info')}
+          </p>
         </div>
-        {canManageEmployees && (
+        {accessLevel === 'admin' && (
           <Button 
             onClick={() => { setEditingEmployee(null); setShowForm(true); }}
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
@@ -145,7 +143,7 @@ function EmployeesPageContent() {
             <div className="relative">
               <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
               <Input
-                placeholder={t('search_employees')}
+                placeholder={t('search_employees_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
@@ -172,7 +170,7 @@ function EmployeesPageContent() {
       {/* Employee List */}
       <Card className="border-0 shadow-lg">
         <CardContent className="p-6">
-          {loadingEmployees ? (
+          {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
             </div>
@@ -180,9 +178,9 @@ function EmployeesPageContent() {
             <div className="text-center py-12">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
               <p className="text-slate-500 mb-4">
-                {searchTerm ? t('no_employees_found') : t('no_employees_found')}
+                {searchTerm ? t('no_employees_found_matching_search') : t('no_employees_found')}
               </p>
-              {canManageEmployees && (
+              {accessLevel === 'admin' && (
                 <Button onClick={() => setShowForm(true)} variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
                   {t('add_first_employee')}
@@ -239,6 +237,15 @@ function EmployeesPageContent() {
                         <span>{t('joined')} {new Date(employee.hire_date).toLocaleDateString()}</span>
                       </div>
                     </div>
+
+                    {employee.manager_id === employeesData?.current_employee_id && (
+                      <div className="mt-3 pt-3 border-t">
+                        <Badge variant="outline" className="text-xs">
+                          <Users className="w-3 h-3 mr-1" />
+                          {t('reports_to_you')}
+                        </Badge>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -267,13 +274,5 @@ function EmployeesPageContent() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-export default function EmployeesPage() {
-  return (
-    <ProtectedModule moduleName="Employees">
-      <EmployeesPageContent />
-    </ProtectedModule>
   );
 }
