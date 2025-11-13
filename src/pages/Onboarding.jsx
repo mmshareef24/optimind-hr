@@ -1,6 +1,8 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { UserPlus, CheckSquare, FileText, Users, TrendingUp, Clock, AlertCircle, Send, Bell, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,9 @@ import AssignChecklistModal from "../components/onboarding/AssignChecklistModal"
 import { toast } from "sonner";
 
 export default function Onboarding() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+  
   const [showChecklistForm, setShowChecklistForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
@@ -281,12 +286,12 @@ export default function Onboarding() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Onboarding</h1>
-          <p className="text-slate-600">Streamline the new hire experience</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('employee_onboarding')}</h1>
+          <p className="text-slate-600">{t('streamline_new_hire')}</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className={`flex flex-wrap gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           {userRole === 'admin' && (
             <>
               <Button
@@ -295,14 +300,14 @@ export default function Onboarding() {
                 className="gap-2"
               >
                 <Bell className="w-4 h-4" />
-                Send Reminders
+                {t('send_reminders')}
               </Button>
               <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                 <SelectTrigger className="w-[180px] bg-white">
-                  <SelectValue placeholder="All Companies" />
+                  <SelectValue placeholder={t('all_companies')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Companies</SelectItem>
+                  <SelectItem value="all">{t('all_companies')}</SelectItem>
                   {companies.map(company => (
                     <SelectItem key={company.id} value={company.id}>
                       {company.name_en}
@@ -314,7 +319,7 @@ export default function Onboarding() {
                 onClick={() => { setEditingChecklist(null); setShowChecklistForm(true); }}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
               >
-                <CheckSquare className="w-4 h-4 mr-2" /> Create Checklist
+                <CheckSquare className="w-4 h-4 mr-2" /> {t('create_checklist')}
               </Button>
             </>
           )}
@@ -324,25 +329,25 @@ export default function Onboarding() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Active Onboarding"
+          title={t('active_onboarding')}
           value={activeOnboarding}
           icon={Users}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Completion Rate"
+          title={t('completion_rate')}
           value={`${completionRate}%`}
           icon={TrendingUp}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Pending Tasks"
+          title={t('pending_tasks')}
           value={totalTasks - completedTasks}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Pending Documents"
+          title={t('pending_documents')}
           value={pendingDocuments}
           icon={FileText}
           bgColor="from-purple-500 to-purple-600"
@@ -353,13 +358,12 @@ export default function Onboarding() {
       {userRole !== 'admin' && myTasks.filter(t => t.status !== 'completed').length > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-6">
-            <div className="flex items-start gap-4">
+            <div className={`flex items-start gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-blue-900 mb-1">You have pending onboarding tasks</h3>
+              <div className={isRTL ? 'text-right' : ''}>
+                <h3 className="font-semibold text-blue-900 mb-1">{t('you_have_pending_tasks')}</h3>
                 <p className="text-sm text-blue-700">
-                  {myTasks.filter(t => t.status !== 'completed').length} tasks require your attention. 
-                  Please complete them as soon as possible.
+                  {myTasks.filter(t => t.status !== 'completed').length} {t('tasks_require_attention')}
                 </p>
               </div>
             </div>
@@ -377,21 +381,21 @@ export default function Onboarding() {
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Dashboard
+                {t('dashboard')}
               </TabsTrigger>
               <TabsTrigger
                 value="new-hires"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
                 <Users className="w-4 h-4 mr-2" />
-                New Hires
+                {t('new_hires')}
               </TabsTrigger>
               <TabsTrigger
                 value="checklists"
                 className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
               >
                 <CheckSquare className="w-4 h-4 mr-2" />
-                Checklists
+                {t('checklists')}
               </TabsTrigger>
             </>
           )}
@@ -400,7 +404,7 @@ export default function Onboarding() {
             className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
           >
             <Clock className="w-4 h-4 mr-2" />
-            My Tasks
+            {t('my_tasks')}
             {myTasks.filter(t => t.status !== 'completed').length > 0 && (
               <span className="ml-2 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
                 {myTasks.filter(t => t.status !== 'completed').length}
@@ -412,7 +416,7 @@ export default function Onboarding() {
             className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
           >
             <FileText className="w-4 h-4 mr-2" />
-            Documents
+            {t('documents')}
           </TabsTrigger>
         </TabsList>
 
@@ -449,7 +453,7 @@ export default function Onboarding() {
                 setShowChecklistForm(true);
               }}
               onDelete={(id) => {
-                if (confirm('Are you sure you want to delete this checklist?')) {
+                if (confirm('Are you sure you want to delete this checklist?')) { // Confirmation message still hardcoded for now, assuming base44 client will be extended for translation on confirmation dialogs.
                   base44.entities.OnboardingChecklist.delete(id).then(() => {
                     queryClient.invalidateQueries(['onboarding-checklists']);
                     toast.success('Checklist deleted');
@@ -528,8 +532,8 @@ export default function Onboarding() {
       <Dialog open={showChecklistForm} onOpenChange={setShowChecklistForm}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingChecklist ? 'Edit Checklist' : 'Create New Checklist'}
+            <DialogTitle className={isRTL ? 'text-right' : ''}>
+              {editingChecklist ? t('edit_checklist') : t('create_new_checklist')}
             </DialogTitle>
           </DialogHeader>
           <ChecklistForm
@@ -565,23 +569,23 @@ export default function Onboarding() {
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Automated Onboarding</DialogTitle>
+            <DialogTitle className={isRTL ? 'text-right' : ''}>{t('assign_automated_onboarding')}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Assign onboarding checklist and tasks to{' '}
+            <p className={`text-sm text-slate-600 ${isRTL ? 'text-right' : ''}`}>
+              {t('assign_onboarding_to')}{' '}
               <strong>{selectedEmployeeForAssign?.first_name} {selectedEmployeeForAssign?.last_name}</strong>
             </p>
 
             <div>
-              <Label>Select Checklist (Optional)</Label>
+              <Label className={isRTL ? 'text-right block' : ''}>{t('select_checklist_optional')}</Label>
               <Select value={selectedChecklistId || ''} onValueChange={setSelectedChecklistId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Auto-select based on role/department" />
+                  <SelectValue placeholder={t('auto_select_based_on')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Auto-select</SelectItem>
+                  <SelectItem value={null}>{t('auto_select_based_on')}</SelectItem>
                   {checklists.filter(c => c.is_active).map((checklist) => (
                     <SelectItem key={checklist.id} value={checklist.id}>
                       {checklist.checklist_name}
@@ -590,26 +594,26 @@ export default function Onboarding() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-500 mt-1">
-                Leave empty to automatically select checklist based on department or job role
+              <p className={`text-xs text-slate-500 mt-1 ${isRTL ? 'text-right' : ''}`}>
+                {t('leave_empty_auto')}
               </p>
             </div>
 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-900 font-medium mb-1">What will happen:</p>
-              <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
-                <li>10 default onboarding tasks will be created</li>
-                <li>Tasks will be assigned based on role (new hire, manager, HR, IT)</li>
-                <li>Due dates will be calculated from hire date</li>
-                <li>Welcome email will be sent to the employee</li>
-                <li>Notification email will be sent to HR</li>
+              <p className={`text-sm text-blue-900 font-medium mb-1 ${isRTL ? 'text-right' : ''}`}>{t('what_will_happen')}</p>
+              <ul className={`text-xs text-blue-700 space-y-1 ${isRTL ? 'mr-4 list-disc text-right' : 'ml-4 list-disc'}`}>
+                <li>{t('default_tasks_created')}</li>
+                <li>{t('tasks_assigned_by_role')}</li>
+                <li>{t('due_dates_calculated')}</li>
+                <li>{t('welcome_email_sent')}</li>
+                <li>{t('notification_email_hr')}</li>
               </ul>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
             <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleConfirmQuickAssign}
@@ -617,7 +621,7 @@ export default function Onboarding() {
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Send className="w-4 h-4 mr-2" />
-              {autoAssignMutation.isPending ? 'Assigning...' : 'Assign Onboarding'}
+              {autoAssignMutation.isPending ? t('assigning') : t('assign_onboarding')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -627,29 +631,29 @@ export default function Onboarding() {
       <Dialog open={showRemindersDialog} onOpenChange={setShowRemindersDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Onboarding Reminders</DialogTitle>
+            <DialogTitle className={isRTL ? 'text-right' : ''}>{t('send_onboarding_reminders')}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              This will send email reminders for onboarding tasks to:
+            <p className={`text-sm text-slate-600 ${isRTL ? 'text-right' : ''}`}>
+              {t('will_send_reminders_to')}
             </p>
-            <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
-              <li>New hires with overdue tasks</li>
-              <li>New hires with tasks due today</li>
-              <li>New hires with tasks due tomorrow</li>
-              <li>Managers and HR staff with assigned tasks</li>
+            <ul className={`text-sm text-slate-600 space-y-1 ${isRTL ? 'mr-4 list-disc text-right' : 'ml-4 list-disc'}`}>
+              <li>{t('new_hires_overdue')}</li>
+              <li>{t('new_hires_due_today')}</li>
+              <li>{t('new_hires_due_tomorrow')}</li>
+              <li>{t('managers_hr_assigned')}</li>
             </ul>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800">
-                <strong>Tip:</strong> You can schedule this function to run automatically daily for proactive follow-ups.
+              <p className={`text-xs text-amber-800 ${isRTL ? 'text-right' : ''}`}>
+                <strong>{t('quick_guide')}</strong> {t('schedule_tip')}
               </p>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
             <Button variant="outline" onClick={() => setShowRemindersDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={() => sendRemindersMutation.mutate()}
@@ -657,7 +661,7 @@ export default function Onboarding() {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <Bell className="w-4 h-4 mr-2" />
-              {sendRemindersMutation.isPending ? 'Sending...' : 'Send Reminders Now'}
+              {sendRemindersMutation.isPending ? t('sending') : t('send_reminders_now')}
             </Button>
           </DialogFooter>
         </DialogContent>
