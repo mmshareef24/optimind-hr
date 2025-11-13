@@ -97,8 +97,8 @@ const navigationSections = [
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 rtl:flex-row-reverse">
-        <Sidebar className="ltr:border-r rtl:border-l border-emerald-100/50 bg-white/80 backdrop-blur-xl">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
+        <Sidebar className="border-emerald-100/50 bg-white/80 backdrop-blur-xl ltr:border-r rtl:border-l [&[data-side='left']]:ltr:left-0 [&[data-side='left']]:rtl:left-auto [&[data-side='left']]:rtl:right-0">
           <SidebarHeader className="border-b border-emerald-100/50 p-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 rtl:flex-row-reverse">
@@ -123,7 +123,8 @@ const navigationSections = [
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group rtl:flex-row-reverse">
                   <span>{section.title}</span>
-                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180 rtl:rotate-180 rtl:group-data-[state=open]:rotate-0" />
+                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180 ltr:block rtl:hidden" />
+                  <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-0 rotate-180 ltr:hidden rtl:block" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarGroup>
@@ -141,8 +142,8 @@ const navigationSections = [
                                 }
                               `}
                             >
-                              <Link to={item.url} className="flex items-center gap-3 rtl:flex-row-reverse rtl:justify-end">
-                                <item.icon className="w-4 h-4" />
+                              <Link to={item.url} className="flex items-center gap-3 rtl:flex-row-reverse">
+                                <item.icon className="w-4 h-4 shrink-0" />
                                 <span className="text-sm">{item.title}</span>
                               </Link>
                             </SidebarMenuButton>
@@ -158,7 +159,7 @@ const navigationSections = [
 
           <SidebarFooter className="border-t border-emerald-100/50 p-4">
             <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent rtl:flex-row-reverse">
-              <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shrink-0">
                 <span className="text-white font-semibold text-sm">HR</span>
               </div>
               <div className="flex-1 min-w-0 rtl:text-right">
