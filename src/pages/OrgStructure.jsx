@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase, Plus, Sitemap } from "lucide-react";
+import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase, Plus, GitBranch } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export default function OrgStructure() {
   const [allExpanded, setAllExpanded] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState('all');
   const [viewType, setViewType] = useState('unified');
-  const [hierarchyView, setHierarchyView] = useState('employee'); // 'employee' or 'position'
+  const [hierarchyView, setHierarchyView] = useState('employee');
 
   const queryClient = useQueryClient();
 
@@ -171,7 +171,6 @@ export default function OrgStructure() {
   };
 
   const handleSubmitPosition = (data) => {
-    // Update headcount_filled based on actual employees
     const employeesInPosition = employees.filter(e => e.position_id === data.id).length;
     const finalData = {
       ...data,
@@ -359,7 +358,7 @@ export default function OrgStructure() {
         <StatCard
           title={t('total_positions')}
           value={totalPositions}
-          icon={Sitemap}
+          icon={GitBranch}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
@@ -446,7 +445,7 @@ export default function OrgStructure() {
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Sitemap className="w-4 h-4 inline mr-2" />
+            <GitBranch className="w-4 h-4 inline mr-2" />
             {t('position_based_view')}
           </button>
         </div>
@@ -460,7 +459,7 @@ export default function OrgStructure() {
             Hierarchy
           </TabsTrigger>
           <TabsTrigger value="positions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Sitemap className="w-4 h-4 mr-2" />
+            <GitBranch className="w-4 h-4 mr-2" />
             {t('positions_tab')} ({positions.length})
           </TabsTrigger>
         </TabsList>
@@ -519,7 +518,7 @@ export default function OrgStructure() {
                   <Skeleton className="h-96 w-full" />
                 ) : filteredPositions.length === 0 ? (
                   <div className="text-center py-12">
-                    <Sitemap className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <GitBranch className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                     <p className="text-slate-500 mb-4">{t('no_positions_found')}</p>
                     <p className="text-sm text-slate-400 mb-4">{t('create_first_position')}</p>
                     <Button onClick={() => setShowPositionForm(true)}>
