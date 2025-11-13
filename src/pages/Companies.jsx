@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Building2, Plus, Search, MoreVertical, Edit, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Companies() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
@@ -79,8 +82,8 @@ export default function Companies() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Companies</h1>
           <p className="text-slate-600">Manage your organization's companies</p>
         </div>
@@ -96,12 +99,12 @@ export default function Companies() {
         <CardHeader className="border-b border-slate-100">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
               <Input
                 placeholder="Search by name or CR number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className={isRTL ? 'pr-10' : 'pl-10'}
               />
             </div>
           </div>
@@ -121,7 +124,7 @@ export default function Companies() {
               {filteredCompanies.map((company) => (
                 <Card key={company.id} className="border border-slate-200 hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
+                    <div className={`flex justify-between items-start mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
                         <Building2 className="w-6 h-6 text-white" />
                       </div>
@@ -129,12 +132,14 @@ export default function Companies() {
                         {company.status}
                       </Badge>
                     </div>
-                    <h3 className="font-bold text-lg text-slate-900 mb-1">{company.name_en}</h3>
-                    {company.name_ar && <p className="text-sm text-slate-500 mb-3">{company.name_ar}</p>}
-                    <div className="space-y-2 text-sm mb-4">
-                      <p className="text-slate-600"><span className="font-medium">CR:</span> {company.cr_number}</p>
-                      <p className="text-slate-600"><span className="font-medium">Industry:</span> {company.industry}</p>
-                      <p className="text-slate-600"><span className="font-medium">City:</span> {company.city || 'N/A'}</p>
+                    <div className={isRTL ? 'text-right' : ''}>
+                      <h3 className="font-bold text-lg text-slate-900 mb-1">{company.name_en}</h3>
+                      {company.name_ar && <p className="text-sm text-slate-500 mb-3">{company.name_ar}</p>}
+                      <div className="space-y-2 text-sm mb-4">
+                        <p className="text-slate-600"><span className="font-medium">CR:</span> {company.cr_number}</p>
+                        <p className="text-slate-600"><span className="font-medium">Industry:</span> {company.industry}</p>
+                        <p className="text-slate-600"><span className="font-medium">City:</span> {company.city || 'N/A'}</p>
+                      </div>
                     </div>
                     <Button
                       variant="outline"
