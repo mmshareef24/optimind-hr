@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Calendar, DollarSign, Users, TrendingUp, Eye, Edit,
+  Calendar, DollarSign, Users, TrendingUp, Eye, Edit, Trash2, PlayCircle, XCircle,
   AlertTriangle, CheckCircle2, Clock, Target
 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function ProjectCard({ project, projectManager, teamSize, onView, onEdit }) {
+export default function ProjectCard({ 
+  project, projectManager, teamSize, currentUser, isUserManager,
+  onView, onEdit, onDelete, onExecute, onCancel 
+}) {
   const statusColors = {
     planning: 'bg-blue-100 text-blue-700 border-blue-200',
     in_progress: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -35,6 +38,9 @@ export default function ProjectCard({ project, projectManager, teamSize, onView,
   const isOverBudget = project.actual_cost > project.budget;
   const budgetPercentage = project.budget > 0 ? (project.actual_cost / project.budget) * 100 : 0;
   const isOverdue = new Date(project.end_date) < new Date() && project.status !== 'completed';
+  const canDelete = !project.is_executed && project.status === 'planning';
+  const canExecute = project.status === 'planning' && !project.is_executed;
+  const canCancel = project.is_executed && project.status !== 'cancelled' && project.status !== 'completed' && isUserManager;
 
   return (
     <Card className="border border-slate-200 hover:shadow-lg transition-all duration-300">
@@ -44,9 +50,8 @@ export default function ProjectCard({ project, projectManager, teamSize, onView,
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="font-bold text-lg text-slate-900">{project.project_name}</h3>
-              {isOverdue && (
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-              )}
+              {isOverdue && <AlertTriangle className="w-4 h-4 text-red-500" />}
+              {project.is_executed && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
             </div>
             <p className="text-sm text-slate-600 line-clamp-2">{project.description}</p>
             <p className="text-xs text-slate-500 mt-1">Code: {project.project_code}</p>
@@ -144,25 +149,65 @@ export default function ProjectCard({ project, projectManager, teamSize, onView,
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onView(project)}
-            className="flex-1"
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            View Details
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(project)}
-            className="flex-1"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onView(project)}
+              className="flex-1"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(project)}
+              className="flex-1"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          </div>
+
+          {/* Execute Project Button (for planning projects) */}
+          {canExecute && (
+            <Button
+              size="sm"
+              onClick={() => onExecute(project)}
+              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+            >
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Review & Execute Project
+            </Button>
+          )}
+
+          {/* Delete Button (only for planning projects) */}
+          {canDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(project)}
+              className="w-full border-red-200 text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Project
+            </Button>
+          )}
+
+          {/* Cancel Button (only for executed projects, managers only) */}
+          {canCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCancel(project)}
+              className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Cancel Project
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
