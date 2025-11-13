@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -31,12 +30,24 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [filters, setFilters] = useState({
     status: 'all', priority: 'all', department: 'all', projectManager: 'all', riskLevel: 'all'
   });
 
   const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['current-user-projects'],
+    queryFn: async () => {
+      const userData = await base44.auth.me();
+      const employees = await base44.entities.Employee.list();
+      const employee = employees.find(e => e.email === userData.email);
+      setCurrentUser({ ...userData, employee });
+      return userData;
+    }
+  });
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -69,9 +80,9 @@ export default function Projects() {
       queryClient.invalidateQueries(['projects']);
       setShowDialog(false);
       setEditingProject(null);
-      toast.success(t('project_created_success'));
+      toast.success('Project created successfully');
     },
-    onError: () => toast.error(t('failed_to_create_project'))
+    onError: () => toast.error('Failed to create project')
   });
 
   const updateProjectMutation = useMutation({
@@ -79,10 +90,60 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
       setShowDialog(false);
+      setShowDetailsModal(false);
       setEditingProject(null);
-      toast.success(t('project_updated_success'));
+      toast.success('Project updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_project'))
+    onError: () => toast.error('Failed to update project')
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (id) => {
+      await base44.entities.Project.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      setShowDetailsModal(false);
+      setSelectedProject(null);
+      toast.success('Project deleted successfully');
+    },
+    onError: () => toast.error('Failed to delete project')
+  });
+
+  const executeProjectMutation = useMutation({
+    mutationFn: ({ id, project }) => {
+      return base44.entities.Project.update(id, {
+        ...project,
+        status: 'in_progress',
+        is_executed: true,
+        executed_date: new Date().toISOString().split('T')[0],
+        executed_by: currentUser?.email,
+        actual_start_date: new Date().toISOString().split('T')[0]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      setShowDetailsModal(false);
+      toast.success('Project executed and moved to active status');
+    },
+    onError: () => toast.error('Failed to execute project')
+  });
+
+  const cancelProjectMutation = useMutation({
+    mutationFn: ({ id, project, reason }) => {
+      return base44.entities.Project.update(id, {
+        ...project,
+        status: 'cancelled',
+        cancelled_by: currentUser?.email,
+        cancellation_reason: reason
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      setShowDetailsModal(false);
+      toast.success('Project cancelled successfully');
+    },
+    onError: () => toast.error('Failed to cancel project')
   });
 
   const createAssignmentMutation = useMutation({
@@ -102,9 +163,9 @@ export default function Projects() {
       queryClient.invalidateQueries(['project-assignments']);
       queryClient.invalidateQueries(['projects']);
       setShowAssignModal(false);
-      toast.success(t('team_member_assigned_success'));
+      toast.success('Team member assigned successfully');
     },
-    onError: () => toast.error(t('failed_to_assign_team_member'))
+    onError: () => toast.error('Failed to assign team member')
   });
 
   const bulkCreateAssignmentsMutation = useMutation({
@@ -129,54 +190,54 @@ export default function Projects() {
       queryClient.invalidateQueries(['project-assignments']);
       queryClient.invalidateQueries(['projects']);
       setShowBulkAssignModal(false);
-      toast.success(t('team_members_assigned_success', { count: assignmentsData.length }));
+      toast.success(`${assignmentsData.length} team members assigned successfully`);
     },
-    onError: () => toast.error(t('failed_to_assign_team_members'))
+    onError: () => toast.error('Failed to assign team members')
   });
 
   const createTaskMutation = useMutation({
     mutationFn: (data) => base44.entities.ProjectTask.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success(t('task_created_success'));
+      toast.success('Task created successfully');
     },
-    onError: () => toast.error(t('failed_to_create_task'))
+    onError: () => toast.error('Failed to create task')
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectTask.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success(t('task_updated_success'));
+      toast.success('Task updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_task'))
+    onError: () => toast.error('Failed to update task')
   });
 
   const deleteTaskMutation = useMutation({
     mutationFn: (id) => base44.entities.ProjectTask.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success(t('task_deleted_success'));
+      toast.success('Task deleted successfully');
     },
-    onError: () => toast.error(t('failed_to_delete_task'))
+    onError: () => toast.error('Failed to delete task')
   });
 
   const createMilestoneMutation = useMutation({
     mutationFn: (data) => base44.entities.ProjectMilestone.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-milestones']);
-      toast.success(t('milestone_created_success'));
+      toast.success('Milestone created successfully');
     },
-    onError: () => toast.error(t('failed_to_create_milestone'))
+    onError: () => toast.error('Failed to create milestone')
   });
 
   const updateMilestoneMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectMilestone.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-milestones']);
-      toast.success(t('milestone_updated_success'));
+      toast.success('Milestone updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_milestone'))
+    onError: () => toast.error('Failed to update milestone')
   });
 
   const handleSubmitProject = (data) => {
@@ -195,6 +256,30 @@ export default function Projects() {
   const handleViewProject = (project) => {
     setSelectedProject(project);
     setShowDetailsModal(true);
+  };
+
+  const handleDeleteProject = (project) => {
+    if (project.is_executed || project.status !== 'planning') {
+      toast.error('Cannot delete executed projects. Only planning projects can be deleted.');
+      return;
+    }
+    
+    if (confirm(`Are you sure you want to delete "${project.project_name}"? This action cannot be undone.`)) {
+      deleteProjectMutation.mutate(project.id);
+    }
+  };
+
+  const handleExecuteProject = (project) => {
+    if (confirm(`Execute project "${project.project_name}"? This will move it to active status and integrate all modules.`)) {
+      executeProjectMutation.mutate({ id: project.id, project });
+    }
+  };
+
+  const handleCancelProject = (project) => {
+    const reason = prompt('Enter cancellation reason:');
+    if (reason) {
+      cancelProjectMutation.mutate({ id: project.id, project, reason });
+    }
   };
 
   const handleAddTeamMember = () => {
@@ -261,9 +346,11 @@ export default function Projects() {
     return assignments.filter(a => a.project_id === projectId);
   };
 
+  const isUserManager = currentUser?.role === 'admin' || 
+    (currentUser?.employee && projects.some(p => p.project_manager_id === currentUser.employee.id));
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      {/* Header */}
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('project_management')}</h1>
@@ -277,7 +364,6 @@ export default function Projects() {
         </Button>
       </div>
 
-      {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title={t('total_projects')} value={projects.length} icon={FolderKanban} bgColor="from-blue-500 to-blue-600" />
         <StatCard title={t('active_projects')} value={activeProjects} icon={TrendingUp} bgColor="from-emerald-500 to-emerald-600" />
@@ -285,7 +371,6 @@ export default function Projects() {
         <StatCard title={t('total_budget')} value={`${(totalBudget / 1000000).toFixed(1)}M SAR`} icon={DollarSign} bgColor="from-amber-500 to-amber-600" />
       </div>
 
-      {/* Search and Filters */}
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-slate-100">
           <div className="flex flex-col gap-4">
@@ -293,7 +378,7 @@ export default function Projects() {
               <div className="relative flex-1">
                 <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
                 <Input
-                  placeholder={t('search_projects_placeholder')}
+                  placeholder="Search projects by name, code, client, or manager..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={isRTL ? 'pr-10' : 'pl-10'}
@@ -320,50 +405,38 @@ export default function Projects() {
                     </div>
 
                     <div className="space-y-3">
-                      {/* Status Filter */}
                       <div>
                         <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
-                        <Select
-                          value={filters.status}
-                          onValueChange={(val) => setFilters({ ...filters, status: val })}
-                        >
+                        <Select value={filters.status} onValueChange={(val) => setFilters({ ...filters, status: val })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">{t('all_status')}</SelectItem>
-                            <SelectItem value="planning">{t('status_planning')}</SelectItem>
-                            <SelectItem value="in_progress">{t('status_in_progress')}</SelectItem>
-                            <SelectItem value="on_hold">{t('status_on_hold')}</SelectItem>
-                            <SelectItem value="completed">{t('status_completed')}</SelectItem>
-                            <SelectItem value="cancelled">{t('status_cancelled')}</SelectItem>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="planning">Planning</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="on_hold">On Hold</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                      {/* Priority Filter */}
                       <div>
                         <label className="text-sm font-medium text-slate-700 mb-1 block">{t('priority')}</label>
-                        <Select
-                          value={filters.priority}
-                          onValueChange={(val) => setFilters({ ...filters, priority: val })}
-                        >
+                        <Select value={filters.priority} onValueChange={(val) => setFilters({ ...filters, priority: val })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('all_priorities')}</SelectItem>
-                            <SelectItem value="low">{t('priority_low')}</SelectItem>
-                            <SelectItem value="medium">{t('priority_medium')}</SelectItem>
-                            <SelectItem value="high">{t('priority_high')}</SelectItem>
-                            <SelectItem value="critical">{t('priority_critical')}</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="critical">Critical</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                      {/* Department Filter */}
                       <div>
                         <label className="text-sm font-medium text-slate-700 mb-1 block">{t('department')}</label>
-                        <Select
-                          value={filters.department}
-                          onValueChange={(val) => setFilters({ ...filters, department: val })}
-                        >
+                        <Select value={filters.department} onValueChange={(val) => setFilters({ ...filters, department: val })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('all_departments')}</SelectItem>
@@ -374,13 +447,9 @@ export default function Projects() {
                         </Select>
                       </div>
 
-                      {/* Project Manager Filter */}
                       <div>
                         <label className="text-sm font-medium text-slate-700 mb-1 block">{t('project_manager')}</label>
-                        <Select
-                          value={filters.projectManager}
-                          onValueChange={(val) => setFilters({ ...filters, projectManager: val })}
-                        >
+                        <Select value={filters.projectManager} onValueChange={(val) => setFilters({ ...filters, projectManager: val })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('all_managers')}</SelectItem>
@@ -393,19 +462,15 @@ export default function Projects() {
                         </Select>
                       </div>
 
-                      {/* Risk Level Filter */}
                       <div>
                         <label className="text-sm font-medium text-slate-700 mb-1 block">{t('risk_level')}</label>
-                        <Select
-                          value={filters.riskLevel}
-                          onValueChange={(val) => setFilters({ ...filters, riskLevel: val })}
-                        >
+                        <Select value={filters.riskLevel} onValueChange={(val) => setFilters({ ...filters, riskLevel: val })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('all_risk_levels')}</SelectItem>
-                            <SelectItem value="low">{t('risk_low')}</SelectItem>
-                            <SelectItem value="medium">{t('risk_medium')}</SelectItem>
-                            <SelectItem value="high">{t('risk_high')}</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -415,7 +480,6 @@ export default function Projects() {
               </Popover>
             </div>
 
-            {/* Active Filters Display */}
             {hasActiveFilters && (
               <div className="flex flex-wrap gap-2">
                 {Object.entries(filters).map(([key, value]) => {
@@ -424,17 +488,11 @@ export default function Projects() {
                   if (key === 'projectManager') {
                     const pm = employees.find(e => e.id === value);
                     displayValue = pm ? `${pm.first_name} ${pm.last_name}` : value;
-                  } else if (key === 'status') {
-                    displayValue = t(`status_${value}`);
-                  } else if (key === 'priority') {
-                    displayValue = t(`priority_${value}`);
-                  } else if (key === 'riskLevel') {
-                    displayValue = t(`risk_${value}`);
                   }
 
                   return (
                     <Badge key={key} variant="secondary" className="gap-1">
-                      {t(key)}: {displayValue}
+                      {key}: {displayValue}
                       <X
                         className="w-3 h-3 cursor-pointer"
                         onClick={() => setFilters({ ...filters, [key]: 'all' })}
@@ -445,9 +503,8 @@ export default function Projects() {
               </div>
             )}
 
-            {/* Results Count */}
             <div className="flex items-center text-sm text-slate-600">
-              <p>{t('showing')} <strong>{filteredProjects.length}</strong> {t('of')} <strong>{projects.length}</strong> {t('projects_plural')}</p>
+              <p>{t('showing')} <strong>{filteredProjects.length}</strong> {t('of')} <strong>{projects.length}</strong> {t('projects')}</p>
             </div>
           </div>
         </CardHeader>
@@ -465,7 +522,7 @@ export default function Projects() {
               </p>
               {hasActiveFilters || searchTerm ? (
                 <Button variant="outline" onClick={() => { clearFilters(); setSearchTerm(''); }}>
-                  {t('clear_all_filters')}
+                  Clear All Filters
                 </Button>
               ) : (
                 <Button onClick={() => setShowDialog(true)}>
@@ -485,8 +542,13 @@ export default function Projects() {
                     project={project}
                     projectManager={projectManager}
                     teamSize={teamSize}
+                    currentUser={currentUser}
+                    isUserManager={isUserManager}
                     onView={handleViewProject}
                     onEdit={handleEditProject}
+                    onDelete={handleDeleteProject}
+                    onExecute={handleExecuteProject}
+                    onCancel={handleCancelProject}
                   />
                 );
               })}
@@ -495,7 +557,6 @@ export default function Projects() {
         </CardContent>
       </Card>
 
-      {/* Project Form Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
@@ -510,7 +571,6 @@ export default function Projects() {
         </DialogContent>
       </Dialog>
 
-      {/* Project Details Modal with NEW task/milestone handlers */}
       <ProjectDetailsModal
         project={selectedProject}
         projectManager={selectedProject ? employees.find(e => e.id === selectedProject.project_manager_id) : null}
@@ -518,9 +578,14 @@ export default function Projects() {
         employees={employees}
         tasks={tasks}
         milestones={milestones}
+        currentUser={currentUser}
+        isUserManager={isUserManager}
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         onEdit={handleEditProject}
+        onDelete={handleDeleteProject}
+        onExecute={handleExecuteProject}
+        onCancel={handleCancelProject}
         onAddTeamMember={handleAddTeamMember}
         onBulkAddTeamMembers={handleBulkAddTeamMembers}
         onTaskCreate={(data) => createTaskMutation.mutate(data)}
@@ -530,7 +595,6 @@ export default function Projects() {
         onMilestoneUpdate={(id, data) => updateMilestoneMutation.mutate({ id, data })}
       />
 
-      {/* Team Assignment Modals */}
       <AssignTeamMemberModal
         project={selectedProject}
         employees={employees}
