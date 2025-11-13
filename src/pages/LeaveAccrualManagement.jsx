@@ -1,6 +1,8 @@
+
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Calendar, Play, RefreshCw, Settings, History, TrendingUp, CheckCircle, AlertTriangle, Clock, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function LeaveAccrualManagement() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+
   const [showProcessDialog, setShowProcessDialog] = useState(false);
   const [showPolicyDialog, setShowPolicyDialog] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(new Date().toISOString().slice(0, 7));
@@ -75,10 +80,10 @@ export default function LeaveAccrualManagement() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['accrual-policies']);
-      toast.success(`${data.policies_created} default policies created`);
+      toast.success(t('policies_created_success', { count: data.policies_created }));
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to initialize policies');
+      toast.error(error.response?.data?.message || t('failed_initialize_policies'));
     }
   });
 
@@ -96,11 +101,11 @@ export default function LeaveAccrualManagement() {
       queryClient.invalidateQueries(['leave-balances']);
       setShowProcessDialog(false);
       toast.success(
-        `Processed ${data.results.processed} employees. Total days accrued: ${data.results.total_days_accrued}`
+        t('accrual_processed_success', { processed: data.results.processed, days: data.results.total_days_accrued })
       );
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to process accrual');
+      toast.error(error.response?.data?.error || t('failed_process_accrual'));
     }
   });
 
@@ -126,10 +131,10 @@ export default function LeaveAccrualManagement() {
         is_active: true,
         notes: ''
       });
-      toast.success('Policy created successfully');
+      toast.success(t('policy_created_success'));
     },
     onError: () => {
-      toast.error('Failed to create policy');
+      toast.error(t('failed_create_policy'));
     }
   });
 
@@ -139,10 +144,10 @@ export default function LeaveAccrualManagement() {
       queryClient.invalidateQueries(['accrual-policies']);
       setShowPolicyDialog(false);
       setEditingPolicy(null);
-      toast.success('Policy updated successfully');
+      toast.success(t('policy_updated_success'));
     },
     onError: () => {
-      toast.error('Failed to update policy');
+      toast.error(t('failed_update_policy'));
     }
   });
 
@@ -170,25 +175,25 @@ export default function LeaveAccrualManagement() {
 
   // Calculate statistics
   const activePolicies = policies.filter(p => p.is_active).length;
-  const totalAccrualsThisMonth = accrualHistory.filter(a => 
+  const totalAccrualsThisMonth = accrualHistory.filter(a =>
     a.accrual_period === new Date().toISOString().slice(0, 7)
   ).length;
   const totalDaysAccruedThisMonth = accrualHistory
     .filter(a => a.accrual_period === new Date().toISOString().slice(0, 7))
     .reduce((sum, a) => sum + a.days_accrued, 0);
-  
+
   // Get unique periods from history
   const processedPeriods = [...new Set(accrualHistory.map(a => a.accrual_period))].sort().reverse();
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Leave Accrual Management</h1>
-          <p className="text-slate-600">Automate monthly leave accruals and manage policies</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('leave_accrual_management')}</h1>
+          <p className="text-slate-600">{t('leave_accrual_desc')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           {policies.length === 0 && (
             <Button
               onClick={handleInitializePolicies}
@@ -197,7 +202,7 @@ export default function LeaveAccrualManagement() {
               disabled={initializePoliciesMutation.isPending}
             >
               <Settings className="w-4 h-4" />
-              Initialize Default Policies
+              {t('initialize_default_policies')}
             </Button>
           )}
           <Button
@@ -205,7 +210,7 @@ export default function LeaveAccrualManagement() {
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg gap-2"
           >
             <Play className="w-4 h-4" />
-            Process Accrual
+            {t('process_accrual')}
           </Button>
         </div>
       </div>
@@ -214,8 +219,8 @@ export default function LeaveAccrualManagement() {
       {policies.length === 0 && (
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-900">
-            <strong>No accrual policies configured.</strong> Click "Initialize Default Policies" to set up standard Saudi labor law policies, or create custom policies.
+          <AlertDescription className={`text-amber-900 ${isRTL ? 'text-right' : ''}`}>
+            <strong>{t('no_accrual_policies')}</strong> {t('click_initialize')}
           </AlertDescription>
         </Alert>
       )}
@@ -223,25 +228,25 @@ export default function LeaveAccrualManagement() {
       {/* Statistics */}
       <div className="grid md:grid-cols-4 gap-6">
         <StatCard
-          title="Active Policies"
+          title={t('active_policies')}
           value={activePolicies}
           icon={Settings}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Employees"
+          title={t('employees')}
           value={employees.filter(e => e.status === 'active').length}
           icon={Users}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Accruals This Month"
+          title={t('accruals_this_month')}
           value={totalAccrualsThisMonth}
           icon={TrendingUp}
           bgColor="from-purple-500 to-purple-600"
         />
         <StatCard
-          title="Days Accrued (Month)"
+          title={t('days_accrued_month')}
           value={totalDaysAccruedThisMonth.toFixed(1)}
           icon={Calendar}
           bgColor="from-amber-500 to-amber-600"
@@ -253,15 +258,15 @@ export default function LeaveAccrualManagement() {
         <TabsList className="bg-white border-2 border-slate-200 p-1">
           <TabsTrigger value="scheduler" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Calendar className="w-4 h-4 mr-2" />
-            Scheduler
+            {t('scheduler')}
           </TabsTrigger>
           <TabsTrigger value="policies" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Settings className="w-4 h-4 mr-2" />
-            Policies ({activePolicies})
+            {t('policies_count')} ({activePolicies})
           </TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <History className="w-4 h-4 mr-2" />
-            History
+            {t('history')}
           </TabsTrigger>
         </TabsList>
 
@@ -278,46 +283,46 @@ export default function LeaveAccrualManagement() {
             {/* Quick Info */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
-                <CardTitle className="text-base">How It Works</CardTitle>
+                <CardTitle className={`text-base ${isRTL ? 'text-right' : ''}`}>{t('how_it_works')}</CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-3">
-                <div className="flex items-start gap-3">
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold text-emerald-700">1</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Monthly Processing</p>
-                    <p className="text-xs text-slate-600">Runs automatically on the 1st of each month</p>
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="text-sm font-semibold text-slate-900">{t('monthly_processing')}</p>
+                    <p className="text-xs text-slate-600">{t('runs_automatically')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold text-blue-700">2</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Policy Application</p>
-                    <p className="text-xs text-slate-600">Each active policy is applied to eligible employees</p>
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="text-sm font-semibold text-slate-900">{t('policy_application')}</p>
+                    <p className="text-xs text-slate-600">{t('applied_to_eligible')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold text-purple-700">3</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Balance Updates</p>
-                    <p className="text-xs text-slate-600">Leave balances are automatically updated</p>
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="text-sm font-semibold text-slate-900">{t('balance_updates')}</p>
+                    <p className="text-xs text-slate-600">{t('balances_auto_updated')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-xs font-bold text-amber-700">4</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Audit Trail</p>
-                    <p className="text-xs text-slate-600">All accruals are logged for compliance</p>
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="text-sm font-semibold text-slate-900">{t('audit_trail')}</p>
+                    <p className="text-xs text-slate-600">{t('accruals_logged')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -329,10 +334,10 @@ export default function LeaveAccrualManagement() {
         <TabsContent value="policies">
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
-              <div className="flex justify-between items-center">
-                <CardTitle>Accrual Policies</CardTitle>
+              <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <CardTitle className={isRTL ? 'text-right' : ''}>{t('accrual_policies')}</CardTitle>
                 <Button onClick={() => { setEditingPolicy(null); setShowPolicyDialog(true); }}>
-                  Add Policy
+                  {t('add_policy')}
                 </Button>
               </div>
             </CardHeader>
@@ -344,7 +349,7 @@ export default function LeaveAccrualManagement() {
               ) : policies.length === 0 ? (
                 <div className="text-center py-12">
                   <Settings className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">No policies configured</p>
+                  <p className="text-slate-500">{t('no_policies_configured')}</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -353,6 +358,7 @@ export default function LeaveAccrualManagement() {
                       key={policy.id}
                       policy={policy}
                       onEdit={handleEditPolicy}
+                      isRTL={isRTL}
                     />
                   ))}
                 </div>
@@ -365,7 +371,7 @@ export default function LeaveAccrualManagement() {
         <TabsContent value="history">
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-white">
-              <CardTitle>Processing History</CardTitle>
+              <CardTitle className={isRTL ? 'text-right' : ''}>{t('processing_history')}</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {loadingHistory ? (
@@ -375,9 +381,9 @@ export default function LeaveAccrualManagement() {
               ) : accrualHistory.length === 0 ? (
                 <div className="text-center py-12">
                   <History className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500 mb-4">No accrual history yet</p>
+                  <p className="text-slate-500 mb-4">{t('no_accrual_history')}</p>
                   <Button onClick={() => setShowProcessDialog(true)}>
-                    Process First Accrual
+                    {t('process_first_accrual')}
                   </Button>
                 </div>
               ) : (
@@ -389,36 +395,36 @@ export default function LeaveAccrualManagement() {
 
                     return (
                       <div key={period}>
-                        <div className="flex items-center justify-between mb-3">
+                        <div className={`flex items-center justify-between mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <h4 className="font-bold text-slate-900">{format(new Date(period + '-01'), 'MMMM yyyy')}</h4>
-                          <div className="flex gap-4 text-sm">
-                            <span className="text-slate-600">{employeeCount} employees</span>
-                            <span className="font-semibold text-emerald-600">{totalDays.toFixed(1)} days accrued</span>
+                          <div className={`flex gap-4 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                            <span className="text-slate-600">{employeeCount} {t('employees')}</span>
+                            <span className="font-semibold text-emerald-600">{totalDays.toFixed(1)} {t('days_accrued')}</span>
                           </div>
                         </div>
                         <div className="space-y-2">
                           {periodAccruals.slice(0, 5).map(accrual => {
                             const employee = employees.find(e => e.id === accrual.employee_id);
                             return (
-                              <div key={accrual.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                <div>
+                              <div key={accrual.id} className={`flex items-center justify-between p-3 bg-slate-50 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <div className={isRTL ? 'text-right' : ''}>
                                   <p className="font-semibold text-slate-900">
                                     {employee?.first_name} {employee?.last_name}
                                   </p>
                                   <p className="text-xs text-slate-500">
-                                    {accrual.leave_type} • {accrual.employment_months} months service
+                                    {t(accrual.leave_type)} • {accrual.employment_months} {t('months_service')}
                                   </p>
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-emerald-600">+{accrual.days_accrued} days</p>
-                                  <p className="text-xs text-slate-500">Balance: {accrual.balance_after}</p>
+                                <div className={isRTL ? 'text-left' : 'text-right'}>
+                                  <p className="font-bold text-emerald-600">+{accrual.days_accrued} {t('days')}</p>
+                                  <p className="text-xs text-slate-500">{t('balance')}: {accrual.balance_after}</p>
                                 </div>
                               </div>
                             );
                           })}
                           {periodAccruals.length > 5 && (
                             <p className="text-sm text-slate-500 text-center py-2">
-                              +{periodAccruals.length - 5} more employees
+                              +{periodAccruals.length - 5} {t('more_employees')}
                             </p>
                           )}
                         </div>
@@ -436,18 +442,18 @@ export default function LeaveAccrualManagement() {
       <Dialog open={showProcessDialog} onOpenChange={setShowProcessDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Process Monthly Leave Accrual</DialogTitle>
+            <DialogTitle className={isRTL ? 'text-right' : ''}>{t('process_monthly_leave_accrual')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Alert className="border-blue-200 bg-blue-50">
               <Calendar className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                This will process leave accruals for all active employees based on configured policies.
+              <AlertDescription className={`text-blue-900 ${isRTL ? 'text-right' : ''}`}>
+                {t('will_process_accruals')}
               </AlertDescription>
             </Alert>
 
             <div>
-              <Label>Accrual Period</Label>
+              <Label className={isRTL ? 'text-right block' : ''}>{t('accrual_period')}</Label>
               <Input
                 type="month"
                 value={selectedPeriod}
@@ -456,29 +462,29 @@ export default function LeaveAccrualManagement() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className={`flex items-center ${isRTL ? 'flex-row-reverse space-x-reverse' : 'space-x-2'}`}>
               <Checkbox
                 id="force-reprocess"
                 checked={forceReprocess}
                 onCheckedChange={setForceReprocess}
               />
               <Label htmlFor="force-reprocess" className="text-sm">
-                Force reprocess (if already processed)
+                {t('force_reprocess')}
               </Label>
             </div>
 
             {forceReprocess && (
               <Alert className="border-amber-200 bg-amber-50">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-900 text-sm">
-                  Warning: Reprocessing will create duplicate accrual records. Use with caution.
+                <AlertDescription className={`text-amber-900 text-sm ${isRTL ? 'text-right' : ''}`}>
+                  {t('reprocess_warning')}
                 </AlertDescription>
               </Alert>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className={isRTL ? 'flex-row-reverse justify-end' : ''}>
             <Button variant="outline" onClick={() => setShowProcessDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleProcessAccrual}
@@ -488,12 +494,12 @@ export default function LeaveAccrualManagement() {
               {processAccrualMutation.isPending ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
+                  {t('processing')}
                 </>
               ) : (
                 <>
                   <Play className="w-4 h-4 mr-2" />
-                  Process Accrual
+                  {t('process_accrual')}
                 </>
               )}
             </Button>
@@ -505,32 +511,32 @@ export default function LeaveAccrualManagement() {
       <Dialog open={showPolicyDialog} onOpenChange={setShowPolicyDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingPolicy ? 'Edit' : 'Create'} Accrual Policy</DialogTitle>
+            <DialogTitle className={isRTL ? 'text-right' : ''}>{editingPolicy ? t('edit_accrual_policy') : t('create_accrual_policy')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label>Policy Name *</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('policy_name')}</Label>
                 <Input
                   value={policyFormData.policy_name}
                   onChange={(e) => setPolicyFormData({...policyFormData, policy_name: e.target.value})}
-                  placeholder="e.g., Annual Leave - Full Time"
+                  placeholder={t('policy_name_placeholder')}
                 />
               </div>
               <div>
-                <Label>Leave Type *</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('leave_type')}</Label>
                 <Select
                   value={policyFormData.leave_type}
                   onValueChange={(val) => setPolicyFormData({...policyFormData, leave_type: val})}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isRTL ? 'text-right' : ''}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual Leave</SelectItem>
-                    <SelectItem value="sick">Sick Leave</SelectItem>
-                    <SelectItem value="hajj">Hajj Leave</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                  <SelectContent dir={isRTL ? 'rtl' : 'ltr'}>
+                    <SelectItem value="annual">{t('annual_leave')}</SelectItem>
+                    <SelectItem value="sick">{t('sick_leave')}</SelectItem>
+                    <SelectItem value="hajj">{t('hajj_leave')}</SelectItem>
+                    <SelectItem value="other">{t('other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -538,7 +544,7 @@ export default function LeaveAccrualManagement() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label>Annual Entitlement (Days) *</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('annual_entitlement')}</Label>
                 <Input
                   type="number"
                   value={policyFormData.annual_entitlement}
@@ -553,7 +559,7 @@ export default function LeaveAccrualManagement() {
                 />
               </div>
               <div>
-                <Label>Monthly Accrual Rate (Days)</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('monthly_accrual_rate')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -566,7 +572,7 @@ export default function LeaveAccrualManagement() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label>Probation Period (Months)</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('probation_period')}</Label>
                 <Input
                   type="number"
                   value={policyFormData.probation_period_months}
@@ -574,7 +580,7 @@ export default function LeaveAccrualManagement() {
                 />
               </div>
               <div>
-                <Label>Max Carryover (Days)</Label>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('max_carryover')}</Label>
                 <Input
                   type="number"
                   value={policyFormData.max_carryover}
@@ -583,30 +589,44 @@ export default function LeaveAccrualManagement() {
               </div>
             </div>
 
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className={isRTL ? 'text-right block' : ''}>{t('carryover_expiry_months')}</Label>
+                <Input
+                  type="number"
+                  value={policyFormData.carryover_expiry_months}
+                  onChange={(e) => setPolicyFormData({...policyFormData, carryover_expiry_months: parseInt(e.target.value)})}
+                />
+              </div>
+              <div>
+                {/* employment_type input is not present in the original UI, maintaining state only. */}
+              </div>
+            </div>
+
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Accrue during probation</Label>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Label>{t('accrue_during_probation')}</Label>
                 <Switch
                   checked={policyFormData.accrue_during_probation}
                   onCheckedChange={(checked) => setPolicyFormData({...policyFormData, accrue_during_probation: checked})}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <Label>Accrue while on leave</Label>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Label>{t('accrue_while_on_leave')}</Label>
                 <Switch
                   checked={policyFormData.accrue_while_on_leave}
                   onCheckedChange={(checked) => setPolicyFormData({...policyFormData, accrue_while_on_leave: checked})}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <Label>Prorate for new hires</Label>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Label>{t('prorate_for_new_hires')}</Label>
                 <Switch
                   checked={policyFormData.prorate_for_new_hires}
                   onCheckedChange={(checked) => setPolicyFormData({...policyFormData, prorate_for_new_hires: checked})}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <Label>Active Policy</Label>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Label>{t('active_policy')}</Label>
                 <Switch
                   checked={policyFormData.is_active}
                   onCheckedChange={(checked) => setPolicyFormData({...policyFormData, is_active: checked})}
@@ -615,24 +635,24 @@ export default function LeaveAccrualManagement() {
             </div>
 
             <div>
-              <Label>Notes</Label>
+              <Label className={isRTL ? 'text-right block' : ''}>{t('notes')}</Label>
               <Input
                 value={policyFormData.notes}
                 onChange={(e) => setPolicyFormData({...policyFormData, notes: e.target.value})}
-                placeholder="Additional policy details"
+                placeholder={t('additional_policy_details')}
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className={isRTL ? 'flex-row-reverse justify-end' : ''}>
             <Button variant="outline" onClick={() => setShowPolicyDialog(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleSavePolicy}
               disabled={createPolicyMutation.isPending || updatePolicyMutation.isPending}
               className="bg-emerald-600 hover:bg-emerald-700"
             >
-              {editingPolicy ? 'Update' : 'Create'} Policy
+              {editingPolicy ? t('update_policy') : t('create_policy')}
             </Button>
           </DialogFooter>
         </DialogContent>
