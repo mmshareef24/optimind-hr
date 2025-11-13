@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Calendar, Plus, TrendingUp, Clock, CheckCircle, XCircle, Users, Filter, Download, History, AlertTriangle, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,8 @@ import { toast } from "sonner";
 import { format, isWithinInterval, addDays } from "date-fns";
 
 export default function LeaveManagement() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState('user');
@@ -106,13 +110,13 @@ export default function LeaveManagement() {
       
       const targetEmployee = employees.find(e => e.id === variables.employee_id);
       if (userRole === 'admin' && targetEmployee && targetEmployee.id !== currentUser?.id) {
-        toast.success(`Leave request created for ${targetEmployee.first_name} ${targetEmployee.last_name}`);
+        toast.success(t('leave_request_created_for', { name: `${targetEmployee.first_name} ${targetEmployee.last_name}` }));
       } else {
-        toast.success('Leave request submitted successfully');
+        toast.success(t('leave_request_submitted_success'));
       }
     },
     onError: () => {
-      toast.error('Failed to submit leave request');
+      toast.error(t('failed_to_submit_leave_request'));
     }
   });
 
@@ -144,10 +148,10 @@ export default function LeaveManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
       queryClient.invalidateQueries(['leave-balances']);
-      toast.success('Leave request approved');
+      toast.success(t('leave_request_approved'));
     },
     onError: () => {
-      toast.error('Failed to approve leave request');
+      toast.error(t('failed_to_approve_leave_request'));
     }
   });
 
@@ -178,10 +182,10 @@ export default function LeaveManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
       queryClient.invalidateQueries(['leave-balances']);
-      toast.success('Leave request rejected');
+      toast.success(t('leave_request_rejected'));
     },
     onError: () => {
-      toast.error('Failed to reject leave request');
+      toast.error(t('failed_to_reject_leave_request'));
     }
   });
 
@@ -224,23 +228,6 @@ export default function LeaveManagement() {
     return startDate > today && startDate <= addDays(today, 30);
   }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-  // Check for overlapping requests
-  const hasOverlappingRequests = (startDate, endDate) => {
-    return myRequests.some(r => {
-      if (r.status === 'rejected' || r.status === 'cancelled') return false;
-      const existingStart = new Date(r.start_date);
-      const existingEnd = new Date(r.end_date);
-      const newStart = new Date(startDate);
-      const newEnd = new Date(endDate);
-      
-      return (
-        (newStart >= existingStart && newStart <= existingEnd) ||
-        (newEnd >= existingStart && newEnd <= existingEnd) ||
-        (newStart <= existingStart && newEnd >= existingEnd)
-      );
-    });
-  };
-
   // Export leave history
   const handleExportHistory = () => {
     let csvContent = 'Leave Type,Start Date,End Date,Days,Status,Reason,Submitted Date\n';
@@ -257,32 +244,32 @@ export default function LeaveManagement() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('Leave history exported');
+    toast.success(t('leave_history_exported'));
   };
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Leave Management</h1>
-          <p className="text-slate-600">Track and manage your leave requests seamlessly</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('leave_management')}</h1>
+          <p className="text-slate-600">{t('leave_management_desc')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Button
             variant="outline"
             onClick={handleExportHistory}
             className="gap-2"
           >
             <Download className="w-4 h-4" />
-            Export History
+            {t('export_history')}
           </Button>
           <Button
             onClick={() => setShowRequestForm(true)}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg gap-2"
           >
             <Plus className="w-4 h-4" />
-            Request Leave
+            {t('request_leave')}
           </Button>
         </div>
       </div>
@@ -292,8 +279,8 @@ export default function LeaveManagement() {
         <Alert className="border-blue-200 bg-blue-50">
           <Calendar className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-900">
-            <strong>Upcoming Leave:</strong> {upcomingLeaves[0].leave_type} leave starting {format(new Date(upcomingLeaves[0].start_date), 'MMM dd, yyyy')} ({upcomingLeaves[0].total_days} days)
-            {upcomingLeaves.length > 1 && ` • +${upcomingLeaves.length - 1} more`}
+            <strong>{t('upcoming_leave')}:</strong> {upcomingLeaves[0].leave_type} {t('leave_starting')} {format(new Date(upcomingLeaves[0].start_date), 'MMM dd, yyyy')} ({upcomingLeaves[0].total_days} {t('days')})
+            {upcomingLeaves.length > 1 && ` • +${upcomingLeaves.length - 1} ${t('more')}`}
           </AlertDescription>
         </Alert>
       )}
@@ -303,7 +290,7 @@ export default function LeaveManagement() {
         <Alert className="border-amber-200 bg-amber-50">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-amber-900">
-            <strong>{teamRequests.filter(r => r.status === 'pending').length} leave requests</strong> are waiting for your approval
+            <strong>{teamRequests.filter(r => r.status === 'pending').length} {t('leave_requests')}</strong> {t('are_waiting_for_approval')}
           </AlertDescription>
         </Alert>
       )}
@@ -311,25 +298,25 @@ export default function LeaveManagement() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Days Used"
+          title={t('days_used')}
           value={totalDaysUsed}
           icon={CheckCircle}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Days Remaining"
+          title={t('days_remaining')}
           value={totalDaysRemaining}
           icon={TrendingUp}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="Pending Requests"
+          title={t('pending_requests')}
           value={pendingCount}
           icon={Clock}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Approved This Year"
+          title={t('approved_this_year')}
           value={approvedCount}
           icon={CheckCircle}
           bgColor="from-purple-500 to-purple-600"
@@ -338,7 +325,7 @@ export default function LeaveManagement() {
 
       {/* Leave Balances */}
       <div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">My Leave Balances</h3>
+        <h3 className={`text-lg font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>{t('my_leave_balances')}</h3>
         {loadingBalances ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
@@ -347,7 +334,7 @@ export default function LeaveManagement() {
           <Card className="border-dashed border-2 border-slate-200">
             <CardContent className="p-12 text-center">
               <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500">No leave balances found</p>
+              <p className="text-slate-500">{t('no_leave_balances')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -367,7 +354,7 @@ export default function LeaveManagement() {
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-emerald-700 data-[state=active]:text-white"
           >
             <History className="w-4 h-4 mr-2" />
-            My Requests
+            {t('my_requests')}
             {pendingCount > 0 && (
               <Badge className="ml-2 bg-amber-500 text-white text-xs">{pendingCount}</Badge>
             )}
@@ -379,7 +366,7 @@ export default function LeaveManagement() {
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Approvals
+                {t('approvals')}
                 {teamRequests.filter(r => r.status === 'pending').length > 0 && (
                   <Badge className="ml-2 bg-red-500 text-white text-xs">
                     {teamRequests.filter(r => r.status === 'pending').length}
@@ -391,14 +378,14 @@ export default function LeaveManagement() {
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white"
               >
                 <Users className="w-4 h-4 mr-2" />
-                Team Calendar
+                {t('team_calendar')}
               </TabsTrigger>
               <TabsTrigger
                 value="analytics"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-indigo-700 data-[state=active]:text-white"
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
-                Analytics
+                {t('analytics')}
               </TabsTrigger>
             </>
           )}
@@ -407,14 +394,14 @@ export default function LeaveManagement() {
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-teal-700 data-[state=active]:text-white"
           >
             <Calendar className="w-4 h-4 mr-2" />
-            My Calendar
+            {t('my_calendar')}
           </TabsTrigger>
           <TabsTrigger
             value="policy"
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-600 data-[state=active]:to-slate-700 data-[state=active]:text-white"
           >
             <BookOpen className="w-4 h-4 mr-2" />
-            Leave Policies
+            {t('leave_policies')}
           </TabsTrigger>
         </TabsList>
 
@@ -422,36 +409,41 @@ export default function LeaveManagement() {
         <TabsContent value="my-requests">
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-white">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
+              <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
+                <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <History className="w-5 h-5 text-emerald-600" />
-                  My Leave History ({myRequests.length})
+                  {t('my_leave_history')} ({myRequests.length})
                 </CardTitle>
                 
                 {/* Filters */}
-                <div className="flex gap-3">
+                <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Select value={filterStatus} onValueChange={setFilterStatus}>
                     <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Status" />
+                      <SelectValue placeholder={t('all_status')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="all">{t('all_status')}</SelectItem>
+                      <SelectItem value="pending">{t('pending')}</SelectItem>
+                      <SelectItem value="approved">{t('approved')}</SelectItem>
+                      <SelectItem value="rejected">{t('rejected')}</SelectItem>
                     </SelectContent>
                   </Select>
 
                   <Select value={filterLeaveType} onValueChange={setFilterLeaveType}>
                     <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Types" />
+                      <SelectValue placeholder={t('all_types')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="annual">Annual</SelectItem>
-                      <SelectItem value="sick">Sick</SelectItem>
-                      <SelectItem value="emergency">Emergency</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="all">{t('all_types')}</SelectItem>
+                      <SelectItem value="annual">{t('annual')}</SelectItem>
+                      <SelectItem value="sick">{t('sick')}</SelectItem>
+                      <SelectItem value="emergency">{t('emergency')}</SelectItem>
+                      <SelectItem value="unpaid">{t('unpaid')}</SelectItem>
+                      <SelectItem value="maternity">{t('maternity')}</SelectItem>
+                      <SelectItem value="paternity">{t('paternity')}</SelectItem>
+                      <SelectItem value="hajj">{t('hajj')}</SelectItem>
+                      <SelectItem value="marriage">{t('marriage')}</SelectItem>
+                      <SelectItem value="bereavement">{t('bereavement')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -467,17 +459,17 @@ export default function LeaveManagement() {
                   <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
                     <Calendar className="w-10 h-10 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No Leave Requests Yet</h3>
-                  <p className="text-slate-500 mb-6">Start by submitting your first leave request</p>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('no_leave_requests')}</h3>
+                  <p className="text-slate-500 mb-6">{t('submit_first_request_desc')}</p>
                   <Button onClick={() => setShowRequestForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
                     <Plus className="w-4 h-4 mr-2" />
-                    Submit Your First Request
+                    {t('submit_your_first_request')}
                   </Button>
                 </div>
               ) : filteredMyRequests.length === 0 ? (
                 <div className="text-center py-12">
                   <Filter className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500">No requests match your filters</p>
+                  <p className="text-slate-500">{t('no_requests_match')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -497,19 +489,19 @@ export default function LeaveManagement() {
                     return (
                       <Card key={request.id} className="border-2 border-slate-200 hover:shadow-md transition-all">
                         <CardContent className="p-5">
-                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
+                          <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+                            <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
+                              <div className={`flex items-center gap-3 mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <span className="text-2xl">{leaveTypeIcons[request.leave_type] || '📅'}</span>
-                                <div>
+                                <div className={isRTL ? 'text-right' : ''}>
                                   <h4 className="font-bold text-slate-900 capitalize text-lg">
-                                    {request.leave_type.replace('_', ' ')} Leave
+                                    {t(request.leave_type.replace('_', ' ')) + ' ' + t('leave')}
                                   </h4>
                                   <p className="text-sm text-slate-500">
-                                    Submitted on {format(new Date(request.created_date), 'MMM dd, yyyy')}
+                                    {t('submitted_on')} {format(new Date(request.created_date), 'MMM dd, yyyy')}
                                   </p>
                                 </div>
-                                <Badge className={`ml-auto ${
+                                <Badge className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${
                                   request.status === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                                   request.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' :
                                   'bg-amber-100 text-amber-700 border-amber-200'
@@ -517,27 +509,27 @@ export default function LeaveManagement() {
                                   {request.status === 'approved' && '✓ '}
                                   {request.status === 'rejected' && '✗ '}
                                   {request.status === 'pending' && '⏱ '}
-                                  {request.status.toUpperCase()}
+                                  {t(request.status.toUpperCase())}
                                 </Badge>
                               </div>
 
                               <div className="grid md:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg mb-3">
                                 <div>
-                                  <p className="text-xs text-slate-500 mb-1">Start Date</p>
+                                  <p className="text-xs text-slate-500 mb-1">{t('start_date')}</p>
                                   <p className="font-semibold text-slate-900">
                                     {format(new Date(request.start_date), 'MMM dd, yyyy')}
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-xs text-slate-500 mb-1">End Date</p>
+                                  <p className="text-xs text-slate-500 mb-1">{t('end_date')}</p>
                                   <p className="font-semibold text-slate-900">
                                     {format(new Date(request.end_date), 'MMM dd, yyyy')}
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-xs text-slate-500 mb-1">Duration</p>
+                                  <p className="text-xs text-slate-500 mb-1">{t('duration')}</p>
                                   <p className="font-semibold text-emerald-600 text-lg">
-                                    {request.total_days} days
+                                    {request.total_days} {t('days')}
                                   </p>
                                 </div>
                               </div>
@@ -545,7 +537,7 @@ export default function LeaveManagement() {
                               {request.reason && (
                                 <div className="text-sm bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 mb-2">
                                   <p className="text-blue-900">
-                                    <strong>Reason:</strong> {request.reason}
+                                    <strong>{t('reason')}:</strong> {request.reason}
                                   </p>
                                 </div>
                               )}
@@ -553,14 +545,14 @@ export default function LeaveManagement() {
                               {request.rejection_reason && (
                                 <div className="text-sm bg-red-50 p-3 rounded-lg border-l-4 border-red-400">
                                   <p className="text-red-900">
-                                    <strong>❌ Rejection Reason:</strong> {request.rejection_reason}
+                                    <strong>❌ {t('rejection_reason')}:</strong> {request.rejection_reason}
                                   </p>
                                 </div>
                               )}
 
                               {request.approval_date && request.status === 'approved' && (
                                 <p className="text-xs text-emerald-600 mt-2">
-                                  ✓ Approved on {format(new Date(request.approval_date), 'MMM dd, yyyy')}
+                                  ✓ {t('approved_on')} {format(new Date(request.approval_date), 'MMM dd, yyyy')}
                                 </p>
                               )}
                             </div>
@@ -593,12 +585,12 @@ export default function LeaveManagement() {
             <div className="space-y-4">
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Button
                       variant="outline"
                       onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
                     >
-                      ← Previous
+                      {isRTL ? '→' : '←'} {t('previous')}
                     </Button>
                     <h3 className="text-lg font-semibold">
                       {format(selectedMonth, 'MMMM yyyy')}
@@ -607,7 +599,7 @@ export default function LeaveManagement() {
                       variant="outline"
                       onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
                     >
-                      Next →
+                      {t('next')} {isRTL ? '←' : '→'}
                     </Button>
                   </div>
                 </CardContent>
@@ -637,12 +629,12 @@ export default function LeaveManagement() {
           <div className="space-y-4">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Button
                     variant="outline"
                     onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
                   >
-                    ← Previous
+                    {isRTL ? '→' : '←'} {t('previous')}
                   </Button>
                   <h3 className="text-lg font-semibold">
                     {format(selectedMonth, 'MMMM yyyy')}
@@ -651,7 +643,7 @@ export default function LeaveManagement() {
                     variant="outline"
                     onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
                   >
-                    Next →
+                    {t('next')} {isRTL ? '←' : '→'}
                   </Button>
                 </div>
               </CardContent>
@@ -675,7 +667,7 @@ export default function LeaveManagement() {
         <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {userRole === 'admin' ? 'Create Leave Request for Employee' : 'Submit Leave Request'}
+              {userRole === 'admin' ? t('create_leave_request_for_employee') : t('submit_leave_request')}
             </DialogTitle>
           </DialogHeader>
           <LeaveRequestForm

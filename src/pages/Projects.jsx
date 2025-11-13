@@ -2,20 +2,15 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { FolderKanban, Plus, Search, Filter, X, TrendingUp, Users, Target, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import {
-  Popover, PopoverContent, PopoverTrigger
-} from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import StatCard from "../components/hrms/StatCard";
 import ProjectCard from "../components/projects/ProjectCard";
 import ProjectForm from "../components/projects/ProjectForm";
@@ -26,6 +21,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function Projects() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -35,13 +32,8 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter states
   const [filters, setFilters] = useState({
-    status: 'all',
-    priority: 'all',
-    department: 'all',
-    projectManager: 'all',
-    riskLevel: 'all'
+    status: 'all', priority: 'all', department: 'all', projectManager: 'all', riskLevel: 'all'
   });
 
   const queryClient = useQueryClient();
@@ -77,11 +69,9 @@ export default function Projects() {
       queryClient.invalidateQueries(['projects']);
       setShowDialog(false);
       setEditingProject(null);
-      toast.success('Project created successfully');
+      toast.success(t('project_created_success'));
     },
-    onError: () => {
-      toast.error('Failed to create project');
-    }
+    onError: () => toast.error(t('failed_to_create_project'))
   });
 
   const updateProjectMutation = useMutation({
@@ -90,11 +80,9 @@ export default function Projects() {
       queryClient.invalidateQueries(['projects']);
       setShowDialog(false);
       setEditingProject(null);
-      toast.success('Project updated successfully');
+      toast.success(t('project_updated_success'));
     },
-    onError: () => {
-      toast.error('Failed to update project');
-    }
+    onError: () => toast.error(t('failed_to_update_project'))
   });
 
   const createAssignmentMutation = useMutation({
@@ -114,11 +102,9 @@ export default function Projects() {
       queryClient.invalidateQueries(['project-assignments']);
       queryClient.invalidateQueries(['projects']);
       setShowAssignModal(false);
-      toast.success('Team member assigned successfully');
+      toast.success(t('team_member_assigned_success'));
     },
-    onError: () => {
-      toast.error('Failed to assign team member');
-    }
+    onError: () => toast.error(t('failed_to_assign_team_member'))
   });
 
   const bulkCreateAssignmentsMutation = useMutation({
@@ -126,7 +112,6 @@ export default function Projects() {
       const createdAssignments = await Promise.all(
         assignmentsData.map(data => base44.entities.ProjectAssignment.create(data))
       );
-
       if (assignmentsData.length > 0) {
         const projectId = assignmentsData[0].project_id;
         const project = projects.find(p => p.id === projectId);
@@ -138,75 +123,60 @@ export default function Projects() {
           });
         }
       }
-
       return createdAssignments;
     },
     onSuccess: (_, assignmentsData) => {
       queryClient.invalidateQueries(['project-assignments']);
       queryClient.invalidateQueries(['projects']);
       setShowBulkAssignModal(false);
-      toast.success(`Successfully assigned ${assignmentsData.length} team member${assignmentsData.length === 1 ? '' : 's'}`);
+      toast.success(t('team_members_assigned_success', { count: assignmentsData.length }));
     },
-    onError: () => {
-      toast.error('Failed to assign team members');
-    }
+    onError: () => toast.error(t('failed_to_assign_team_members'))
   });
 
-  // NEW: Task mutations
   const createTaskMutation = useMutation({
     mutationFn: (data) => base44.entities.ProjectTask.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success('Task created successfully');
+      toast.success(t('task_created_success'));
     },
-    onError: () => {
-      toast.error('Failed to create task');
-    }
+    onError: () => toast.error(t('failed_to_create_task'))
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectTask.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success('Task updated successfully');
+      toast.success(t('task_updated_success'));
     },
-    onError: () => {
-      toast.error('Failed to update task');
-    }
+    onError: () => toast.error(t('failed_to_update_task'))
   });
 
   const deleteTaskMutation = useMutation({
     mutationFn: (id) => base44.entities.ProjectTask.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-tasks']);
-      toast.success('Task deleted successfully');
+      toast.success(t('task_deleted_success'));
     },
-    onError: () => {
-      toast.error('Failed to delete task');
-    }
+    onError: () => toast.error(t('failed_to_delete_task'))
   });
 
-  // NEW: Milestone mutations
   const createMilestoneMutation = useMutation({
     mutationFn: (data) => base44.entities.ProjectMilestone.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-milestones']);
-      toast.success('Milestone created successfully');
+      toast.success(t('milestone_created_success'));
     },
-    onError: () => {
-      toast.error('Failed to create milestone');
-    }
+    onError: () => toast.error(t('failed_to_create_milestone'))
   });
 
   const updateMilestoneMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectMilestone.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['project-milestones']);
-      toast.success('Milestone updated successfully');
+      toast.success(t('milestone_updated_success'));
     },
-    onError: () => {
-      toast.error('Failed to update milestone');
-    }
+    onError: () => toast.error(t('failed_to_update_milestone'))
   });
 
   const handleSubmitProject = (data) => {
@@ -245,13 +215,11 @@ export default function Projects() {
     bulkCreateAssignmentsMutation.mutate(assignmentsData);
   };
 
-  // Get unique values for filters
   const departments = [...new Set(projects.map(p => p.department).filter(Boolean))];
   const projectManagers = [...new Set(projects.map(p => p.project_manager_id).filter(Boolean))]
     .map(id => employees.find(e => e.id === id))
     .filter(Boolean);
 
-  // Apply filters
   const filteredProjects = projects.filter(project => {
     const projectManager = employees.find(e => e.id === project.project_manager_id);
     const projectName = project.project_name?.toLowerCase() || '';
@@ -275,13 +243,7 @@ export default function Projects() {
   });
 
   const clearFilters = () => {
-    setFilters({
-      status: 'all',
-      priority: 'all',
-      department: 'all',
-      projectManager: 'all',
-      riskLevel: 'all'
-    });
+    setFilters({ status: 'all', priority: 'all', department: 'all', projectManager: 'all', riskLevel: 'all' });
   };
 
   const hasActiveFilters = Object.values(filters).some(f => f !== 'all');
@@ -302,45 +264,25 @@ export default function Projects() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Project Management</h1>
-          <p className="text-slate-600">Track projects and manage team assignments</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('project_management')}</h1>
+          <p className="text-slate-600">{t('project_management_desc')}</p>
         </div>
         <Button
           onClick={() => { setEditingProject(null); setShowDialog(true); }}
           className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
         >
-          <Plus className="w-4 h-4 mr-2" /> New Project
+          <Plus className="w-4 h-4 mr-2" /> {t('new_project')}
         </Button>
       </div>
 
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Projects"
-          value={projects.length}
-          icon={FolderKanban}
-          bgColor="from-blue-500 to-blue-600"
-        />
-        <StatCard
-          title="Active Projects"
-          value={activeProjects}
-          icon={TrendingUp}
-          bgColor="from-emerald-500 to-emerald-600"
-        />
-        <StatCard
-          title="Team Members"
-          value={totalTeamMembers}
-          icon={Users}
-          bgColor="from-purple-500 to-purple-600"
-        />
-        <StatCard
-          title="Total Budget"
-          value={`${(totalBudget / 1000000).toFixed(1)}M SAR`}
-          icon={DollarSign}
-          bgColor="from-amber-500 to-amber-600"
-        />
+        <StatCard title={t('total_projects')} value={projects.length} icon={FolderKanban} bgColor="from-blue-500 to-blue-600" />
+        <StatCard title={t('active_projects')} value={activeProjects} icon={TrendingUp} bgColor="from-emerald-500 to-emerald-600" />
+        <StatCard title={t('team_members')} value={totalTeamMembers} icon={Users} bgColor="from-purple-500 to-purple-600" />
+        <StatCard title={t('total_budget')} value={`${(totalBudget / 1000000).toFixed(1)}M SAR`} icon={DollarSign} bgColor="from-amber-500 to-amber-600" />
       </div>
 
       {/* Search and Filters */}
@@ -349,32 +291,30 @@ export default function Projects() {
           <div className="flex flex-col gap-4">
             <div className="flex gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
                 <Input
-                  placeholder="Search by project name, code, client, or manager..."
+                  placeholder={t('search_projects_placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className={isRTL ? 'pr-10' : 'pl-10'}
                 />
               </div>
               <Popover open={showFilters} onOpenChange={setShowFilters}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="relative">
                     <Filter className="w-4 h-4 mr-2" />
-                    Advanced Filters
-                    {hasActiveFilters && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
-                    )}
+                    {t('advanced_filters')}
+                    {hasActiveFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-96" align="end">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-900">Filter Projects</h3>
+                    <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <h3 className="font-semibold text-slate-900">{t('filter_projects')}</h3>
                       {hasActiveFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters}>
                           <X className="w-4 h-4 mr-1" />
-                          Clear All
+                          {t('clear_all')}
                         </Button>
                       )}
                     </div>
@@ -382,51 +322,51 @@ export default function Projects() {
                     <div className="space-y-3">
                       {/* Status Filter */}
                       <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
                         <Select
                           value={filters.status}
                           onValueChange={(val) => setFilters({ ...filters, status: val })}
                         >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="planning">Planning</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="on_hold">On Hold</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="all">{t('all_status')}</SelectItem>
+                            <SelectItem value="planning">{t('status_planning')}</SelectItem>
+                            <SelectItem value="in_progress">{t('status_in_progress')}</SelectItem>
+                            <SelectItem value="on_hold">{t('status_on_hold')}</SelectItem>
+                            <SelectItem value="completed">{t('status_completed')}</SelectItem>
+                            <SelectItem value="cancelled">{t('status_cancelled')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       {/* Priority Filter */}
                       <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Priority</label>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('priority')}</label>
                         <Select
                           value={filters.priority}
                           onValueChange={(val) => setFilters({ ...filters, priority: val })}
                         >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Priorities</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="critical">Critical</SelectItem>
+                            <SelectItem value="all">{t('all_priorities')}</SelectItem>
+                            <SelectItem value="low">{t('priority_low')}</SelectItem>
+                            <SelectItem value="medium">{t('priority_medium')}</SelectItem>
+                            <SelectItem value="high">{t('priority_high')}</SelectItem>
+                            <SelectItem value="critical">{t('priority_critical')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       {/* Department Filter */}
                       <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Department</label>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('department')}</label>
                         <Select
                           value={filters.department}
                           onValueChange={(val) => setFilters({ ...filters, department: val })}
                         >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
+                            <SelectItem value="all">{t('all_departments')}</SelectItem>
                             {departments.map(dept => (
                               <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                             ))}
@@ -436,14 +376,14 @@ export default function Projects() {
 
                       {/* Project Manager Filter */}
                       <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Project Manager</label>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('project_manager')}</label>
                         <Select
                           value={filters.projectManager}
                           onValueChange={(val) => setFilters({ ...filters, projectManager: val })}
                         >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Managers</SelectItem>
+                            <SelectItem value="all">{t('all_managers')}</SelectItem>
                             {projectManagers.map(pm => (
                               <SelectItem key={pm.id} value={pm.id}>
                                 {pm.first_name} {pm.last_name}
@@ -455,17 +395,17 @@ export default function Projects() {
 
                       {/* Risk Level Filter */}
                       <div>
-                        <label className="text-sm font-medium text-slate-700 mb-1 block">Risk Level</label>
+                        <label className="text-sm font-medium text-slate-700 mb-1 block">{t('risk_level')}</label>
                         <Select
                           value={filters.riskLevel}
                           onValueChange={(val) => setFilters({ ...filters, riskLevel: val })}
                         >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Risk Levels</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="all">{t('all_risk_levels')}</SelectItem>
+                            <SelectItem value="low">{t('risk_low')}</SelectItem>
+                            <SelectItem value="medium">{t('risk_medium')}</SelectItem>
+                            <SelectItem value="high">{t('risk_high')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -484,10 +424,17 @@ export default function Projects() {
                   if (key === 'projectManager') {
                     const pm = employees.find(e => e.id === value);
                     displayValue = pm ? `${pm.first_name} ${pm.last_name}` : value;
+                  } else if (key === 'status') {
+                    displayValue = t(`status_${value}`);
+                  } else if (key === 'priority') {
+                    displayValue = t(`priority_${value}`);
+                  } else if (key === 'riskLevel') {
+                    displayValue = t(`risk_${value}`);
                   }
+
                   return (
                     <Badge key={key} variant="secondary" className="gap-1">
-                      {key}: {displayValue}
+                      {t(key)}: {displayValue}
                       <X
                         className="w-3 h-3 cursor-pointer"
                         onClick={() => setFilters({ ...filters, [key]: 'all' })}
@@ -499,8 +446,8 @@ export default function Projects() {
             )}
 
             {/* Results Count */}
-            <div className="flex items-center justify-between text-sm text-slate-600">
-              <p>Showing <strong>{filteredProjects.length}</strong> of <strong>{projects.length}</strong> projects</p>
+            <div className="flex items-center text-sm text-slate-600">
+              <p>{t('showing')} <strong>{filteredProjects.length}</strong> {t('of')} <strong>{projects.length}</strong> {t('projects_plural')}</p>
             </div>
           </div>
         </CardHeader>
@@ -514,19 +461,16 @@ export default function Projects() {
             <div className="text-center py-12">
               <FolderKanban className="w-16 h-16 mx-auto mb-4 text-slate-300" />
               <p className="text-slate-500 mb-2">
-                {hasActiveFilters || searchTerm ? 'No projects match the selected filters' : 'No projects yet'}
+                {hasActiveFilters || searchTerm ? t('no_projects_match') : t('no_projects_yet')}
               </p>
               {hasActiveFilters || searchTerm ? (
-                <Button variant="outline" onClick={() => {
-                  clearFilters();
-                  setSearchTerm('');
-                }}>
-                  Clear All Filters
+                <Button variant="outline" onClick={() => { clearFilters(); setSearchTerm(''); }}>
+                  {t('clear_all_filters')}
                 </Button>
               ) : (
                 <Button onClick={() => setShowDialog(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create First Project
+                  {t('create_first_project')}
                 </Button>
               )}
             </div>
@@ -535,7 +479,6 @@ export default function Projects() {
               {filteredProjects.map((project) => {
                 const projectManager = employees.find(e => e.id === project.project_manager_id);
                 const teamSize = getTeamSize(project.id);
-
                 return (
                   <ProjectCard
                     key={project.id}
@@ -556,18 +499,13 @@ export default function Projects() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingProject ? 'Edit Project' : 'Create New Project'}
-            </DialogTitle>
+            <DialogTitle>{editingProject ? t('edit_project') : t('create_new_project')}</DialogTitle>
           </DialogHeader>
           <ProjectForm
             project={editingProject}
             employees={employees.filter(e => e.status === 'active')}
             onSubmit={handleSubmitProject}
-            onCancel={() => {
-              setShowDialog(false);
-              setEditingProject(null);
-            }}
+            onCancel={() => { setShowDialog(false); setEditingProject(null); }}
           />
         </DialogContent>
       </Dialog>
@@ -598,10 +536,7 @@ export default function Projects() {
         employees={employees}
         existingAssignments={selectedProject ? getProjectAssignments(selectedProject.id) : []}
         isOpen={showAssignModal}
-        onClose={() => {
-          setShowAssignModal(false);
-          setShowDetailsModal(true);
-        }}
+        onClose={() => { setShowAssignModal(false); setShowDetailsModal(true); }}
         onAssign={handleAssignTeamMember}
       />
 
@@ -610,10 +545,7 @@ export default function Projects() {
         employees={employees}
         existingAssignments={selectedProject ? getProjectAssignments(selectedProject.id) : []}
         isOpen={showBulkAssignModal}
-        onClose={() => {
-          setShowBulkAssignModal(false);
-          setShowDetailsModal(true);
-        }}
+        onClose={() => { setShowBulkAssignModal(false); setShowDetailsModal(true); }}
         onBulkAssign={handleBulkAssignTeamMembers}
       />
     </div>
