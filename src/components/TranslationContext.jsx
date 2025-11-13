@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
@@ -145,7 +144,6 @@ const translations = {
     timing: "Timing",
     hours: "Hours",
     break: "Break",
-    employees: "employees",
     days: "days",
     
     // Clock In/Out
@@ -298,7 +296,6 @@ const translations = {
     current_month_status: "Current Month Status",
     total_contributions_ytd: "Total Contributions (YTD)",
     submitted_reports: "Submitted Reports",
-    pending_actions: "Pending Actions",
     generate_report: "Generate Report",
     report_history: "Report History",
     submit_to_gosi: "Submit to GOSI Portal",
@@ -373,7 +370,6 @@ const translations = {
     total_departments: "Total Departments",
     avg_department_size: "Avg Department Size",
     with_managers: "With Managers",
-    all_departments: "All Departments",
     no_departments_found: "No departments found",
     departments_auto_created: "Departments are created automatically when employees are assigned to them",
     department_head: "Department Head",
@@ -689,7 +685,6 @@ const translations = {
     timing: "التوقيت",
     hours: "ساعات",
     break: "استراحة",
-    employees: "موظفين",
     days: "أيام",
     
     // Shifts - Arabic
@@ -833,7 +828,6 @@ const translations = {
     current_month_status: "حالة الشهر الحالي",
     total_contributions_ytd: "إجمالي المساهمات (منذ بداية العام)",
     submitted_reports: "التقارير المقدمة",
-    pending_actions: "إجراءات قيد الانتظار",
     generate_report: "إنشاء تقرير",
     report_history: "سجل التقارير",
     submit_to_gosi: "إرسال إلى بوابة التأمينات",
@@ -908,7 +902,6 @@ const translations = {
     total_departments: "إجمالي الأقسام",
     avg_department_size: "متوسط حجم القسم",
     with_managers: "مع مدراء",
-    all_departments: "جميع الأقسام",
     no_departments_found: "لم يتم العثور على أقسام",
     departments_auto_created: "يتم إنشاء الأقسام تلقائياً عند تعيين الموظفين لها",
     department_head: "رئيس القسم",
@@ -931,45 +924,6 @@ const translations = {
     upload_document: "رفع مستند",
     all_documents: "جميع المستندات",
     no_documents_uploaded: "لم يتم رفع مستندات بعد",
-    
-    // Onboarding - Arabic
-    employee_onboarding: "توظيف الموظفين",
-    streamline_new_hire: "تبسيط تجربة الموظف الجديد",
-    send_reminders: "إرسال تذكيرات",
-    create_checklist: "إنشاء قائمة تحقق",
-    active_onboarding: "توظيف نشط",
-    completion_rate: "معدل الإنجاز",
-    pending_tasks: "مهام قيد الانتظار",
-    pending_documents: "مستندات قيد الانتظار",
-    you_have_pending_tasks: "لديك مهام توظيف قيد الانتظار",
-    tasks_require_attention: "مهام تتطلب اهتمامك. يرجى إكمالها في أقرب وقت ممكن.",
-    new_hires: "موظفون جدد",
-    checklists: "قوائم التحقق",
-    my_tasks: "مهامي",
-    edit_checklist: "تعديل قائمة التحقق",
-    create_new_checklist: "إنشاء قائمة تحقق جديدة",
-    assign_automated_onboarding: "تعيين توظيف آلي",
-    assign_onboarding_to: "تعيين قائمة التحقق والمهام التوظيفية لـ",
-    select_checklist_optional: "اختر قائمة التحقق (اختياري)",
-    auto_select_based_on: "اختيار تلقائي بناءً على الدور/القسم",
-    leave_empty_auto: "اترك فارغاً للاختيار التلقائي لقائمة التحقق بناءً على القسم أو الدور الوظيفي",
-    what_will_happen: "ماذا سيحدث:",
-    default_tasks_created: "سيتم إنشاء 10 مهام توظيف افتراضية",
-    tasks_assigned_by_role: "سيتم تعيين المهام بناءً على الدور (موظف جديد، مدير، موارد بشرية، تقنية معلومات)",
-    due_dates_calculated: "سيتم حساب تواريخ الاستحقاق من تاريخ التوظيف",
-    welcome_email_sent: "سيتم إرسال بريد ترحيبي للموظف",
-    notification_email_hr: "سيتم إرسال بريد إشعار للموارد البشرية",
-    assigning: "جاري التعيين...",
-    assign_onboarding: "تعيين التوظيف",
-    send_onboarding_reminders: "إرسال تذكيرات التوظيف",
-    will_send_reminders_to: "سيؤدي هذا إلى إرسال تذكيرات عبر البريد الإلكتروني لمهام التوظيف إلى:",
-    new_hires_overdue: "الموظفون الجدد مع مهام متأخرة",
-    new_hires_due_today: "الموظفون الجدد مع مهام مستحقة اليوم",
-    new_hires_due_tomorrow: "الموظفون الجدد مع مهام مستحقة غداً",
-    managers_hr_assigned: "المدراء والموارد البشرية مع مهام معينة",
-    schedule_tip: "نصيحة: يمكنك جدولة هذه الوظيفة للعمل تلقائياً يومياً للمتابعة الاستباقية.",
-    sending: "جاري الإرسال...",
-    send_reminders_now: "إرسال التذكيرات الآن",
     
     // User Management - Arabic
     user_access_management: "إدارة وصول المستخدمين",
