@@ -1,7 +1,7 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Plane, Receipt, Plus, DollarSign, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,10 @@ import TravelApprovalPanel from "../components/travel/TravelApprovalPanel";
 import ExpenseApprovalPanel from "../components/travel/ExpenseApprovalPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useTranslation } from 'react-i18next';
 
 export default function TravelExpense() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar'; // Assuming 'ar' is the Arabic language code for RTL
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [showTravelForm, setShowTravelForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingTravel, setEditingTravel] = useState(null);
@@ -32,7 +31,6 @@ export default function TravelExpense() {
 
   const queryClient = useQueryClient();
 
-  // Fetch current user
   const { data: user } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
@@ -60,17 +58,16 @@ export default function TravelExpense() {
     queryFn: () => base44.entities.ExpenseClaim.list('-created_date'),
   });
 
-  // Mutations for Travel Requests
   const createTravelMutation = useMutation({
     mutationFn: (data) => base44.entities.TravelRequest.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests']);
       setShowTravelForm(false);
       setEditingTravel(null);
-      toast.success(t('toast_travel_submitted_success'));
+      toast.success('Travel request submitted successfully');
     },
     onError: () => {
-      toast.error(t('toast_travel_submitted_fail'));
+      toast.error('Failed to submit travel request');
     }
   });
 
@@ -80,10 +77,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['travel-requests']);
       setShowTravelForm(false);
       setEditingTravel(null);
-      toast.success(t('toast_travel_updated_success'));
+      toast.success('Travel request updated successfully');
     },
     onError: () => {
-      toast.error(t('toast_travel_updated_fail'));
+      toast.error('Failed to update travel request');
     }
   });
 
@@ -99,10 +96,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests']);
-      toast.success(t('toast_travel_approved'));
+      toast.success('Travel request approved');
     },
     onError: () => {
-      toast.error(t('toast_travel_approve_fail'));
+      toast.error('Failed to approve travel request');
     }
   });
 
@@ -119,24 +116,23 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests']);
-      toast.success(t('toast_travel_rejected'));
+      toast.success('Travel request rejected');
     },
     onError: () => {
-      toast.error(t('toast_travel_reject_fail'));
+      toast.error('Failed to reject travel request');
     }
   });
 
-  // Mutations for Expense Claims
   const createExpenseMutation = useMutation({
     mutationFn: (data) => base44.entities.ExpenseClaim.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims']);
       setShowExpenseForm(false);
       setEditingExpense(null);
-      toast.success(t('toast_expense_submitted_success'));
+      toast.success('Expense claim submitted successfully');
     },
     onError: () => {
-      toast.error(t('toast_expense_submitted_fail'));
+      toast.error('Failed to submit expense claim');
     }
   });
 
@@ -146,10 +142,10 @@ export default function TravelExpense() {
       queryClient.invalidateQueries(['expense-claims']);
       setShowExpenseForm(false);
       setEditingExpense(null);
-      toast.success(t('toast_expense_updated_success'));
+      toast.success('Expense claim updated successfully');
     },
     onError: () => {
-      toast.error(t('toast_expense_updated_fail'));
+      toast.error('Failed to update expense claim');
     }
   });
 
@@ -165,10 +161,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims']);
-      toast.success(t('toast_expense_approved'));
+      toast.success('Expense claim approved');
     },
     onError: () => {
-      toast.error(t('toast_expense_approve_fail'));
+      toast.error('Failed to approve expense claim');
     }
   });
 
@@ -185,10 +181,10 @@ export default function TravelExpense() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims']);
-      toast.success(t('toast_expense_rejected'));
+      toast.success('Expense claim rejected');
     },
     onError: () => {
-      toast.error(t('toast_expense_reject_fail'));
+      toast.error('Failed to reject expense claim');
     }
   });
 
@@ -218,13 +214,11 @@ export default function TravelExpense() {
     setShowExpenseForm(true);
   };
 
-  // Filter data based on role
   const myTravelRequests = currentUser ? travelRequests.filter(r => r.employee_id === currentUser.id) : [];
   const myExpenses = currentUser ? expenseClaims.filter(c => c.employee_id === currentUser.id) : [];
   const allTravelRequests = userRole === 'admin' ? travelRequests : myTravelRequests;
   const allExpenses = userRole === 'admin' ? expenseClaims : myExpenses;
 
-  // Calculate statistics
   const pendingTravelCount = myTravelRequests.filter(r => r.status === 'pending').length;
   const approvedTravelCount = myTravelRequests.filter(r => r.status === 'approved').length;
   const totalExpenseAmount = myExpenses
@@ -236,7 +230,6 @@ export default function TravelExpense() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      {/* Header */}
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('travel_expense_management')}</h1>
@@ -258,64 +251,30 @@ export default function TravelExpense() {
         </div>
       </div>
 
-      {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={t('pending_travel')}
-          value={pendingTravelCount}
-          icon={Clock}
-          bgColor="from-amber-500 to-amber-600"
-        />
-        <StatCard
-          title={t('approved_travel')}
-          value={approvedTravelCount}
-          icon={CheckCircle}
-          bgColor="from-emerald-500 to-emerald-600"
-        />
-        <StatCard
-          title={t('total_expenses')}
-          value={`${totalExpenseAmount.toLocaleString()} SAR`}
-          icon={DollarSign}
-          bgColor="from-blue-500 to-blue-600"
-        />
-        <StatCard
-          title={t('pending_claims')}
-          value={`${pendingExpenseAmount.toLocaleString()} SAR`}
-          icon={Receipt}
-          bgColor="from-purple-500 to-purple-600"
-        />
+        <StatCard title={t('pending_travel')} value={pendingTravelCount} icon={Clock} bgColor="from-amber-500 to-amber-600" />
+        <StatCard title={t('approved_travel')} value={approvedTravelCount} icon={CheckCircle} bgColor="from-emerald-500 to-emerald-600" />
+        <StatCard title={t('total_expenses')} value={`${totalExpenseAmount.toLocaleString()} SAR`} icon={DollarSign} bgColor="from-blue-500 to-blue-600" />
+        <StatCard title={t('pending_claims')} value={`${pendingExpenseAmount.toLocaleString()} SAR`} icon={Receipt} bgColor="from-purple-500 to-purple-600" />
       </div>
 
-      {/* Main Tabs */}
       <Tabs defaultValue={userRole === 'admin' ? 'travel-approvals' : 'my-travel'} className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1">
-          <TabsTrigger
-            value="my-travel"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="my-travel" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Plane className="w-4 h-4 mr-2" />
             {t('my_travel')}
           </TabsTrigger>
-          <TabsTrigger
-            value="my-expenses"
-            className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="my-expenses" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Receipt className="w-4 h-4 mr-2" />
             {t('my_expenses')}
           </TabsTrigger>
           {userRole === 'admin' && (
             <>
-              <TabsTrigger
-                value="travel-approvals"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
+              <TabsTrigger value="travel-approvals" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 {t('travel_approvals')}
               </TabsTrigger>
-              <TabsTrigger
-                value="expense-approvals"
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-              >
+              <TabsTrigger value="expense-approvals" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 {t('expense_approvals')}
               </TabsTrigger>
@@ -323,7 +282,6 @@ export default function TravelExpense() {
           )}
         </TabsList>
 
-        {/* My Travel Tab */}
         <TabsContent value="my-travel">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6">
@@ -355,7 +313,6 @@ export default function TravelExpense() {
           </Card>
         </TabsContent>
 
-        {/* My Expenses Tab */}
         <TabsContent value="my-expenses">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6">
@@ -388,7 +345,6 @@ export default function TravelExpense() {
           </Card>
         </TabsContent>
 
-        {/* Travel Approvals Tab (Admin) */}
         {userRole === 'admin' && (
           <TabsContent value="travel-approvals">
             <TravelApprovalPanel
@@ -400,7 +356,6 @@ export default function TravelExpense() {
           </TabsContent>
         )}
 
-        {/* Expense Approvals Tab (Admin) */}
         {userRole === 'admin' && (
           <TabsContent value="expense-approvals">
             <ExpenseApprovalPanel
@@ -414,35 +369,26 @@ export default function TravelExpense() {
         )}
       </Tabs>
 
-      {/* Travel Request Form Dialog */}
       <Dialog open={showTravelForm} onOpenChange={setShowTravelForm}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingTravel ? t('edit_travel_request') : t('new_travel_request')}
-            </DialogTitle>
+            <DialogTitle>{editingTravel ? t('edit_travel_request') : t('new_travel_request')}</DialogTitle>
           </DialogHeader>
           {currentUser && (
             <TravelRequestForm
               request={editingTravel}
               employee={currentUser}
               onSubmit={handleSubmitTravel}
-              onCancel={() => {
-                setShowTravelForm(false);
-                setEditingTravel(null);
-              }}
+              onCancel={() => { setShowTravelForm(false); setEditingTravel(null); }}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Expense Claim Form Dialog */}
       <Dialog open={showExpenseForm} onOpenChange={setShowExpenseForm}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingExpense ? t('edit_expense_claim') : t('new_expense_claim')}
-            </DialogTitle>
+            <DialogTitle>{editingExpense ? t('edit_expense_claim') : t('new_expense_claim')}</DialogTitle>
           </DialogHeader>
           {currentUser && (
             <ExpenseClaimForm
@@ -450,10 +396,7 @@ export default function TravelExpense() {
               employee={currentUser}
               travelRequests={myTravelRequests.filter(r => r.status === 'approved')}
               onSubmit={handleSubmitExpense}
-              onCancel={() => {
-                setShowExpenseForm(false);
-                setEditingExpense(null);
-              }}
+              onCancel={() => { setShowExpenseForm(false); setEditingExpense(null); }}
             />
           )}
         </DialogContent>

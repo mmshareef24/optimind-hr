@@ -1,7 +1,7 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Package, Plus, Search, Filter, X, Laptop, Phone, Printer, Car, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,13 +25,10 @@ import AssetDetailsModal from "../components/assets/AssetDetailsModal";
 import AssignAssetModal from "../components/assets/AssignAssetModal";
 import MaintenanceSchedule from "../components/assets/MaintenanceSchedule";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next"; // Added import
 
 export default function Assets() {
-  const { t, i18n } = useTranslation(); // Destructure i18n to get language
-  const language = i18n.language; // Get current language
+  const { t, language } = useTranslation();
   const isRTL = language === 'ar';
-
   const [searchTerm, setSearchTerm] = useState("");
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -49,7 +46,6 @@ export default function Assets() {
 
   const queryClient = useQueryClient();
 
-  // Fetch data
   const { data: assets = [], isLoading: loadingAssets } = useQuery({
     queryKey: ['assets'],
     queryFn: () => base44.entities.Asset.list('-created_date'),
@@ -70,16 +66,15 @@ export default function Assets() {
     queryFn: () => base44.entities.MaintenanceRecord.list('-maintenance_date'),
   });
 
-  // Mutations
   const createAssetMutation = useMutation({
     mutationFn: (data) => base44.entities.Asset.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['assets']);
       setShowAssetForm(false);
       setEditingAsset(null);
-      toast.success(t('asset_created_successfully'));
+      toast.success('Asset created successfully');
     },
-    onError: () => toast.error(t('failed_to_create_asset'))
+    onError: () => toast.error('Failed to create asset')
   });
 
   const updateAssetMutation = useMutation({
@@ -89,16 +84,14 @@ export default function Assets() {
       setShowAssetForm(false);
       setShowDetailsModal(false);
       setEditingAsset(null);
-      toast.success(t('asset_updated_successfully'));
+      toast.success('Asset updated successfully');
     },
-    onError: () => toast.error(t('failed_to_update_asset'))
+    onError: () => toast.error('Failed to update asset')
   });
 
   const assignAssetMutation = useMutation({
     mutationFn: async (assignmentData) => {
-      // Create assignment record
       await base44.entities.AssetAssignment.create(assignmentData);
-      // Update asset status
       const asset = assets.find(a => a.id === assignmentData.asset_id);
       await base44.entities.Asset.update(assignmentData.asset_id, {
         ...asset,
@@ -112,22 +105,20 @@ export default function Assets() {
       queryClient.invalidateQueries(['asset-assignments']);
       setShowAssignModal(false);
       setSelectedAsset(null);
-      toast.success(t('asset_assigned_successfully'));
+      toast.success('Asset assigned successfully');
     },
-    onError: () => toast.error(t('failed_to_assign_asset'))
+    onError: () => toast.error('Failed to assign asset')
   });
 
   const returnAssetMutation = useMutation({
     mutationFn: async ({ assignmentId, assetId, condition }) => {
       const assignment = assignments.find(a => a.id === assignmentId);
-      // Update assignment
       await base44.entities.AssetAssignment.update(assignmentId, {
         ...assignment,
         status: 'returned',
         actual_return_date: new Date().toISOString().split('T')[0],
         condition_at_return: condition
       });
-      // Update asset
       const asset = assets.find(a => a.id === assetId);
       await base44.entities.Asset.update(assetId, {
         ...asset,
@@ -139,12 +130,11 @@ export default function Assets() {
     onSuccess: () => {
       queryClient.invalidateQueries(['assets']);
       queryClient.invalidateQueries(['asset-assignments']);
-      toast.success(t('asset_returned_successfully'));
+      toast.success('Asset returned successfully');
     },
-    onError: () => toast.error(t('failed_to_return_asset'))
+    onError: () => toast.error('Failed to return asset')
   });
 
-  // Filter and search
   const departments = [...new Set(assets.map(a => a.department).filter(Boolean))];
 
   const filteredAssets = assets.filter(asset => {
@@ -173,14 +163,12 @@ export default function Assets() {
 
   const hasActiveFilters = Object.values(filters).some(f => f !== 'all');
 
-  // Statistics
   const totalAssets = assets.length;
   const availableAssets = assets.filter(a => a.status === 'available').length;
   const assignedAssets = assets.filter(a => a.status === 'assigned').length;
   const maintenanceNeeded = assets.filter(a => a.status === 'in_maintenance').length;
   const totalValue = assets.reduce((sum, a) => sum + (a.current_value || a.purchase_cost || 0), 0);
 
-  // Upcoming maintenance
   const upcomingMaintenance = maintenanceRecords.filter(m =>
     m.status === 'scheduled' &&
     new Date(m.maintenance_date) > new Date()
@@ -211,7 +199,6 @@ export default function Assets() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      {/* Header */}
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
         <div className={isRTL ? 'text-right' : ''}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('assets_facilities')}</h1>
@@ -225,71 +212,38 @@ export default function Assets() {
         </Button>
       </div>
 
-      {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={t('total_assets')}
-          value={totalAssets}
-          icon={Package}
-          bgColor="from-blue-500 to-blue-600"
-        />
-        <StatCard
-          title={t('available')}
-          value={availableAssets}
-          icon={Laptop}
-          bgColor="from-emerald-500 to-emerald-600"
-        />
-        <StatCard
-          title={t('assigned')}
-          value={assignedAssets}
-          icon={Phone}
-          bgColor="from-purple-500 to-purple-600"
-        />
-        <StatCard
-          title={t('total_value')}
-          value={`${totalValue.toLocaleString()} SAR`}
-          icon={Package}
-          bgColor="from-amber-500 to-amber-600"
-        />
+        <StatCard title={t('total_assets')} value={totalAssets} icon={Package} bgColor="from-blue-500 to-blue-600" />
+        <StatCard title={t('available')} value={availableAssets} icon={Laptop} bgColor="from-emerald-500 to-emerald-600" />
+        <StatCard title={t('assigned')} value={assignedAssets} icon={Phone} bgColor="from-purple-500 to-purple-600" />
+        <StatCard title={t('total_value')} value={`${totalValue.toLocaleString()} SAR`} icon={Package} bgColor="from-amber-500 to-amber-600" />
       </div>
 
-      {/* Main Tabs */}
       <Tabs defaultValue="all-assets" className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1">
-          <TabsTrigger
-            value="all-assets"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="all-assets" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <Package className="w-4 h-4 mr-2" />
             {t('all_assets')}
           </TabsTrigger>
-          <TabsTrigger
-            value="assignments"
-            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="assignments" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
             <Laptop className="w-4 h-4 mr-2" />
             {t('assignments')}
           </TabsTrigger>
-          <TabsTrigger
-            value="maintenance"
-            className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-          >
+          <TabsTrigger value="maintenance" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white">
             <Wrench className="w-4 h-4 mr-2" />
             {t('maintenance')}
           </TabsTrigger>
         </TabsList>
 
-        {/* All Assets Tab */}
         <TabsContent value="all-assets">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6">
-              {/* Search and Filter */}
               <div className="flex flex-col gap-4 mb-6">
                 <div className="flex gap-3">
                   <div className="relative flex-1">
                     <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
                     <Input
-                      placeholder={t('search_assets_placeholder')}
+                      placeholder="Search assets by name, code, serial number, or model..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className={isRTL ? 'pr-10' : 'pl-10'}
@@ -300,9 +254,7 @@ export default function Assets() {
                       <Button variant="outline" className="relative">
                         <Filter className="w-4 h-4 mr-2" />
                         {t('filters')}
-                        {hasActiveFilters && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full" />
-                        )}
+                        {hasActiveFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full" />}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-96" align="end">
@@ -320,66 +272,51 @@ export default function Assets() {
                         <div className="space-y-3">
                           <div>
                             <label className="text-sm font-medium text-slate-700 mb-1 block">{t('category')}</label>
-                            <Select
-                              value={filters.category}
-                              onValueChange={(val) => setFilters({ ...filters, category: val })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
+                            <Select value={filters.category} onValueChange={(val) => setFilters({ ...filters, category: val })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">{t('all_categories')}</SelectItem>
-                                <SelectItem value="computer">{t('category_computer')}</SelectItem>
-                                <SelectItem value="laptop">{t('category_laptop')}</SelectItem>
-                                <SelectItem value="phone">{t('category_phone')}</SelectItem>
-                                <SelectItem value="tablet">{t('category_tablet')}</SelectItem>
-                                <SelectItem value="monitor">{t('category_monitor')}</SelectItem>
-                                <SelectItem value="printer">{t('category_printer')}</SelectItem>
-                                <SelectItem value="furniture">{t('category_furniture')}</SelectItem>
-                                <SelectItem value="vehicle">{t('category_vehicle')}</SelectItem>
-                                <SelectItem value="equipment">{t('category_equipment')}</SelectItem>
-                                <SelectItem value="software">{t('category_software')}</SelectItem>
-                                <SelectItem value="other">{t('category_other')}</SelectItem>
+                                <SelectItem value="computer">Computer</SelectItem>
+                                <SelectItem value="laptop">Laptop</SelectItem>
+                                <SelectItem value="phone">Phone</SelectItem>
+                                <SelectItem value="tablet">Tablet</SelectItem>
+                                <SelectItem value="monitor">Monitor</SelectItem>
+                                <SelectItem value="printer">Printer</SelectItem>
+                                <SelectItem value="furniture">Furniture</SelectItem>
+                                <SelectItem value="vehicle">Vehicle</SelectItem>
+                                <SelectItem value="equipment">Equipment</SelectItem>
+                                <SelectItem value="software">Software</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div>
                             <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
-                            <Select
-                              value={filters.status}
-                              onValueChange={(val) => setFilters({ ...filters, status: val })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
+                            <Select value={filters.status} onValueChange={(val) => setFilters({ ...filters, status: val })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">{t('all_status')}</SelectItem>
-                                <SelectItem value="available">{t('status_available')}</SelectItem>
-                                <SelectItem value="assigned">{t('status_assigned')}</SelectItem>
-                                <SelectItem value="in_maintenance">{t('status_in_maintenance')}</SelectItem>
-                                <SelectItem value="retired">{t('status_retired')}</SelectItem>
-                                <SelectItem value="lost">{t('status_lost')}</SelectItem>
-                                <SelectItem value="damaged">{t('status_damaged')}</SelectItem>
+                                <SelectItem value="available">{t('available')}</SelectItem>
+                                <SelectItem value="assigned">{t('assigned')}</SelectItem>
+                                <SelectItem value="in_maintenance">In Maintenance</SelectItem>
+                                <SelectItem value="retired">Retired</SelectItem>
+                                <SelectItem value="lost">Lost</SelectItem>
+                                <SelectItem value="damaged">Damaged</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div>
                             <label className="text-sm font-medium text-slate-700 mb-1 block">{t('condition')}</label>
-                            <Select
-                              value={filters.condition}
-                              onValueChange={(val) => setFilters({ ...filters, condition: val })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
+                            <Select value={filters.condition} onValueChange={(val) => setFilters({ ...filters, condition: val })}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">{t('all_conditions')}</SelectItem>
-                                <SelectItem value="excellent">{t('condition_excellent')}</SelectItem>
-                                <SelectItem value="good">{t('condition_good')}</SelectItem>
-                                <SelectItem value="fair">{t('condition_fair')}</SelectItem>
-                                <SelectItem value="poor">{t('condition_poor')}</SelectItem>
+                                <SelectItem value="excellent">Excellent</SelectItem>
+                                <SelectItem value="good">Good</SelectItem>
+                                <SelectItem value="fair">Fair</SelectItem>
+                                <SelectItem value="poor">Poor</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -387,13 +324,8 @@ export default function Assets() {
                           {departments.length > 0 && (
                             <div>
                               <label className="text-sm font-medium text-slate-700 mb-1 block">{t('department')}</label>
-                              <Select
-                                value={filters.department}
-                                onValueChange={(val) => setFilters({ ...filters, department: val })}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
+                              <Select value={filters.department} onValueChange={(val) => setFilters({ ...filters, department: val })}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="all">{t('all_departments')}</SelectItem>
                                   {departments.map(dept => (
@@ -409,55 +341,40 @@ export default function Assets() {
                   </Popover>
                 </div>
 
-                {/* Active Filters Display */}
                 {hasActiveFilters && (
                   <div className="flex flex-wrap gap-2">
                     {filters.category !== 'all' && (
                       <Badge variant="secondary" className="gap-1">
                         {t('category')}: {filters.category}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => setFilters({ ...filters, category: 'all' })}
-                        />
+                        <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters({ ...filters, category: 'all' })} />
                       </Badge>
                     )}
                     {filters.status !== 'all' && (
                       <Badge variant="secondary" className="gap-1">
                         {t('status')}: {filters.status}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => setFilters({ ...filters, status: 'all' })}
-                        />
+                        <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters({ ...filters, status: 'all' })} />
                       </Badge>
                     )}
                     {filters.condition !== 'all' && (
                       <Badge variant="secondary" className="gap-1">
                         {t('condition')}: {filters.condition}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => setFilters({ ...filters, condition: 'all' })}
-                        />
+                        <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters({ ...filters, condition: 'all' })} />
                       </Badge>
                     )}
                     {filters.department !== 'all' && (
                       <Badge variant="secondary" className="gap-1">
                         {t('department')}: {filters.department}
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => setFilters({ ...filters, department: 'all' })}
-                        />
+                        <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters({ ...filters, department: 'all' })} />
                       </Badge>
                     )}
                   </div>
                 )}
 
-                {/* Results Count */}
                 <div className="text-sm text-slate-600">
                   {t('showing')} <strong>{filteredAssets.length}</strong> {t('of')} <strong>{totalAssets}</strong> {t('assets')}
                 </div>
               </div>
 
-              {/* Assets Grid */}
               {loadingAssets ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-64" />)}
@@ -469,11 +386,8 @@ export default function Assets() {
                     {hasActiveFilters || searchTerm ? t('no_assets_match') : t('no_assets_found')}
                   </p>
                   {(hasActiveFilters || searchTerm) && (
-                    <Button variant="outline" onClick={() => {
-                      clearFilters();
-                      setSearchTerm('');
-                    }}>
-                      {t('clear_all_filters')}
+                    <Button variant="outline" onClick={() => { clearFilters(); setSearchTerm(''); }}>
+                      {t('clear_all')} Filters
                     </Button>
                   )}
                 </div>
@@ -495,11 +409,9 @@ export default function Assets() {
           </Card>
         </TabsContent>
 
-        {/* Assignments Tab */}
         <TabsContent value="assignments">
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6">
-              {/* Assignment history and management */}
               <div className="space-y-4">
                 {assignments.filter(a => a.status === 'active').map(assignment => {
                   const asset = assets.find(a => a.id === assignment.asset_id);
@@ -509,9 +421,7 @@ export default function Assets() {
                       <CardContent className="p-5">
                         <div className={`flex items-start justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
-                            <h4 className="font-semibold text-slate-900 mb-1">
-                              {asset?.asset_name}
-                            </h4>
+                            <h4 className="font-semibold text-slate-900 mb-1">{asset?.asset_name}</h4>
                             <p className="text-sm text-slate-600 mb-2">
                               {t('assigned_to')}: {employee?.first_name} {employee?.last_name}
                             </p>
@@ -536,7 +446,7 @@ export default function Assets() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const condition = prompt(t('prompt_return_condition'), 'good');
+                              const condition = prompt('Enter return condition (excellent/good/fair/poor):', 'good');
                               if (condition) {
                                 returnAssetMutation.mutate({
                                   assignmentId: assignment.id,
@@ -564,39 +474,30 @@ export default function Assets() {
           </Card>
         </TabsContent>
 
-        {/* Maintenance Tab */}
         <TabsContent value="maintenance">
           <MaintenanceSchedule
             assets={assets}
             maintenanceRecords={maintenanceRecords}
             onScheduleMaintenance={(assetId, data) => {
-              // Handle maintenance scheduling
-              toast.info(t('maintenance_scheduling_coming_soon'));
+              toast.info('Maintenance scheduling coming soon');
             }}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Asset Form Dialog */}
       <Dialog open={showAssetForm} onOpenChange={setShowAssetForm}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingAsset ? t('edit_asset') : t('add_new_asset')}
-            </DialogTitle>
+            <DialogTitle>{editingAsset ? t('edit_asset') : t('add_new_asset')}</DialogTitle>
           </DialogHeader>
           <AssetForm
             asset={editingAsset}
             onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowAssetForm(false);
-              setEditingAsset(null);
-            }}
+            onCancel={() => { setShowAssetForm(false); setEditingAsset(null); }}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Assign Asset Modal */}
       {selectedAsset && (
         <AssignAssetModal
           open={showAssignModal}
@@ -607,7 +508,6 @@ export default function Assets() {
         />
       )}
 
-      {/* Asset Details Modal */}
       {selectedAsset && (
         <AssetDetailsModal
           open={showDetailsModal}

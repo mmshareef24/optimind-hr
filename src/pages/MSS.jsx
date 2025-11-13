@@ -1,7 +1,7 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Users, Calendar, TrendingUp, Clock, Plane, Receipt, CheckCircle, Award, BarChart3, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,16 +16,14 @@ import TravelExpenseApprovals from "../components/mss/TravelExpenseApprovals";
 import ProfileChangeApprovals from "../components/mss/ProfileChangeApprovals";
 import TeamAnalytics from "../components/mss/TeamAnalytics";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
 
 export default function MSS() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar';
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch current user and employee
   const { data: user, isLoading: loadingUser } = useQuery({
     queryKey: ['current-user-mss'],
     queryFn: async () => {
@@ -38,32 +36,27 @@ export default function MSS() {
     }
   });
 
-  // Fetch all employees
   const { data: employees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: () => base44.entities.Employee.list(),
   });
 
-  // Fetch team members (direct reports)
   const teamMembers = currentEmployee
     ? employees.filter(e => e.manager_id === currentEmployee.id)
     : [];
 
-  // Fetch leave requests
   const { data: leaveRequests = [], isLoading: loadingLeaves } = useQuery({
     queryKey: ['leave-requests'],
     queryFn: () => base44.entities.LeaveRequest.list('-created_date'),
     enabled: !!currentEmployee
   });
 
-  // Fetch profile change requests
   const { data: profileChangeRequests = [] } = useQuery({
     queryKey: ['profile-change-requests-mss'],
     queryFn: () => base44.entities.ProfileChangeRequest.list('-created_date'),
     enabled: !!currentEmployee
   });
 
-  // Fetch performance data
   const { data: performanceReviews = [] } = useQuery({
     queryKey: ['performance-reviews'],
     queryFn: () => base44.entities.PerformanceReview.list('-created_date'),
@@ -76,21 +69,18 @@ export default function MSS() {
     enabled: !!currentEmployee
   });
 
-  // Fetch attendance
   const { data: attendance = [] } = useQuery({
     queryKey: ['attendance'],
     queryFn: () => base44.entities.Attendance.list('-date', 100),
     enabled: !!currentEmployee
   });
 
-  // Fetch timesheets
   const { data: timesheets = [] } = useQuery({
     queryKey: ['timesheets'],
     queryFn: () => base44.entities.Timesheet.list('-created_date'),
     enabled: !!currentEmployee
   });
 
-  // Fetch travel & expense
   const { data: travelRequests = [] } = useQuery({
     queryKey: ['travel-requests-mss'],
     queryFn: () => base44.entities.TravelRequest.list('-created_date'),
@@ -103,7 +93,6 @@ export default function MSS() {
     enabled: !!currentEmployee
   });
 
-  // Mutations for Leave Approvals
   const approveLeave = useMutation({
     mutationFn: async ({ id, notes }) => {
       const leave = leaveRequests.find(l => l.id === id);
@@ -116,9 +105,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
-      toast.success(t('leave_request_approved'));
+      toast.success('Leave request approved');
     },
-    onError: () => toast.error(t('failed_to_approve_leave_request'))
+    onError: () => toast.error('Failed to approve leave request')
   });
 
   const rejectLeave = useMutation({
@@ -134,12 +123,11 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['leave-requests']);
-      toast.success(t('leave_request_rejected'));
+      toast.success('Leave request rejected');
     },
-    onError: () => toast.error(t('failed_to_reject_leave_request'))
+    onError: () => toast.error('Failed to reject leave request')
   });
 
-  // Mutations for Travel Approvals
   const approveTravel = useMutation({
     mutationFn: async ({ id }) => {
       const travel = travelRequests.find(t => t.id === id);
@@ -152,9 +140,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests-mss']);
-      toast.success(t('travel_request_approved'));
+      toast.success('Travel request approved');
     },
-    onError: () => toast.error(t('failed_to_approve_travel_request'))
+    onError: () => toast.error('Failed to approve travel request')
   });
 
   const rejectTravel = useMutation({
@@ -170,12 +158,11 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['travel-requests-mss']);
-      toast.success(t('travel_request_rejected'));
+      toast.success('Travel request rejected');
     },
-    onError: () => toast.error(t('failed_to_reject_travel_request'))
+    onError: () => toast.error('Failed to reject travel request')
   });
 
-  // Mutations for Expense Approvals
   const approveExpense = useMutation({
     mutationFn: async ({ id }) => {
       const expense = expenseClaims.find(e => e.id === id);
@@ -188,9 +175,9 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims-mss']);
-      toast.success(t('expense_claim_approved'));
+      toast.success('Expense claim approved');
     },
-    onError: () => toast.error(t('failed_to_approve_expense_claim'))
+    onError: () => toast.error('Failed to approve expense claim')
   });
 
   const rejectExpense = useMutation({
@@ -206,18 +193,15 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['expense-claims-mss']);
-      toast.success(t('expense_claim_rejected'));
+      toast.success('Expense claim rejected');
     },
-    onError: () => toast.error(t('failed_to_reject_expense_claim'))
+    onError: () => toast.error('Failed to reject expense claim')
   });
 
-  // Mutations for Profile Change Approvals
   const approveProfileChange = useMutation({
     mutationFn: async ({ id, notes }) => {
       const request = profileChangeRequests.find(r => r.id === id);
-      // Update the employee record with the new data
       await base44.entities.Employee.update(request.employee_id, request.requested_data);
-      // Mark the request as approved
       return base44.entities.ProfileChangeRequest.update(id, {
         ...request,
         status: 'approved',
@@ -229,9 +213,9 @@ export default function MSS() {
     onSuccess: () => {
       queryClient.invalidateQueries(['profile-change-requests-mss']);
       queryClient.invalidateQueries(['employees']);
-      toast.success(t('profile_change_approved_and_applied'));
+      toast.success('Profile change approved and applied');
     },
-    onError: () => toast.error(t('failed_to_approve_profile_change'))
+    onError: () => toast.error('Failed to approve profile change')
   });
 
   const rejectProfileChange = useMutation({
@@ -247,12 +231,11 @@ export default function MSS() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['profile-change-requests-mss']);
-      toast.success(t('profile_change_rejected'));
+      toast.success('Profile change rejected');
     },
-    onError: () => toast.error(t('failed_to_reject_profile_change'))
+    onError: () => toast.error('Failed to reject profile change')
   });
 
-  // Filter data for team
   const teamMemberIds = teamMembers.map(m => m.id);
   const teamLeaveRequests = leaveRequests.filter(l => teamMemberIds.includes(l.employee_id));
   const teamProfileChangeRequests = profileChangeRequests.filter(r => teamMemberIds.includes(r.employee_id));
@@ -262,15 +245,13 @@ export default function MSS() {
   const teamTravelRequests = travelRequests.filter(t => teamMemberIds.includes(t.employee_id));
   const teamExpenseClaims = expenseClaims.filter(e => teamMemberIds.includes(e.employee_id));
 
-  // Calculate statistics
   const pendingLeaves = teamLeaveRequests.filter(l => l.status === 'pending').length;
   const pendingProfileChanges = teamProfileChangeRequests.filter(r => r.status === 'pending').length;
   const pendingTravel = teamTravelRequests.filter(t => t.status === 'pending').length;
   const pendingExpenses = teamExpenseClaims.filter(e => e.status === 'submitted' || e.status === 'under_review').length;
   const teamSize = teamMembers.length;
 
-  // Calculate team attendance rate
-  const recentAttendance = teamAttendance.slice(0, teamSize * 30); // Last 30 days
+  const recentAttendance = teamAttendance.slice(0, teamSize * 30);
   const presentCount = recentAttendance.filter(a => a.status === 'present').length;
   const attendanceRate = recentAttendance.length > 0
     ? Math.round((presentCount / recentAttendance.length) * 100)
@@ -319,32 +300,20 @@ export default function MSS() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      {/* Header */}
       <div className={isRTL ? 'text-right' : ''}>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('manager_self_service')}</h1>
         <p className="text-slate-600">{t('manage_your_team')} {teamSize} {teamSize !== 1 ? t('members') : t('member')}</p>
       </div>
 
-      {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={t('team_size')}
-          value={teamSize}
-          icon={Users}
-          bgColor="from-blue-500 to-blue-600"
-        />
+        <StatCard title={t('team_size')} value={teamSize} icon={Users} bgColor="from-blue-500 to-blue-600" />
         <StatCard
           title={t('pending_approvals')}
           value={pendingLeaves + pendingTravel + pendingExpenses + pendingProfileChanges}
           icon={CheckCircle}
           bgColor="from-amber-500 to-amber-600"
         />
-        <StatCard
-          title={t('attendance_rate')}
-          value={`${attendanceRate}%`}
-          icon={Clock}
-          bgColor="from-emerald-500 to-emerald-600"
-        />
+        <StatCard title={t('attendance_rate')} value={`${attendanceRate}%`} icon={Clock} bgColor="from-emerald-500 to-emerald-600" />
         <StatCard
           title={t('active_goals')}
           value={teamPerformanceGoals.filter(g => g.status === 'in_progress').length}
@@ -353,7 +322,6 @@ export default function MSS() {
         />
       </div>
 
-      {/* Main Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1 flex-wrap h-auto">
           <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
@@ -401,7 +369,6 @@ export default function MSS() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
         <TabsContent value="overview">
           <TeamOverview
             teamMembers={teamMembers}
@@ -412,7 +379,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Team Members Tab */}
         <TabsContent value="team">
           <TeamMembersList
             teamMembers={teamMembers}
@@ -422,7 +388,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Leave Approvals Tab */}
         <TabsContent value="leave-approvals">
           <LeaveApprovals
             leaveRequests={teamLeaveRequests}
@@ -432,7 +397,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Profile Change Approvals Tab */}
         <TabsContent value="profile-approvals">
           <ProfileChangeApprovals
             requests={teamProfileChangeRequests}
@@ -442,7 +406,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Performance Tab */}
         <TabsContent value="performance">
           <PerformanceManagement
             teamMembers={teamMembers}
@@ -452,7 +415,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Attendance Tab */}
         <TabsContent value="attendance">
           <AttendanceMonitor
             teamMembers={teamMembers}
@@ -461,7 +423,6 @@ export default function MSS() {
           />
         </TabsContent>
 
-        {/* Travel & Expense Tab */}
         <TabsContent value="travel-expense">
           <TravelExpenseApprovals
             teamMembers={teamMembers}
