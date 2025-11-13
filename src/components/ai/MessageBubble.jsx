@@ -2,7 +2,6 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from "@/components/ui/button";
 import { Copy, Zap, CheckCircle2, AlertCircle, Loader2, ChevronRight, Clock } from 'lucide-react';
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const FunctionDisplay = ({ toolCall }) => {
@@ -44,22 +43,19 @@ const FunctionDisplay = ({ toolCall }) => {
         <div className="mt-2 text-xs">
             <button
                 onClick={() => setExpanded(!expanded)}
-                className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all",
-                    "hover:bg-slate-50",
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all hover:bg-slate-50 ${
                     expanded ? "bg-slate-50 border-slate-300" : "bg-white border-slate-200"
-                )}
+                }`}
             >
-                <Icon className={cn("h-3 w-3", statusConfig.color, statusConfig.spin && "animate-spin")} />
+                <Icon className={`h-3 w-3 ${statusConfig.color} ${statusConfig.spin ? 'animate-spin' : ''}`} />
                 <span className="text-slate-700">{formattedName}</span>
                 {statusConfig.text && (
-                    <span className={cn("text-slate-500", isError && "text-red-600")}>
+                    <span className={`text-slate-500 ${isError ? 'text-red-600' : ''}`}>
                         • {statusConfig.text}
                     </span>
                 )}
                 {!statusConfig.spin && (toolCall.arguments_string || results) && (
-                    <ChevronRight className={cn("h-3 w-3 text-slate-400 transition-transform ml-auto", 
-                        expanded && "rotate-90")} />
+                    <ChevronRight className={`h-3 w-3 text-slate-400 transition-transform ml-auto ${expanded ? 'rotate-90' : ''}`} />
                 )}
             </button>
             
@@ -98,18 +94,17 @@ export default function MessageBubble({ message }) {
     const isUser = message.role === 'user';
     
     return (
-        <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}>
+        <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
             {!isUser && (
                 <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mt-0.5 shadow-sm">
                     <Zap className="h-4 w-4 text-white" />
                 </div>
             )}
-            <div className={cn("max-w-[85%]", isUser && "flex flex-col items-end")}>
+            <div className={`max-w-[85%] ${isUser ? "flex flex-col items-end" : ""}`}>
                 {message.content && (
-                    <div className={cn(
-                        "rounded-2xl px-4 py-2.5",
+                    <div className={`rounded-2xl px-4 py-2.5 ${
                         isUser ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 shadow-sm"
-                    )}>
+                    }`}>
                         {isUser ? (
                             <p className="text-sm leading-relaxed">{message.content}</p>
                         ) : (
