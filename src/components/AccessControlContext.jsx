@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -129,7 +129,10 @@ export function AccessControlProvider({ children }) {
     return accessibleCompanies.map(c => c.id);
   }, [selectedCompanyId, baseUser?.role, companies, accessibleCompanies]);
 
-  const value = React.useMemo(() => ({
+  const isAdmin = baseUser?.role === 'admin';
+  const isSuperAdmin = baseUser?.role === 'admin' || (userData?.custom_roles && Array.isArray(userData.custom_roles) && userData.custom_roles.includes('super_admin'));
+
+  const value = {
     baseUser,
     userData,
     employee,
@@ -141,22 +144,9 @@ export function AccessControlProvider({ children }) {
     hasPermission,
     hasRole,
     getAccessibleCompanyIds,
-    isAdmin: baseUser?.role === 'admin',
-    isSuperAdmin: baseUser?.role === 'admin' || (userData?.custom_roles && Array.isArray(userData.custom_roles) && userData.custom_roles.includes('super_admin'))
-  }), [
-    baseUser,
-    userData,
-    employee,
-    loadingUser,
-    loadingUserData,
-    selectedCompanyId,
-    changeSelectedCompany,
-    accessibleCompanies,
-    hasModuleAccess,
-    hasPermission,
-    hasRole,
-    getAccessibleCompanyIds
-  ]);
+    isAdmin,
+    isSuperAdmin
+  };
 
   return (
     <AccessControlContext.Provider value={value}>
