@@ -9,6 +9,9 @@ import SalaryDetailsTab from './SalaryDetailsTab';
 import BankDetailsTab from './BankDetailsTab';
 import InsuranceDetailsTab from './InsuranceDetailsTab';
 import ShiftAssignmentTab from './ShiftAssignmentTab';
+import LeaveBalanceTab from './LeaveBalanceTab';
+import LoanBalanceTab from './LoanBalanceTab';
+import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 
 export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCancel }) {
   const [activeTab, setActiveTab] = useState('details');
@@ -26,6 +29,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
     gender: 'male',
     marital_status: 'single',
     hire_date: '',
+    position_id: '',
     job_title: '',
     department: '',
     employment_type: 'full_time',
@@ -69,20 +73,24 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
     { value: 'salary', label: 'Salary Details', icon: '💰' },
     { value: 'bank', label: 'Bank Details', icon: '🏦' },
     { value: 'insurance', label: 'Insurance', icon: '🛡️' },
-    { value: 'shifts', label: 'Shift Assignments', icon: '🕐' }
+    { value: 'shifts', label: 'Shift Assignments', icon: '🕐' },
+    { value: 'leave', label: 'Leave Balances', icon: '📅', onlyEdit: true },
+    { value: 'loans', label: 'Loans', icon: '💵', onlyEdit: true },
+    { value: 'benefits', label: 'Benefits', icon: '🎁', onlyEdit: true }
   ];
 
-  const currentTabIndex = tabs.findIndex(t => t.value === activeTab);
+  const availableTabs = employee ? tabs : tabs.filter(t => !t.onlyEdit);
+  const currentTabIndex = availableTabs.findIndex(t => t.value === activeTab);
 
   const handleNext = () => {
-    if (currentTabIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentTabIndex + 1].value);
+    if (currentTabIndex < availableTabs.length - 1) {
+      setActiveTab(availableTabs[currentTabIndex + 1].value);
     }
   };
 
   const handlePrevious = () => {
     if (currentTabIndex > 0) {
-      setActiveTab(tabs[currentTabIndex - 1].value);
+      setActiveTab(availableTabs[currentTabIndex - 1].value);
     }
   };
 
@@ -98,8 +106,8 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 bg-slate-100 p-1">
-          {tabs.map(tab => (
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 bg-slate-100 p-1">
+          {availableTabs.map(tab => (
             <TabsTrigger 
               key={tab.value} 
               value={tab.value}
@@ -161,6 +169,22 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
             onAssignmentsChange={setShiftAssignments}
           />
         </TabsContent>
+
+        {employee && (
+          <>
+            <TabsContent value="leave" className="mt-6">
+              <LeaveBalanceTab employeeId={employee.id} />
+            </TabsContent>
+
+            <TabsContent value="loans" className="mt-6">
+              <LoanBalanceTab employeeId={employee.id} />
+            </TabsContent>
+
+            <TabsContent value="benefits" className="mt-6">
+              <BenefitsEnrollmentTab employeeId={employee.id} />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
       {/* Navigation Buttons */}
@@ -183,7 +207,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
             </Button>
           )}
           
-          {currentTabIndex < tabs.length - 1 ? (
+          {currentTabIndex < availableTabs.length - 1 ? (
             <Button
               onClick={handleNext}
               className="bg-emerald-600 hover:bg-emerald-700"
