@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -22,7 +21,7 @@ export default function Companies() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
   const [formData, setFormData] = useState({
-    name_en: "", name_ar: "", cr_number: "", tax_number: "", gosi_number: "",
+    company_code: "", name_en: "", name_ar: "", cr_number: "", tax_number: "", gosi_number: "",
     establishment_date: "", industry: "technology", address: "", city: "",
     phone: "", email: "", status: "active"
   });
@@ -54,7 +53,7 @@ export default function Companies() {
 
   const resetForm = () => {
     setFormData({
-      name_en: "", name_ar: "", cr_number: "", tax_number: "", gosi_number: "",
+      company_code: "", name_en: "", name_ar: "", cr_number: "", tax_number: "", gosi_number: "",
       establishment_date: "", industry: "technology", address: "", city: "",
       phone: "", email: "", status: "active"
     });
@@ -78,6 +77,7 @@ export default function Companies() {
 
   const filteredCompanies = companies.filter(c =>
     c.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.company_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.cr_number?.includes(searchTerm)
   );
 
@@ -102,7 +102,7 @@ export default function Companies() {
             <div className="relative flex-1">
               <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
               <Input
-                placeholder={t('search_by_name_or_cr')} // Placeholder for search input
+                placeholder="Search by name, code, or CR number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={isRTL ? 'pr-10' : 'pl-10'}
@@ -137,6 +137,11 @@ export default function Companies() {
                       <h3 className="font-bold text-lg text-slate-900 mb-1">{company.name_en}</h3>
                       {company.name_ar && <p className="text-sm text-slate-500 mb-3">{company.name_ar}</p>}
                       <div className="space-y-2 text-sm mb-4">
+                        {company.company_code && (
+                          <p className="text-slate-600">
+                            <span className="font-medium">Code:</span> {company.company_code}
+                          </p>
+                        )}
                         <p className="text-slate-600"><span className="font-medium">CR:</span> {company.cr_number}</p>
                         <p className="text-slate-600"><span className="font-medium">{t('industry')}:</span> {company.industry}</p>
                         <p className="text-slate-600"><span className="font-medium">{t('city')}:</span> {company.city || 'N/A'}</p>
@@ -165,6 +170,15 @@ export default function Companies() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>Company Code *</Label>
+                <Input 
+                  value={formData.company_code} 
+                  onChange={(e) => setFormData({...formData, company_code: e.target.value})} 
+                  placeholder="e.g., COMP001"
+                  required 
+                />
+              </div>
               <div>
                 <Label>{t('company_name_en')} *</Label>
                 <Input value={formData.name_en} onChange={(e) => setFormData({...formData, name_en: e.target.value})} required />
@@ -225,7 +239,7 @@ export default function Companies() {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>{t('cancel')}</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                {editingCompany ? t('update') : t('create')} {t('companies')}
+                {editingCompany ? t('update') : t('create')}
               </Button>
             </DialogFooter>
           </form>
