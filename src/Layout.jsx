@@ -153,7 +153,6 @@ function LayoutContent({ children }) {
               >
                 <CollapsibleTrigger 
                   className={`flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider transition-colors group ${isRTL ? 'flex-row-reverse' : ''}`}
-                  style={{ '--hover-color': 'var(--primary-color)' } as any}
                   onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
                   onMouseLeave={(e) => e.currentTarget.style.color = ''}
                 >
@@ -235,7 +234,6 @@ function LayoutContent({ children }) {
               <button 
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 rounded-lg transition-colors"
-                style={{ '--hover-bg': 'var(--primary-light)' } as any}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
               >
