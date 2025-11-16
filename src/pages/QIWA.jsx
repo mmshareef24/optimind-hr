@@ -15,12 +15,14 @@ import StatCard from "@/components/hrms/StatCard";
 import QIWARegistrationForm from "@/components/qiwa/QIWARegistrationForm";
 import QIWAEmployeeList from "@/components/qiwa/QIWAEmployeeList";
 import QIWAWageFileUpload from "@/components/qiwa/QIWAWageFileUpload";
+import QIWASyncMonitor from "@/components/qiwa/QIWASyncMonitor";
 
 export default function QIWA() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: qiwaRecords = [], isLoading } = useQuery({
     queryKey: ['qiwa-records'],
@@ -46,7 +48,8 @@ export default function QIWA() {
       if (!r.work_permit_expiry) return false;
       const daysUntilExpiry = Math.ceil((new Date(r.work_permit_expiry) - new Date()) / (1000 * 60 * 60 * 24));
       return daysUntilExpiry <= 90 && daysUntilExpiry > 0;
-    }).length
+    }).length,
+    syncErrors: qiwaRecords.filter(r => r.sync_status === 'error').length
   };
 
   return (
@@ -73,7 +76,7 @@ export default function QIWA() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title={language === 'ar' ? 'إجمالي السجلات' : 'Total Records'}
           value={stats.total}
@@ -98,7 +101,19 @@ export default function QIWA() {
           icon={AlertTriangle}
           bgColor="from-red-500 to-red-600"
         />
+        <StatCard
+          title={language === 'ar' ? 'أخطاء المزامنة' : 'Sync Errors'}
+          value={stats.syncErrors}
+          icon={AlertTriangle}
+          bgColor="from-orange-500 to-orange-600"
+        />
       </div>
+
+      {/* Sync Monitor */}
+      <QIWASyncMonitor 
+        records={qiwaRecords}
+        onSyncComplete={() => queryClient.invalidateQueries(['qiwa-records'])}
+      />
 
       {/* Main Content */}
       <Tabs defaultValue="employees" className="space-y-6">
@@ -174,6 +189,7 @@ export default function QIWA() {
                 <p>• {language === 'ar' ? 'تأكد من تحديث البيانات بانتظام' : 'Ensure data is updated regularly'}</p>
                 <p>• {language === 'ar' ? 'راقب تواريخ انتهاء تصاريح العمل' : 'Monitor work permit expiry dates'}</p>
                 <p>• {language === 'ar' ? 'رفع ملفات الأجور شهرياً' : 'Upload wage files monthly'}</p>
+                <p>• {language === 'ar' ? 'استخدم المزامنة التلقائية لتحديثات فورية' : 'Use automated sync for real-time updates'}</p>
               </div>
             </div>
           </div>
