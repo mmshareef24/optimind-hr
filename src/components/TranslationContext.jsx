@@ -565,6 +565,23 @@ const translations = {
     submit_leave_request: "Submit Leave Request",
     previous: "Previous",
     next: "Next",
+    
+    // Leave Types
+    annual_leave: "Annual Leave",
+    sick_leave: "Sick Leave",
+    maternity_leave: "Maternity Leave",
+    paternity_leave: "Paternity Leave",
+    unpaid_leave: "Unpaid Leave",
+    hajj_leave: "Hajj Leave",
+    marriage_leave: "Marriage Leave",
+    bereavement_leave: "Bereavement Leave",
+    emergency_leave: "Emergency Leave",
+    
+    // Leave Balance
+    total: "Total",
+    used: "Used",
+    usage: "Usage",
+    days_carried_forward: "days carried forward from previous year",
   },
   ar: {
     // Common - Arabic
@@ -698,6 +715,23 @@ const translations = {
     submit_leave_request: "تقديم طلب إجازة",
     previous: "السابق",
     next: "التالي",
+    
+    // Leave Types - Arabic
+    annual_leave: "إجازة سنوية",
+    sick_leave: "إجازة مرضية",
+    maternity_leave: "إجازة أمومة",
+    paternity_leave: "إجازة أبوة",
+    unpaid_leave: "إجازة بدون راتب",
+    hajj_leave: "إجازة حج",
+    marriage_leave: "إجازة زواج",
+    bereavement_leave: "إجازة وفاة",
+    emergency_leave: "إجازة طارئة",
+    
+    // Leave Balance - Arabic
+    total: "الإجمالي",
+    used: "المستخدم",
+    usage: "الاستخدام",
+    days_carried_forward: "أيام محولة من العام السابق",
   }
 };
 
