@@ -456,7 +456,7 @@ export default function OrgStructure() {
         <TabsList className="bg-white border-2 border-slate-200 p-1">
           <TabsTrigger value="hierarchy" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <Network className="w-4 h-4 mr-2" />
-            Hierarchy
+            {t('hierarchy')}
           </TabsTrigger>
           <TabsTrigger value="positions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             <GitBranch className="w-4 h-4 mr-2" />

@@ -362,6 +362,8 @@ const translations = {
     staff: "Staff",
     no_employees_display: "No employees to display",
     no_employees_found_search: "No employees found matching your search",
+    hierarchy: "Hierarchy",
+    companies: "Companies",
     
     // Departments
     department_management: "Department Management",
@@ -716,6 +718,21 @@ const translations = {
     add_first_employee: "إضافة أول موظف", reports_to_you: "يرفع تقاريره إليك",
     full_access: "وصول كامل", my_team: "فريقي", personal_view: "عرض شخصي",
     joined: "انضم في", position: "المنصب",
+    
+    // Org Structure - Arabic
+    organization_structure: "الهيكل التنظيمي",
+    org_desc: "تصور التسلسل الهرمي متعدد الشركات",
+    unified_view: "عرض موحد",
+    by_company: "حسب الشركة",
+    managers: "المدراء",
+    hierarchy_distribution: "توزيع التسلسل الهرمي",
+    executive_level: "المستوى التنفيذي",
+    senior_managers: "المدراء الأقدم",
+    staff: "الموظفون",
+    no_employees_display: "لا يوجد موظفون لعرضهم",
+    no_employees_found_search: "لم يتم العثور على موظفين مطابقين لبحثك",
+    hierarchy: "التسلسل الهرمي",
+    companies: "الشركات",
     
     // Positions - Arabic
     positions: "المناصب",
