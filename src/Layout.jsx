@@ -99,44 +99,32 @@ function LayoutContent({ children }) {
   ];
 
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-red-50/30 to-slate-50" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
-      <style>{`
-        :root {
-          --primary-color: #8B2D23;
-          --primary-hover: #6B1D13;
-          --primary-light: rgba(139, 45, 35, 0.1);
-          --primary-border: rgba(139, 45, 35, 0.2);
-        }
-      `}</style>
-
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
       {/* Sidebar */}
       <aside 
         className={`
           fixed top-0 h-full w-72 bg-white/80 backdrop-blur-xl shadow-xl z-40
           transition-transform duration-300 ease-in-out
+          border-emerald-100/50
           ${isRTL ? 'right-0 border-l' : 'left-0 border-r'}
           ${sidebarOpen ? 'translate-x-0' : (isRTL ? 'translate-x-full' : '-translate-x-full')}
           lg:translate-x-0
         `}
         style={{
-          [isRTL ? 'right' : 'left']: 0,
-          borderColor: 'var(--primary-border)'
+          [isRTL ? 'right' : 'left']: 0
         }}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="border-b p-6" style={{ borderColor: 'var(--primary-border)' }}>
+          <div className="border-b border-emerald-100/50 p-6">
             <div className="flex items-center justify-between gap-3">
               <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-                  style={{ background: 'var(--primary-color)' }}
-                >
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div className={isRTL ? 'text-right' : ''}>
                   <h2 className="font-bold text-lg text-slate-900">{t('app_name')}</h2>
-                  <p className="text-xs font-medium" style={{ color: 'var(--primary-color)' }}>{t('app_tagline')}</p>
+                  <p className="text-xs text-emerald-700 font-medium">{t('app_tagline')}</p>
                 </div>
               </div>
               <LanguageSwitcher />
@@ -151,11 +139,7 @@ function LayoutContent({ children }) {
                 defaultOpen={sectionIndex === 0 || sectionIndex === 1}
                 className="mb-2"
               >
-                <CollapsibleTrigger 
-                  className={`flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider transition-colors group ${isRTL ? 'flex-row-reverse' : ''}`}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
-                >
+                <CollapsibleTrigger className={`flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:text-emerald-700 transition-colors group ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <span>{section.title}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform group-data-[state=open]:rotate-180 ${isRTL ? 'rotate-180 group-data-[state=open]:rotate-0' : ''}`} />
                 </CollapsibleTrigger>
@@ -170,27 +154,10 @@ function LayoutContent({ children }) {
                           flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200
                           ${isRTL ? 'flex-row-reverse' : ''}
                           ${location.pathname === item.url 
-                            ? 'text-white shadow-lg font-medium' 
-                            : 'hover:text-slate-900 text-slate-700'
+                            ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/30 font-medium' 
+                            : 'hover:bg-emerald-50 text-slate-700 hover:text-emerald-700'
                           }
                         `}
-                        style={location.pathname === item.url 
-                          ? { 
-                              background: 'var(--primary-color)',
-                              boxShadow: '0 10px 15px -3px rgba(139, 45, 35, 0.3)'
-                            } 
-                          : {}
-                        }
-                        onMouseEnter={(e) => {
-                          if (location.pathname !== item.url) {
-                            e.currentTarget.style.backgroundColor = 'var(--primary-light)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (location.pathname !== item.url) {
-                            e.currentTarget.style.backgroundColor = '';
-                          }
-                        }}
                       >
                         <item.icon className="w-4 h-4 shrink-0" />
                         <span className="text-sm">{item.title}</span>
@@ -203,9 +170,9 @@ function LayoutContent({ children }) {
           </div>
 
           {/* Footer */}
-          <div className="border-t p-4" style={{ borderColor: 'var(--primary-border)' }}>
-            <div className={`flex items-center gap-3 px-3 py-2 rounded-xl ${isRTL ? 'flex-row-reverse' : ''}`} style={{ background: 'var(--primary-light)' }}>
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-md shrink-0" style={{ background: 'var(--primary-color)' }}>
+          <div className="border-t border-emerald-100/50 p-4">
+            <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shrink-0">
                 <span className="text-white font-semibold text-sm">HR</span>
               </div>
               <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : ''}`}>
@@ -228,24 +195,22 @@ function LayoutContent({ children }) {
       {/* Main Content */}
       <main className={`flex-1 flex flex-col min-w-0 ${isRTL ? 'lg:mr-72' : 'lg:ml-72'}`}>
         {/* Mobile Header */}
-        <header className="bg-white/80 backdrop-blur-xl border-b px-6 py-4 lg:hidden sticky top-0 z-10" style={{ borderColor: 'var(--primary-border)' }}>
+        <header className="bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 px-6 py-4 lg:hidden sticky top-0 z-10">
           <div className={`flex items-center justify-between gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <button 
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg transition-colors"
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
+                className="hover:bg-emerald-50 p-2 rounded-lg transition-colors"
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
               <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary-color)' }}>
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />
                 </div>
                 <div className={isRTL ? 'text-right' : ''}>
                   <h1 className="text-lg font-bold text-slate-900">{t('app_name')}</h1>
-                  <p className="text-xs" style={{ color: 'var(--primary-color)' }}>{t('app_tagline')}</p>
+                  <p className="text-xs text-emerald-700">{t('app_tagline')}</p>
                 </div>
               </div>
             </div>
