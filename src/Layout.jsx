@@ -33,7 +33,7 @@ function LayoutContent({ children }) {
       ]
     },
     {
-      title: t('nav_employee_lifecycle'),
+      title: t('nav_personal_administration'),
       items: [
         { title: t('nav_employee_management'), url: createPageUrl("Employees"), icon: Users },
         { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserPlus },
