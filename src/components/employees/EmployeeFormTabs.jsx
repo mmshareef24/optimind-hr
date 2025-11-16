@@ -12,11 +12,11 @@ import ShiftAssignmentTab from './ShiftAssignmentTab';
 import LeaveBalanceTab from './LeaveBalanceTab';
 import LoanBalanceTab from './LoanBalanceTab';
 import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
+import EOSBTab from './EOSBTab';
 
 export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], onSubmit, onCancel, onSaveDraft }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
-    // Employee Details
     employee_id: '',
     first_name: '',
     last_name: '',
@@ -35,28 +35,18 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
     department: '',
     employment_type: 'full_time',
     status: 'active',
-    
-    // ID Details
     national_id: '',
     national_id_expiry: '',
     passport_number: '',
     passport_expiry: '',
-    
-    // Salary Details
     basic_salary: 0,
     housing_allowance: 0,
     transport_allowance: 0,
-    
-    // Bank Details
     bank_name: '',
     bank_account: '',
     iban: '',
-    
-    // Emergency Contact
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    
-    // GOSI
     gosi_applicable: true,
     gosi_number: '',
     gosi_registration_date: '',
@@ -77,7 +67,8 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
     { value: 'shifts', label: 'Shifts', icon: '🕐' },
     { value: 'leave', label: 'Leave', icon: '📅', onlyEdit: true },
     { value: 'loans', label: 'Loans', icon: '💵', onlyEdit: true },
-    { value: 'benefits', label: 'Benefits', icon: '🎁', onlyEdit: true }
+    { value: 'benefits', label: 'Benefits', icon: '🎁', onlyEdit: true },
+    { value: 'eosb', label: 'EOSB', icon: '💼', onlyEdit: true }
   ];
 
   const availableTabs = employee ? tabs : tabs.filter(t => !t.onlyEdit);
@@ -198,6 +189,10 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
 
             <TabsContent value="benefits" className="mt-6">
               <BenefitsEnrollmentTab employeeId={employee.id} />
+            </TabsContent>
+
+            <TabsContent value="eosb" className="mt-6">
+              <EOSBTab employeeId={employee.id} employee={employee} />
             </TabsContent>
           </>
         )}
