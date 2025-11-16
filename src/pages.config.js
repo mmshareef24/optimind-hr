@@ -28,6 +28,8 @@ import MasterData from './pages/MasterData';
 import Departments from './pages/Departments';
 import LeaveAccrualManagement from './pages/LeaveAccrualManagement';
 import PublicHolidays from './pages/PublicHolidays';
+import QIWA from './pages/QIWA';
+import SINAD from './pages/SINAD';
 import Layout from './Layout.jsx';
 
 
@@ -62,6 +64,8 @@ export const PAGES = {
     "Departments": Departments,
     "LeaveAccrualManagement": LeaveAccrualManagement,
     "PublicHolidays": PublicHolidays,
+    "QIWA": QIWA,
+    "SINAD": SINAD,
 }
 
 export const pagesConfig = {

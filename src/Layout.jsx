@@ -5,7 +5,7 @@ import { TranslationProvider, useTranslation } from '@/components/TranslationCon
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
-  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2
+  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag
 } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,80 +16,87 @@ function LayoutContent({ children }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
 
-const navigationSections = [
-  {
-    title: t('nav_main'),
-    items: [
-      { title: t('nav_dashboard'), url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-      { title: t('nav_ai_assistant'), url: createPageUrl("AIAssistant"), icon: Sparkles }
-    ]
-  },
-  {
-    title: t('nav_organization'),
-    items: [
-      { title: t('nav_companies'), url: createPageUrl("Companies"), icon: Building2 },
-      { title: t('nav_org_structure'), url: createPageUrl("OrgStructure"), icon: Network },
-      { title: t('nav_departments'), url: createPageUrl("Departments"), icon: Users }
-    ]
-  },
-  {
-    title: t('nav_employee_lifecycle'),
-    items: [
-      { title: t('nav_employee_management'), url: createPageUrl("Employees"), icon: Users },
-      { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserPlus },
-      { title: t('nav_documents'), url: createPageUrl("Documents"), icon: FileText }
-    ]
-  },
-  {
-    title: t('nav_time_attendance'),
-    items: [
-      { title: t('nav_time_management'), url: createPageUrl("TimeManagement"), icon: Clock },
-      { title: t('nav_shift_management'), url: createPageUrl("Shifts"), icon: Clock3 },
-      { title: t('nav_leave_management'), url: createPageUrl("LeaveManagement"), icon: Calendar },
-      { title: t('nav_leave_accrual'), url: createPageUrl("LeaveAccrualManagement"), icon: TrendingUp }
-    ]
-  },
-  {
-    title: t('nav_compensation'),
-    items: [
-      { title: t('nav_payroll_management'), url: createPageUrl("PayrollManagement"), icon: DollarSign },
-      { title: t('nav_gosi_reporting'), url: createPageUrl("GOSIReporting"), icon: Shield },
-      { title: t('nav_benefits_rewards'), url: createPageUrl("Benefits"), icon: Gift }
-    ]
-  },
-  {
-    title: t('nav_performance_projects'),
-    items: [
-      { title: t('nav_performance'), url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
-      { title: t('nav_project_management'), url: createPageUrl("Projects"), icon: FolderKanban }
-    ]
-  },
-  {
-    title: t('nav_employee_services'),
-    items: [
-      { title: t('nav_ess_portal'), url: createPageUrl("ESS"), icon: User },
-      { title: t('nav_manager_portal'), url: createPageUrl("MSS"), icon: UserCheck },
-      { title: t('nav_approvals'), url: createPageUrl("Approvals"), icon: CheckCircle2 },
-      { title: t('nav_travel_expense'), url: createPageUrl("TravelExpense"), icon: Plane }
-    ]
-  },
-  {
-    title: t('nav_resources'),
-    items: [
-      { title: t('nav_assets_facilities'), url: createPageUrl("Assets"), icon: Package },
-      { title: t('nav_health_safety'), url: createPageUrl("HealthSafety"), icon: Shield },
-      { title: t('nav_employee_relations'), url: createPageUrl("EmployeeRelations"), icon: MessageSquare }
-    ]
-  },
-  {
-    title: t('nav_administration'),
-    items: [
-      { title: t('nav_user_management'), url: createPageUrl("UserManagement"), icon: Shield },
-      { title: t('nav_master_data'), url: createPageUrl("MasterData"), icon: FileText },
-      { title: t('nav_public_holidays'), url: createPageUrl("PublicHolidays"), icon: Calendar }
-    ]
-  }
-];
+  const navigationSections = [
+    {
+      title: t('nav_main'),
+      items: [
+        { title: t('nav_dashboard'), url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+        { title: t('nav_ai_assistant'), url: createPageUrl("AIAssistant"), icon: Sparkles }
+      ]
+    },
+    {
+      title: t('nav_organization'),
+      items: [
+        { title: t('nav_companies'), url: createPageUrl("Companies"), icon: Building2 },
+        { title: t('nav_org_structure'), url: createPageUrl("OrgStructure"), icon: Network },
+        { title: t('nav_departments'), url: createPageUrl("Departments"), icon: Users }
+      ]
+    },
+    {
+      title: t('nav_employee_lifecycle'),
+      items: [
+        { title: t('nav_employee_management'), url: createPageUrl("Employees"), icon: Users },
+        { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserPlus },
+        { title: t('nav_documents'), url: createPageUrl("Documents"), icon: FileText }
+      ]
+    },
+    {
+      title: t('nav_time_attendance'),
+      items: [
+        { title: t('nav_time_management'), url: createPageUrl("TimeManagement"), icon: Clock },
+        { title: t('nav_shift_management'), url: createPageUrl("Shifts"), icon: Clock3 },
+        { title: t('nav_leave_management'), url: createPageUrl("LeaveManagement"), icon: Calendar },
+        { title: t('nav_leave_accrual'), url: createPageUrl("LeaveAccrualManagement"), icon: TrendingUp }
+      ]
+    },
+    {
+      title: t('nav_compensation'),
+      items: [
+        { title: t('nav_payroll_management'), url: createPageUrl("PayrollManagement"), icon: DollarSign },
+        { title: t('nav_gosi_reporting'), url: createPageUrl("GOSIReporting"), icon: Shield },
+        { title: t('nav_benefits_rewards'), url: createPageUrl("Benefits"), icon: Gift }
+      ]
+    },
+    {
+      title: language === 'ar' ? 'التكامل والامتثال' : 'Integration & Compliance',
+      items: [
+        { title: language === 'ar' ? 'منصة قوى (QIWA)' : 'QIWA Platform', url: createPageUrl("QIWA"), icon: Flag },
+        { title: language === 'ar' ? 'نظام سند (SINAD)' : 'SINAD System', url: createPageUrl("SINAD"), icon: Shield }
+      ]
+    },
+    {
+      title: t('nav_performance_projects'),
+      items: [
+        { title: t('nav_performance'), url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
+        { title: t('nav_project_management'), url: createPageUrl("Projects"), icon: FolderKanban }
+      ]
+    },
+    {
+      title: t('nav_employee_services'),
+      items: [
+        { title: t('nav_ess_portal'), url: createPageUrl("ESS"), icon: User },
+        { title: t('nav_manager_portal'), url: createPageUrl("MSS"), icon: UserCheck },
+        { title: t('nav_approvals'), url: createPageUrl("Approvals"), icon: CheckCircle2 },
+        { title: t('nav_travel_expense'), url: createPageUrl("TravelExpense"), icon: Plane }
+      ]
+    },
+    {
+      title: t('nav_resources'),
+      items: [
+        { title: t('nav_assets_facilities'), url: createPageUrl("Assets"), icon: Package },
+        { title: t('nav_health_safety'), url: createPageUrl("HealthSafety"), icon: Shield },
+        { title: t('nav_employee_relations'), url: createPageUrl("EmployeeRelations"), icon: MessageSquare }
+      ]
+    },
+    {
+      title: t('nav_administration'),
+      items: [
+        { title: t('nav_user_management'), url: createPageUrl("UserManagement"), icon: Shield },
+        { title: t('nav_master_data'), url: createPageUrl("MasterData"), icon: FileText },
+        { title: t('nav_public_holidays'), url: createPageUrl("PublicHolidays"), icon: Calendar }
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
