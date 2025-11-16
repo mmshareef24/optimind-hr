@@ -68,14 +68,14 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   const [shiftAssignments, setShiftAssignments] = useState([]);
 
   const tabs = [
-    { value: 'details', label: 'Employee Details', icon: '👤' },
+    { value: 'details', label: 'Details', icon: '👤' },
     { value: 'dependents', label: 'Dependents', icon: '👨‍👩‍👧‍👦' },
-    { value: 'ids', label: 'ID Documents', icon: '🆔' },
-    { value: 'salary', label: 'Salary Details', icon: '💰' },
-    { value: 'bank', label: 'Bank Details', icon: '🏦' },
+    { value: 'ids', label: 'ID Docs', icon: '🆔' },
+    { value: 'salary', label: 'Salary', icon: '💰' },
+    { value: 'bank', label: 'Bank', icon: '🏦' },
     { value: 'insurance', label: 'Insurance', icon: '🛡️' },
-    { value: 'shifts', label: 'Shift Assignments', icon: '🕐' },
-    { value: 'leave', label: 'Leave Balances', icon: '📅', onlyEdit: true },
+    { value: 'shifts', label: 'Shifts', icon: '🕐' },
+    { value: 'leave', label: 'Leave', icon: '📅', onlyEdit: true },
     { value: 'loans', label: 'Loans', icon: '💵', onlyEdit: true },
     { value: 'benefits', label: 'Benefits', icon: '🎁', onlyEdit: true }
   ];
@@ -118,16 +118,16 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="w-full overflow-x-auto">
-          <TabsList className="inline-flex h-auto w-auto bg-slate-100 p-1 gap-1">
+        <div className="w-full overflow-x-auto pb-2 -mx-2 px-2">
+          <TabsList className="inline-flex h-auto bg-slate-100 p-1.5 rounded-lg">
             {availableTabs.map(tab => (
               <TabsTrigger 
                 key={tab.value} 
                 value={tab.value}
-                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs whitespace-nowrap px-3 py-2"
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs whitespace-nowrap px-2.5 py-1.5 rounded-md flex items-center gap-1"
               >
-                <span className="mr-1">{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span>{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </TabsTrigger>
             ))}
           </TabsList>
