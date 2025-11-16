@@ -37,7 +37,7 @@ export default function Shifts() {
       queryClient.invalidateQueries(['shifts']);
       setShowDialog(false);
       setEditingShift(null);
-      toast.success('Shift created successfully');
+      toast.success(t('shift_created'));
     }
   });
 
@@ -47,7 +47,7 @@ export default function Shifts() {
       queryClient.invalidateQueries(['shifts']);
       setShowDialog(false);
       setEditingShift(null);
-      toast.success('Shift updated successfully');
+      toast.success(t('shift_updated'));
     }
   });
 
@@ -164,7 +164,7 @@ export default function Shifts() {
                           {shift.shift_type}
                         </Badge>
                         {!shift.is_active && (
-                          <Badge variant="outline" className="bg-slate-100">Inactive</Badge>
+                          <Badge variant="outline" className="bg-slate-100">{t('inactive')}</Badge>
                         )}
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export default function Shifts() {
                         </div>
                         {shift.department && (
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-600">Department</span>
+                            <span className="text-slate-600">{t('department')}</span>
                             <span className="font-semibold text-slate-900">{shift.department}</span>
                           </div>
                         )}

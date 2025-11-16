@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -268,7 +267,7 @@ export default function Dashboard() {
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
                     <p className="text-sm text-slate-500">{t('shift_coverage')}</p>
-                    <p className="text-lg font-bold text-slate-900">{employeesWithShifts} Assigned</p>
+                    <p className="text-lg font-bold text-slate-900">{employeesWithShifts} {t('assigned')}</p>
                   </div>
                 </div>
               </div>

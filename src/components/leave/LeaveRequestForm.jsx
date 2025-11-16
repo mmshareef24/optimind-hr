@@ -12,8 +12,10 @@ import { base44 } from "@/api/base44Client";
 import { Save, X, Upload, AlertCircle, Info, Calendar, User } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useTranslation } from '@/components/TranslationContext';
 
 export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmit, onCancel, isAdmin = false, allEmployees = [] }) {
+  const { t } = useTranslation();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(employee?.id || '');
   const [selectedEmployeeBalances, setSelectedEmployeeBalances] = useState(leaveBalances);
   const [formData, setFormData] = useState({
@@ -57,7 +59,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
         const end = new Date(formData.end_date);
         
         if (end < start) {
-          setValidationError('End date must be after start date');
+          setValidationError(t('end_date_after_start'));
           setFormData(prev => ({ ...prev, total_days: 0 }));
           setLeaveDaysCalculation(null);
           return;
@@ -94,7 +96,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
     if (formData.total_days > 0 && formData.leave_type) {
       const balance = getBalance(formData.leave_type);
       if (balance < formData.total_days && ['annual', 'sick'].includes(formData.leave_type)) {
-        setValidationError(`Insufficient balance. You only have ${balance} days available.`);
+        setValidationError(t('insufficient_balance', { balance }));
       } else {
         setValidationError('');
       }
@@ -129,7 +131,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
       const balances = await base44.entities.LeaveBalance.filter({ employee_id: employeeId });
       setSelectedEmployeeBalances(balances);
     } catch (error) {
-      toast.error('Failed to load employee balances');
+      toast.error(t('failed_load_balances'));
       setSelectedEmployeeBalances([]);
     } finally {
       setLoadingBalances(false);
@@ -142,7 +144,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+      toast.error(t('file_size_limit'));
       return;
     }
 
@@ -150,24 +152,24 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setFormData(prev => ({ ...prev, attachment_url: file_url }));
-      toast.success('Document uploaded successfully');
+      toast.success(t('document_uploaded'));
     } catch (error) {
-      toast.error('Failed to upload document');
+      toast.error(t('failed_upload_document'));
     } finally {
       setUploading(false);
     }
   };
 
   const leaveTypeInfo = {
-    annual: { color: 'blue', days: 21, description: 'Standard annual vacation leave' },
-    sick: { color: 'red', days: 30, description: 'Medical certificate may be required for extended periods' },
-    emergency: { color: 'orange', days: 3, description: 'For urgent personal matters' },
-    unpaid: { color: 'slate', days: null, description: 'Leave without salary' },
-    maternity: { color: 'pink', days: 70, description: '10 weeks maternity leave as per Saudi labor law' },
-    paternity: { color: 'purple', days: 3, description: '3 days paternity leave' },
-    hajj: { color: 'emerald', days: 10, description: 'Hajj pilgrimage leave (once in service)' },
-    marriage: { color: 'amber', days: 5, description: '5 days marriage leave' },
-    bereavement: { color: 'slate', days: 5, description: 'Bereavement/mourning leave' }
+    annual: { color: 'blue', days: 21, descriptionKey: 'annual_leave_desc' },
+    sick: { color: 'red', days: 30, descriptionKey: 'sick_leave_desc' },
+    emergency: { color: 'orange', days: 3, descriptionKey: 'emergency_leave_desc' },
+    unpaid: { color: 'slate', days: null, descriptionKey: 'unpaid_leave_desc' },
+    maternity: { color: 'pink', days: 70, descriptionKey: 'maternity_leave_desc' },
+    paternity: { color: 'purple', days: 3, descriptionKey: 'paternity_leave_desc' },
+    hajj: { color: 'emerald', days: 10, descriptionKey: 'hajj_leave_desc' },
+    marriage: { color: 'amber', days: 5, descriptionKey: 'marriage_leave_desc' },
+    bereavement: { color: 'slate', days: 5, descriptionKey: 'bereavement_leave_desc' }
   };
 
   const currentLeaveInfo = leaveTypeInfo[formData.leave_type];
@@ -179,14 +181,14 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
       {/* Employee Selection (Admin Only) */}
       {isAdmin && (
         <div>
-          <Label className="text-base font-semibold">Select Employee *</Label>
+          <Label className="text-base font-semibold">{t('select_employee')} *</Label>
           <Select
             value={selectedEmployeeId}
             onValueChange={handleEmployeeChange}
             required
           >
             <SelectTrigger className="h-12">
-              <SelectValue placeholder="Choose employee..." />
+              <SelectValue placeholder={t('choose_employee')} />
             </SelectTrigger>
             <SelectContent>
               {allEmployees
@@ -222,14 +224,14 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
           )}
 
           {loadingBalances && (
-            <p className="text-sm text-blue-600 mt-2">Loading leave balances...</p>
+            <p className="text-sm text-blue-600 mt-2">{t('loading_balances')}</p>
           )}
         </div>
       )}
 
       {/* Leave Type Selection */}
       <div>
-        <Label className="text-base font-semibold">Leave Type *</Label>
+        <Label className="text-base font-semibold">{t('leave_type')} *</Label>
         <Select
           value={formData.leave_type}
           onValueChange={(val) => setFormData({ ...formData, leave_type: val })}
@@ -240,36 +242,36 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
           <SelectContent>
             <SelectItem value="annual">
               <div className="flex items-center justify-between w-full">
-                <span>📅 Annual Leave</span>
-                <span className="text-blue-600 font-semibold ml-4">{getBalance('annual')} days</span>
+                <span>📅 {t('annual_leave')}</span>
+                <span className="text-blue-600 font-semibold ml-4">{getBalance('annual')} {t('days')}</span>
               </div>
             </SelectItem>
             <SelectItem value="sick">
               <div className="flex items-center justify-between w-full">
-                <span>🏥 Sick Leave</span>
-                <span className="text-red-600 font-semibold ml-4">{getBalance('sick')} days</span>
+                <span>🏥 {t('sick_leave')}</span>
+                <span className="text-red-600 font-semibold ml-4">{getBalance('sick')} {t('days')}</span>
               </div>
             </SelectItem>
             <SelectItem value="emergency">
-              <span>🚨 Emergency Leave</span>
+              <span>🚨 {t('emergency_leave')}</span>
             </SelectItem>
             <SelectItem value="unpaid">
-              <span>💼 Unpaid Leave</span>
+              <span>💼 {t('unpaid_leave')}</span>
             </SelectItem>
             <SelectItem value="maternity">
-              <span>👶 Maternity Leave (70 days)</span>
+              <span>👶 {t('maternity_leave')} (70 {t('days')})</span>
             </SelectItem>
             <SelectItem value="paternity">
-              <span>👨‍👧 Paternity Leave (3 days)</span>
+              <span>👨‍👧 {t('paternity_leave')} (3 {t('days')})</span>
             </SelectItem>
             <SelectItem value="hajj">
-              <span>🕋 Hajj Leave (10 days)</span>
+              <span>🕋 {t('hajj_leave')} (10 {t('days')})</span>
             </SelectItem>
             <SelectItem value="marriage">
-              <span>💍 Marriage Leave (5 days)</span>
+              <span>💍 {t('marriage_leave')} (5 {t('days')})</span>
             </SelectItem>
             <SelectItem value="bereavement">
-              <span>🕊️ Bereavement Leave (5 days)</span>
+              <span>🕊️ {t('bereavement_leave')} (5 {t('days')})</span>
             </SelectItem>
           </SelectContent>
         </Select>
@@ -279,9 +281,9 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
           <Alert className="mt-2 border-blue-200 bg-blue-50">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-sm text-blue-900">
-              <strong>Policy:</strong> {currentLeaveInfo.description}
+              <strong>{t('policy')}:</strong> {t(currentLeaveInfo.descriptionKey)}
               {currentLeaveInfo.days && (
-                <span className="block mt-1">Standard entitlement: {currentLeaveInfo.days} days per year</span>
+                <span className="block mt-1">{t('standard_entitlement')}: {currentLeaveInfo.days} {t('days_per_year')}</span>
               )}
             </AlertDescription>
           </Alert>
@@ -291,7 +293,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
       {/* Date Selection */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label className="text-base font-semibold">Start Date *</Label>
+          <Label className="text-base font-semibold">{t('start_date')} *</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -306,7 +308,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
         </div>
 
         <div>
-          <Label className="text-base font-semibold">End Date *</Label>
+          <Label className="text-base font-semibold">{t('end_date')} *</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
@@ -334,27 +336,27 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
         {calculatingDays ? (
           <div className="text-center py-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
-            <p className="text-sm text-slate-600">Calculating leave days...</p>
+            <p className="text-sm text-slate-600">{t('calculating_leave_days')}</p>
           </div>
         ) : (
           <>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-700">Leave Days to Deduct</span>
+              <span className="text-sm font-medium text-slate-700">{t('leave_days_to_deduct')}</span>
               <span className="text-3xl font-bold text-emerald-600">{formData.total_days}</span>
             </div>
             {leaveDaysCalculation && (
               <div className="space-y-2 mt-3">
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="p-2 bg-white rounded text-center">
-                    <p className="text-slate-500">Total Days</p>
+                    <p className="text-slate-500">{t('total_days')}</p>
                     <p className="font-bold text-slate-900">{leaveDaysCalculation.total_days}</p>
                   </div>
                   <div className="p-2 bg-slate-100 rounded text-center">
-                    <p className="text-slate-500">Weekends</p>
+                    <p className="text-slate-500">{t('weekends')}</p>
                     <p className="font-bold text-slate-700">{leaveDaysCalculation.weekend_days}</p>
                   </div>
                   <div className="p-2 bg-amber-100 rounded text-center">
-                    <p className="text-amber-700">Holidays</p>
+                    <p className="text-amber-700">{t('holidays')}</p>
                     <p className="font-bold text-amber-800">{leaveDaysCalculation.holiday_days}</p>
                   </div>
                 </div>
@@ -362,13 +364,13 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
                   <Alert className="border-amber-200 bg-amber-50">
                     <AlertCircle className="h-4 w-4 text-amber-600" />
                     <AlertDescription className="text-amber-900 text-xs">
-                      <strong>Public Holidays Detected:</strong>
+                      <strong>{t('public_holidays_detected')}:</strong>
                       <ul className="mt-1 space-y-1">
                         {leaveDaysCalculation.overlapping_holidays.map((h, idx) => (
                           <li key={idx}>• {h.name} ({format(new Date(h.date), 'MMM dd')})</li>
                         ))}
                       </ul>
-                      <p className="mt-1">These days are automatically excluded from your leave balance.</p>
+                      <p className="mt-1">{t('holidays_excluded_note')}</p>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -376,7 +378,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
             )}
             {!leaveDaysCalculation && formData.start_date && formData.end_date && (
               <p className="text-xs text-slate-600 mt-2">
-                Weekends (Fri & Sat) excluded • Public holidays will be auto-excluded
+                {t('weekends_excluded_note')}
               </p>
             )}
           </>
@@ -385,17 +387,17 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
 
       {/* Reason */}
       <div>
-        <Label className="text-base font-semibold">Reason for Leave *</Label>
+        <Label className="text-base font-semibold">{t('reason_for_leave')} *</Label>
         <Textarea
           value={formData.reason}
           onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-          placeholder="Please provide a detailed explanation for your leave request..."
+          placeholder={t('reason_placeholder')}
           rows={4}
           className="resize-none"
           required
         />
         <p className="text-xs text-slate-500 mt-1">
-          {formData.reason.length}/500 characters
+          {formData.reason.length}/500 {t('characters')}
         </p>
       </div>
 
@@ -403,17 +405,17 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
       {['sick', 'maternity', 'bereavement'].includes(formData.leave_type) && (
         <div>
           <Label className="text-base font-semibold">
-            Supporting Document {formData.leave_type === 'sick' ? '(Medical Certificate)' : ''}
-            {formData.total_days > 3 && formData.leave_type === 'sick' ? ' *' : ' (Optional)'}
+            {t('supporting_document')} {formData.leave_type === 'sick' ? `(${t('medical_certificate')})` : ''}
+            {formData.total_days > 3 && formData.leave_type === 'sick' ? ' *' : ` (${t('optional')})`}
           </Label>
           <div className="mt-2">
             <label className="flex items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-dashed rounded-lg cursor-pointer hover:bg-slate-50 border-slate-300 hover:border-emerald-400">
               <div className="text-center">
                 <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
                 <p className="text-sm text-slate-600">
-                  {uploading ? 'Uploading...' : formData.attachment_url ? '✓ Document uploaded' : 'Click to upload document'}
+                  {uploading ? t('uploading') : formData.attachment_url ? `✓ ${t('document_uploaded')}` : t('click_to_upload')}
                 </p>
-                <p className="text-xs text-slate-500">PDF, JPG, PNG (max 5MB)</p>
+                <p className="text-xs text-slate-500">{t('file_formats')}</p>
               </div>
               <input
                 type="file"
@@ -426,7 +428,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
           </div>
           {formData.total_days > 3 && formData.leave_type === 'sick' && (
             <p className="text-xs text-amber-600 mt-2 font-medium">
-              ⚠️ Medical certificate is required for sick leave exceeding 3 days
+              ⚠️ {t('medical_cert_required')}
             </p>
           )}
         </div>
@@ -436,7 +438,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel} className="min-w-[100px]">
           <X className="w-4 h-4 mr-2" />
-          Cancel
+          {t('cancel')}
         </Button>
         <Button 
           type="submit" 
@@ -444,7 +446,7 @@ export default function LeaveRequestForm({ employee, leaveBalances = [], onSubmi
           disabled={!!validationError || uploading || (formData.total_days > 3 && formData.leave_type === 'sick' && !formData.attachment_url)}
         >
           <Save className="w-4 h-4 mr-2" />
-          Submit Request
+          {t('submit_request')}
         </Button>
       </div>
     </form>
