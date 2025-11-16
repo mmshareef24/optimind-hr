@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Save, ArrowLeft, ArrowRight } from "lucide-react";
+import { Save, ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import EmployeeDetailsTab from './EmployeeDetailsTab';
 import DependentDetailsTab from './DependentDetailsTab';
 import IDDetailsTab from './IDDetailsTab';
@@ -13,7 +13,7 @@ import LeaveBalanceTab from './LeaveBalanceTab';
 import LoanBalanceTab from './LoanBalanceTab';
 import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 
-export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCancel }) {
+export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCancel, onSaveDraft }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     // Employee Details
@@ -101,6 +101,17 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
       insurance,
       shiftAssignments
     });
+  };
+
+  const handleSaveDraft = () => {
+    if (onSaveDraft) {
+      onSaveDraft({
+        employee: formData,
+        dependents,
+        insurance,
+        shiftAssignments
+      });
+    }
   };
 
   return (
@@ -197,6 +208,17 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
         </Button>
 
         <div className="flex gap-3">
+          {onSaveDraft && !employee && (
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          )}
+
           {currentTabIndex > 0 && (
             <Button
               variant="outline"

@@ -7,9 +7,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { Clock } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 
-export default function PositionForm({ position, positions, companies, onSubmit, onCancel }) {
+export default function PositionForm({ position, positions, companies, onSubmit, onCancel, onSaveDraft }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   
@@ -36,6 +37,12 @@ export default function PositionForm({ position, positions, companies, onSubmit,
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  const handleSaveDraft = () => {
+    if (onSaveDraft) {
+      onSaveDraft(formData);
+    }
   };
 
   const departments = [...new Set(positions.map(p => p.department).filter(Boolean))];
@@ -275,13 +282,26 @@ export default function PositionForm({ position, positions, companies, onSubmit,
       </div>
 
       {/* Actions */}
-      <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+      <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
         <Button type="button" variant="outline" onClick={onCancel}>
           {t('cancel')}
         </Button>
-        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-          {position ? t('update') : t('create')}
-        </Button>
+        <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          {onSaveDraft && !position && (
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={handleSaveDraft}
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          )}
+          <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+            {position ? t('update') : t('create')}
+          </Button>
+        </div>
       </div>
     </form>
   );

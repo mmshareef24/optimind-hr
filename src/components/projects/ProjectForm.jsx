@@ -7,9 +7,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, DollarSign, Users, Target } from "lucide-react";
+import { Calendar, DollarSign, Users, Target, Clock } from "lucide-react";
 
-export default function ProjectForm({ project, employees, onSubmit, onCancel }) {
+export default function ProjectForm({ project, employees, onSubmit, onCancel, onSaveDraft }) {
   const [formData, setFormData] = useState({
     project_code: '',
     project_name: '',
@@ -37,6 +37,12 @@ export default function ProjectForm({ project, employees, onSubmit, onCancel }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  const handleSaveDraft = () => {
+    if (onSaveDraft) {
+      onSaveDraft(formData);
+    }
   };
 
   const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
@@ -269,13 +275,26 @@ export default function ProjectForm({ project, employees, onSubmit, onCancel }) 
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-between items-center">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-          {project ? 'Update Project' : 'Create Project'}
-        </Button>
+        <div className="flex gap-3">
+          {onSaveDraft && !project && (
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={handleSaveDraft}
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+          )}
+          <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+            {project ? 'Update Project' : 'Create Project'}
+          </Button>
+        </div>
       </div>
     </form>
   );
