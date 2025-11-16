@@ -118,18 +118,20 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 bg-slate-100 p-1">
-          {availableTabs.map(tab => (
-            <TabsTrigger 
-              key={tab.value} 
-              value={tab.value}
-              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs lg:text-sm"
-            >
-              <span className="mr-1">{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="w-full overflow-x-auto">
+          <TabsList className="inline-flex h-auto w-auto bg-slate-100 p-1 gap-1">
+            {availableTabs.map(tab => (
+              <TabsTrigger 
+                key={tab.value} 
+                value={tab.value}
+                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs whitespace-nowrap px-3 py-2"
+              >
+                <span className="mr-1">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         <TabsContent value="details" className="mt-6">
           <EmployeeDetailsTab 
