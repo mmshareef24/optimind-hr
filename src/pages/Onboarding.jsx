@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -94,9 +93,9 @@ export default function Onboarding() {
       queryClient.invalidateQueries(['onboarding-checklists']);
       setShowChecklistForm(false);
       setEditingChecklist(null);
-      toast.success('Checklist created successfully');
+      toast.success(t('checklist_created_success'));
     },
-    onError: () => toast.error('Failed to create checklist')
+    onError: () => toast.error(t('failed_create_checklist'))
   });
 
   const updateChecklistMutation = useMutation({
@@ -105,9 +104,9 @@ export default function Onboarding() {
       queryClient.invalidateQueries(['onboarding-checklists']);
       setShowChecklistForm(false);
       setEditingChecklist(null);
-      toast.success('Checklist updated successfully');
+      toast.success(t('checklist_updated_success'));
     },
-    onError: () => toast.error('Failed to update checklist')
+    onError: () => toast.error(t('failed_update_checklist'))
   });
 
   const assignChecklistMutation = useMutation({
@@ -132,27 +131,27 @@ export default function Onboarding() {
       queryClient.invalidateQueries(['onboarding-tasks']);
       setShowAssignModal(false);
       setSelectedEmployee(null);
-      toast.success('Checklist assigned successfully');
+      toast.success(t('checklist_assigned_success'));
     },
-    onError: () => toast.error('Failed to assign checklist')
+    onError: () => toast.error(t('failed_assign_checklist'))
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.OnboardingTask.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['onboarding-tasks']);
-      toast.success('Task updated successfully');
+      toast.success(t('task_updated_success'));
     },
-    onError: () => toast.error('Failed to update task')
+    onError: () => toast.error(t('failed_update_task'))
   });
 
   const uploadDocumentMutation = useMutation({
     mutationFn: (data) => base44.entities.OnboardingDocument.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['onboarding-documents']);
-      toast.success('Document uploaded successfully');
+      toast.success(t('document_uploaded_success'));
     },
-    onError: () => toast.error('Failed to upload document')
+    onError: () => toast.error(t('failed_upload_document'))
   });
 
   // Auto-assign onboarding mutation
@@ -170,10 +169,10 @@ export default function Onboarding() {
       setShowAssignDialog(false);
       setSelectedEmployeeForAssign(null);
       setSelectedChecklistId(null);
-      toast.success(`Onboarding assigned: ${result.data.total_tasks} tasks created`);
+      toast.success(`${t('onboarding_assigned')}: ${result.data.total_tasks} ${t('tasks_created')}`);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to assign onboarding');
+      toast.error(error.response?.data?.error || t('failed_assign_onboarding'));
     }
   });
 
@@ -185,10 +184,11 @@ export default function Onboarding() {
     },
     onSuccess: (result) => {
       setShowRemindersDialog(false);
-      toast.success(`Sent ${result.data.reminders_sent} reminder${result.data.reminders_sent !== 1 ? 's' : ''}`);
+      const count = result.data.reminders_sent;
+      toast.success(`${t('sent')} ${count} ${count !== 1 ? t('reminders') : t('reminder')}`);
     },
     onError: () => {
-      toast.error('Failed to send reminders');
+      toast.error(t('failed_send_reminders'));
     }
   });
 
@@ -236,7 +236,7 @@ export default function Onboarding() {
 
   const handleConfirmQuickAssign = () => {
     if (!selectedEmployeeForAssign) {
-      toast.error('Please select an employee');
+      toast.error(t('please_select_employee'));
       return;
     }
     autoAssignMutation.mutate({
@@ -267,7 +267,7 @@ export default function Onboarding() {
         uploaded_date: new Date().toISOString().split('T')[0]
       });
     } catch (error) {
-      toast.error('Failed to upload file');
+      toast.error(t('failed_upload_file'));
     }
   };
 
@@ -456,7 +456,7 @@ export default function Onboarding() {
                 if (confirm('Are you sure you want to delete this checklist?')) { // Confirmation message still hardcoded for now, assuming base44 client will be extended for translation on confirmation dialogs.
                   base44.entities.OnboardingChecklist.delete(id).then(() => {
                     queryClient.invalidateQueries(['onboarding-checklists']);
-                    toast.success('Checklist deleted');
+                    toast.success(t('checklist_deleted'));
                   });
                 }
               }}
@@ -496,7 +496,7 @@ export default function Onboarding() {
                 signed_by: currentUser?.id
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success('Document signed successfully');
+                toast.success(t('document_signed_success'));
               });
             }}
             onApproveDocument={(docId) => {
@@ -508,7 +508,7 @@ export default function Onboarding() {
                 reviewed_date: new Date().toISOString().split('T')[0]
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success('Document approved');
+                toast.success(t('document_approved'));
               });
             }}
             onRejectDocument={(docId, reason) => {
@@ -521,7 +521,7 @@ export default function Onboarding() {
                 rejection_reason: reason
               }).then(() => {
                 queryClient.invalidateQueries(['onboarding-documents']);
-                toast.success('Document rejected');
+                toast.success(t('document_rejected'));
               });
             }}
           />
