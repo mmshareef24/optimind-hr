@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Shield, DollarSign, Users, FileText, CheckCircle2, 
-  AlertTriangle, Calendar, TrendingUp 
+  AlertTriangle, Calendar, TrendingUp, Clock 
 } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 import StatCard from "@/components/hrms/StatCard";
