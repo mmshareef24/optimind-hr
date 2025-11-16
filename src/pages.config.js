@@ -30,7 +30,8 @@ import LeaveAccrualManagement from './pages/LeaveAccrualManagement';
 import PublicHolidays from './pages/PublicHolidays';
 import QIWA from './pages/QIWA';
 import SINAD from './pages/SINAD';
-import Layout from './Layout.jsx';
+import EOSBManagement from './pages/EOSBManagement';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -66,10 +67,11 @@ export const PAGES = {
     "PublicHolidays": PublicHolidays,
     "QIWA": QIWA,
     "SINAD": SINAD,
+    "EOSBManagement": EOSBManagement,
 }
 
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
