@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Users, Calendar, TrendingUp, Clock, Plane, Receipt, CheckCircle, Award, BarChart3, User } from "lucide-react";
+import { Users, Calendar, TrendingUp, Clock, Plane, Receipt, CheckCircle, Award, BarChart3, User, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import StatCard from "../components/hrms/StatCard";
 import TeamOverview from "../components/mss/TeamOverview";
@@ -22,12 +23,14 @@ export default function MSS() {
   const isRTL = language === 'ar';
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEmployee, setCurrentEmployee] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: loadingUser } = useQuery({
     queryKey: ['current-user-mss'],
     queryFn: async () => {
       const userData = await base44.auth.me();
+      setAuthUser(userData);
       const employees = await base44.entities.Employee.list();
       const employee = employees.find(e => e.email === userData.email);
       setCurrentUser(userData);
@@ -271,12 +274,50 @@ export default function MSS() {
 
   if (!currentEmployee) {
     return (
-      <div className="p-6 lg:p-8">
-        <Card className="border-amber-200 bg-amber-50">
+      <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
           <CardContent className="p-12 text-center">
-            <Users className="w-16 h-16 mx-auto mb-4 text-amber-600" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('no_employee_record')}</h2>
-            <p className="text-slate-600">{t('contact_hr')}</p>
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-xl">
+              <AlertCircle className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">No Employee Record Found</h2>
+            <p className="text-lg text-slate-700 mb-6">Your account ({authUser?.email}) is not linked to an employee record.</p>
+            
+            <div className="max-w-md mx-auto bg-white rounded-xl p-6 shadow-md mb-6">
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center justify-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
+                What to do next:
+              </h3>
+              <ul className="text-sm text-left space-y-2 text-slate-600">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 mt-0.5">✓</span>
+                  <span>Contact your HR department to create your employee profile</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 mt-0.5">✓</span>
+                  <span>Ensure your email (<strong>{authUser?.email}</strong>) matches your employee record</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 mt-0.5">✓</span>
+                  <span>Once your profile is created, refresh this page to access MSS</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+              >
+                Refresh Page
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => base44.auth.logout()}
+              >
+                Logout
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
