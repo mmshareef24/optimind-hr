@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from "@/components/ui/card";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
-export default function StatCard({ title, value, icon: Icon, trend, trendValue, bgColor = "from-emerald-500 to-emerald-600" }) {
+export default function StatCard({ title, value, icon: Icon, trend, trendValue, bgColor = "from-red-700 to-red-800" }) {
   return (
     <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
       <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
