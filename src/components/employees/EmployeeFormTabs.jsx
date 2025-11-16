@@ -13,7 +13,7 @@ import LeaveBalanceTab from './LeaveBalanceTab';
 import LoanBalanceTab from './LoanBalanceTab';
 import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 
-export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCancel, onSaveDraft }) {
+export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], onSubmit, onCancel, onSaveDraft }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     // Employee Details
@@ -29,6 +29,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
     gender: 'male',
     marital_status: 'single',
     hire_date: '',
+    company_id: '',
     position_id: '',
     job_title: '',
     department: '',
@@ -133,7 +134,9 @@ export default function EmployeeFormTabs({ employee, shifts = [], onSubmit, onCa
         <TabsContent value="details" className="mt-6">
           <EmployeeDetailsTab 
             formData={formData} 
-            setFormData={setFormData} 
+            setFormData={setFormData}
+            companies={companies}
+            positions={positions}
           />
         </TabsContent>
 

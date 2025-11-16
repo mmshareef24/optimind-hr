@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -54,6 +53,16 @@ export default function EmployeesPage() {
   const { data: shifts = [] } = useQuery({
     queryKey: ['shifts'],
     queryFn: () => base44.entities.Shift.list(),
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list()
+  });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ['positions'],
+    queryFn: () => base44.entities.Position.list()
   });
 
   const createEmployeeMutation = useMutation({
@@ -265,6 +274,8 @@ export default function EmployeesPage() {
           <EmployeeFormTabs
             employee={editingEmployee}
             shifts={shifts}
+            companies={companies}
+            positions={positions}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);
