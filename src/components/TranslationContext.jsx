@@ -8,6 +8,7 @@ const translations = {
     close: "Close", choose: "Choose", select: "Select", create: "Create", update: "Update",
     add: "Add", remove: "Remove", view: "View", all: "All", status: "Status", name: "Name",
     description: "Description", date: "Date", time: "Time", actions: "Actions", details: "Details",
+    unspecified: "Unspecified",
     
     // App
     app_name: "OptiMindHR",
@@ -661,6 +662,7 @@ const translations = {
     close: "إغلاق", choose: "اختر", select: "اختيار", create: "إنشاء", update: "تحديث",
     add: "إضافة", remove: "إزالة", view: "عرض", all: "الكل", status: "الحالة", name: "الاسم",
     description: "الوصف", date: "التاريخ", time: "الوقت", actions: "الإجراءات", details: "التفاصيل",
+    unspecified: "غير محدد",
     
     // App
     app_name: "أوبتي مايند",
