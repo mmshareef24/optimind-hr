@@ -124,7 +124,17 @@ export default function BudgetForm({ budget, departments, positions, employees, 
               <Label>Position (Optional)</Label>
               <Select 
                 value={formData.position_id} 
-                onValueChange={(v) => setFormData({...formData, position_id: v})}
+                onValueChange={(v) => {
+                  const pos = positions.find(p => p.id === v);
+                  const suggestedSalary = pos && pos.min_salary && pos.max_salary
+                    ? Math.round((pos.min_salary + pos.max_salary) / 2)
+                    : formData.budgeted_salary_cost;
+                  setFormData({
+                    ...formData, 
+                    position_id: v,
+                    budgeted_salary_cost: suggestedSalary
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select position" />
@@ -134,10 +144,26 @@ export default function BudgetForm({ budget, departments, positions, employees, 
                   {positions
                     .filter(p => !formData.department || p.department === formData.department)
                     .map(pos => (
-                      <SelectItem key={pos.id} value={pos.id}>{pos.position_title}</SelectItem>
+                      <SelectItem key={pos.id} value={pos.id}>
+                        {pos.position_title}
+                        {pos.min_salary && pos.max_salary && (
+                          <span className="text-xs text-slate-500 ml-2">
+                            ({pos.min_salary.toLocaleString()} - {pos.max_salary.toLocaleString()} SAR)
+                          </span>
+                        )}
+                      </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
+              {selectedPosition && selectedPosition.min_salary && selectedPosition.max_salary && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">Position Salary Scale</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Min: {selectedPosition.min_salary.toLocaleString()} SAR</span>
+                    <span className="text-slate-600">Max: {selectedPosition.max_salary.toLocaleString()} SAR</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
