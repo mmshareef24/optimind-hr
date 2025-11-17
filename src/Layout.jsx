@@ -58,7 +58,8 @@ function LayoutContent({ children }) {
         { title: t('nav_payroll_management'), url: createPageUrl("PayrollManagement"), icon: DollarSign },
         { title: t('nav_gosi_reporting'), url: createPageUrl("GOSIReporting"), icon: Shield },
         { title: t('nav_benefits_rewards'), url: createPageUrl("Benefits"), icon: Gift },
-        { title: language === 'ar' ? 'مكافأة نهاية الخدمة' : 'EOSB Management', url: createPageUrl("EOSBManagement"), icon: FileText }
+        { title: language === 'ar' ? 'مكافأة نهاية الخدمة' : 'EOSB Management', url: createPageUrl("EOSBManagement"), icon: FileText },
+        { title: language === 'ar' ? 'إدارة الميزانية' : 'Budget Management', url: createPageUrl("BudgetManagement"), icon: TrendingUp }
       ]
     },
     {
