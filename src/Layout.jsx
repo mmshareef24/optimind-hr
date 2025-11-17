@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { TranslationProvider, useTranslation } from '@/components/TranslationContext';
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
