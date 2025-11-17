@@ -31,6 +31,7 @@ import PublicHolidays from './pages/PublicHolidays';
 import QIWA from './pages/QIWA';
 import SINAD from './pages/SINAD';
 import EOSBManagement from './pages/EOSBManagement';
+import BudgetManagement from './pages/BudgetManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -68,6 +69,7 @@ export const PAGES = {
     "QIWA": QIWA,
     "SINAD": SINAD,
     "EOSBManagement": EOSBManagement,
+    "BudgetManagement": BudgetManagement,
 }
 
 export const pagesConfig = {
