@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { UserX, Calendar, Edit, CheckCircle, AlertCircle, FileText } from "lucide-react";
+import { UserX, Calendar, Edit, CheckCircle, AlertCircle, FileText, Printer } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ClearancePrintForm from "./ClearancePrintForm";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function OffboardingProcessCard({ process, employee, tasks, onEdit, onUpdateProcess }) {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
@@ -47,6 +51,7 @@ export default function OffboardingProcessCard({ process, employee, tasks, onEdi
   };
 
   return (
+    <>
     <Card className="border-0 shadow-lg hover:shadow-xl transition-all">
       <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-red-50/30">
         <div className="flex items-start justify-between">
@@ -73,10 +78,16 @@ export default function OffboardingProcessCard({ process, employee, tasks, onEdi
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(true)}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print Forms
+            </Button>
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
