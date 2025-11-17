@@ -43,6 +43,35 @@ export default function Departments() {
     queryFn: () => base44.entities.Employee.list(),
   });
 
+  const { data: departmentEntities = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => base44.entities.Department.list(),
+  });
+
+  const createDepartmentMutation = useMutation({
+    mutationFn: (data) => base44.entities.Department.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['departments']);
+      setShowDialog(false);
+      toast.success(editingDepartment ? t('department') + ' ' + t('update') : t('department') + ' ' + t('create'));
+    },
+    onError: (error) => {
+      toast.error('Failed to save department: ' + error.message);
+    }
+  });
+
+  const updateDepartmentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Department.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['departments']);
+      setShowDialog(false);
+      toast.success(t('department') + ' ' + t('update') + 'd successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update department: ' + error.message);
+    }
+  });
+
   const departments = React.useMemo(() => {
     const deptMap = new Map();
     
@@ -401,12 +430,29 @@ export default function Departments() {
               </Button>
               <Button 
                 onClick={() => {
-                  toast.info(t('dept_mgmt_coming_soon_toast'));
-                  setShowDialog(false);
+                  if (!formData.name) {
+                    toast.error('Department name is required');
+                    return;
+                  }
+                  
+                  if (editingDepartment) {
+                    const existingDept = departmentEntities.find(d => d.name === editingDepartment.name);
+                    if (existingDept) {
+                      updateDepartmentMutation.mutate({ id: existingDept.id, data: formData });
+                    } else {
+                      createDepartmentMutation.mutate(formData);
+                    }
+                  } else {
+                    createDepartmentMutation.mutate(formData);
+                  }
                 }}
+                disabled={createDepartmentMutation.isPending || updateDepartmentMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {editingDepartment ? t('update_department') : t('create_department')}
+                {(createDepartmentMutation.isPending || updateDepartmentMutation.isPending) 
+                  ? t('processing') 
+                  : (editingDepartment ? t('update_department') : t('create_department'))
+                }
               </Button>
             </div>
           </div>
