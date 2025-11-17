@@ -63,13 +63,24 @@ export default function LeaveManagement() {
 
   const { data: leaveBalances = [], isLoading: loadingBalances } = useQuery({
     queryKey: ['leave-balances', currentUser?.id],
-    queryFn: () => base44.entities.LeaveBalance.filter({ employee_id: currentUser.id }),
+    queryFn: async () => {
+      const balances = await base44.entities.LeaveBalance.filter({ employee_id: currentUser.id });
+      // Remove duplicates based on leave_type and year
+      const uniqueBalances = balances.reduce((acc, balance) => {
+        const key = `${balance.leave_type}-${balance.year}`;
+        if (!acc.has(key)) {
+          acc.set(key, balance);
+        }
+        return acc;
+      }, new Map());
+      return Array.from(uniqueBalances.values());
+    },
     enabled: !!currentUser?.id
   });
 
   // Initialize leave balances if they don't exist
   useEffect(() => {
-    if (currentUser && leaveBalances.length === 0) {
+    if (currentUser && leaveBalances.length === 0 && !loadingBalances) {
       const currentYear = new Date().getFullYear();
       const defaultBalances = [
         { employee_id: currentUser.id, leave_type: 'annual', year: currentYear, total_entitled: 21, used: 0, pending: 0, remaining: 21 },
@@ -77,11 +88,14 @@ export default function LeaveManagement() {
         { employee_id: currentUser.id, leave_type: 'hajj', year: currentYear, total_entitled: 10, used: 0, pending: 0, remaining: 10 }
       ];
       
-      defaultBalances.forEach(balance => {
-        base44.entities.LeaveBalance.create(balance).catch(() => {});
+      // Create all balances in one go to prevent race conditions
+      Promise.all(defaultBalances.map(balance => 
+        base44.entities.LeaveBalance.create(balance).catch(() => {})
+      )).then(() => {
+        queryClient.invalidateQueries(['leave-balances']);
       });
     }
-  }, [currentUser, leaveBalances]);
+  }, [currentUser, leaveBalances.length, loadingBalances]);
 
   const createRequestMutation = useMutation({
     mutationFn: async (data) => {
