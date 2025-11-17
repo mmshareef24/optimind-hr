@@ -387,7 +387,6 @@ const translations = {
     no_employees_display: "No employees to display",
     no_employees_found_search: "No employees found matching your search",
     hierarchy: "Hierarchy",
-    companies: "Companies",
     
     // Departments
     department_management: "Department Management",
@@ -423,7 +422,6 @@ const translations = {
     department_note: "Currently, departments are automatically created from employee data. To create a new department, assign an employee to it in the Employee Management page.",
     update_department: "Update Department",
     create_department: "Create Department",
-    all_departments: "All Departments",
     
     // Documents
     documents: "Documents",
@@ -652,7 +650,6 @@ const translations = {
     failed_load_balances: "Failed to load employee balances",
     file_size_limit: "File size must be less than 5MB",
     document_uploaded: "Document uploaded successfully",
-    failed_upload_document: "Failed to upload document",
     loading_balances: "Loading leave balances...",
     
     // Leave Type Descriptions
@@ -757,7 +754,6 @@ const translations = {
     no_employees_display: "لا يوجد موظفون لعرضهم",
     no_employees_found_search: "لم يتم العثور على موظفين مطابقين لبحثك",
     hierarchy: "التسلسل الهرمي",
-    companies: "الشركات",
     
     // Positions - Arabic
     positions: "المناصب",
@@ -976,7 +972,6 @@ const translations = {
     task_updated_success: "تم تحديث المهمة بنجاح",
     failed_update_task: "فشل تحديث المهمة",
     document_uploaded_success: "تم رفع المستند بنجاح",
-    failed_upload_document: "فشل رفع المستند",
     onboarding_assigned: "تم تعيين التوظيف",
     tasks_created: "مهام تم إنشاؤها",
     failed_assign_onboarding: "فشل تعيين التوظيف",
