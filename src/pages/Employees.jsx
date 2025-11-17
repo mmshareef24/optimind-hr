@@ -276,6 +276,7 @@ export default function EmployeesPage() {
             shifts={shifts}
             companies={companies}
             positions={positions}
+            employees={employees}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);

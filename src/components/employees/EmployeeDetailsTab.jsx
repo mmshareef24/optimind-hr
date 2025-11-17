@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import {
 } from "@/components/ui/select";
 import { useTranslation } from '@/components/TranslationContext';
 
-export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [] }) {
+export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [] }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
 
@@ -15,6 +14,9 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
   const availablePositions = formData.company_id
     ? positions.filter(p => p.company_id === formData.company_id && p.status === 'active')
     : positions.filter(p => p.status === 'active');
+  
+  // Get potential managers (exclude the current employee being edited)
+  const potentialManagers = employees.filter(emp => emp.id !== formData.id && emp.status === 'active');
 
   // When a position is selected, auto-fill department and job_title
   const handlePositionChange = (positionId) => {
@@ -250,6 +252,28 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
             onChange={(e) => setFormData({...formData, department: e.target.value})}
           />
         </div>
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Reporting Manager</Label>
+          <Select
+            value={formData.manager_id || ''}
+            onValueChange={(val) => setFormData({...formData, manager_id: val || null})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select reporting manager" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>None</SelectItem>
+              {potentialManagers.map(manager => (
+                <SelectItem key={manager.id} value={manager.id}>
+                  {manager.first_name} {manager.last_name} - {manager.job_title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Employment Type</Label>
           <Select

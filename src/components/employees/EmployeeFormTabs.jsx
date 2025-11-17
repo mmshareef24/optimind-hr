@@ -14,7 +14,7 @@ import LoanBalanceTab from './LoanBalanceTab';
 import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 import EOSBTab from './EOSBTab';
 
-export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], onSubmit, onCancel, onSaveDraft }) {
+export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], onSubmit, onCancel, onSaveDraft }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     employee_id: '',
@@ -130,6 +130,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
             setFormData={setFormData}
             companies={companies}
             positions={positions}
+            employees={employees}
           />
         </TabsContent>
 
