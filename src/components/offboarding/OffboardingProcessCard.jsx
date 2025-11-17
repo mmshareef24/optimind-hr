@@ -7,6 +7,19 @@ import { UserX, Calendar, Edit, CheckCircle, AlertCircle, FileText } from "lucid
 import { format, differenceInDays } from "date-fns";
 
 export default function OffboardingProcessCard({ process, employee, tasks, onEdit, onUpdateProcess }) {
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+
+  const { data: clearanceItems = [] } = useQuery({
+    queryKey: ['clearance-items', process.id],
+    queryFn: () => base44.entities.ClearanceItem.filter({ offboarding_process_id: process.id })
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list()
+  });
+
+  const company = companies.find(c => c.id === employee?.company_id);
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -168,5 +181,20 @@ export default function OffboardingProcessCard({ process, employee, tasks, onEdi
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Clearance Forms - {employee?.first_name} {employee?.last_name}</DialogTitle>
+        </DialogHeader>
+        <ClearancePrintForm
+          process={process}
+          employee={employee}
+          clearanceItems={clearanceItems}
+          company={company}
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
