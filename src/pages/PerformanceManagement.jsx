@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from '@/components/TranslationContext';
 import { Target, Star, TrendingUp, CheckCircle, FileText, Plus, Filter, X, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function PerformanceManagement() {
+  const { t, language } = useTranslation();
+  const isRTL = language === 'ar';
+
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -88,10 +92,10 @@ export default function PerformanceManagement() {
       queryClient.invalidateQueries(['performance-goals']);
       setShowGoalForm(false);
       setEditingGoal(null);
-      toast.success('Goal created successfully');
+      toast.success(t('goal_created_successfully'));
     },
     onError: () => {
-      toast.error('Failed to create goal');
+      toast.error(t('failed_to_create_goal'));
     }
   });
 
@@ -101,10 +105,10 @@ export default function PerformanceManagement() {
       queryClient.invalidateQueries(['performance-goals']);
       setShowGoalForm(false);
       setEditingGoal(null);
-      toast.success('Goal updated successfully');
+      toast.success(t('goal_updated_successfully'));
     },
     onError: () => {
-      toast.error('Failed to update goal');
+      toast.error(t('failed_to_update_goal'));
     }
   });
 
@@ -114,10 +118,10 @@ export default function PerformanceManagement() {
       queryClient.invalidateQueries(['performance-reviews']);
       setShowReviewForm(false);
       setSelectedEmployee(null);
-      toast.success('Review submitted successfully');
+      toast.success(t('review_submitted_successfully'));
     },
     onError: () => {
-      toast.error('Failed to submit review');
+      toast.error(t('failed_to_submit_review'));
     }
   });
 
@@ -170,8 +174,8 @@ export default function PerformanceManagement() {
   const filteredGoals = goals.filter(goal => {
     const employee = employees.find(e => e.id === goal.employee_id);
     const employeeName = employee ? `${employee.first_name} ${employee.last_name}`.toLowerCase() : '';
-    
-    const matchesSearch = 
+
+    const matchesSearch =
       goal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       goal.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employeeName.includes(searchTerm.toLowerCase());
@@ -188,8 +192,8 @@ export default function PerformanceManagement() {
   const filteredReviews = reviews.filter(review => {
     const employee = employees.find(e => e.id === review.employee_id);
     const employeeName = employee ? `${employee.first_name} ${employee.last_name}`.toLowerCase() : '';
-    
-    const matchesSearch = 
+
+    const matchesSearch =
       employeeName.includes(searchTerm.toLowerCase()) ||
       review.review_period?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -241,17 +245,17 @@ export default function PerformanceManagement() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Performance Management</h1>
-          <p className="text-slate-600">Track goals, reviews, and employee performance</p>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('performance_management')}</h1>
+          <p className="text-slate-600">{t('performance_desc')}</p>
         </div>
         {userRole === 'admin' && (
           <Button
             onClick={() => { setEditingGoal(null); setShowGoalForm(true); }}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
           >
-            <Plus className="w-4 h-4 mr-2" /> Set New Goal
+            <Plus className="w-4 h-4 mr-2" /> {t('set_new_goal')}
           </Button>
         )}
       </div>
@@ -259,25 +263,25 @@ export default function PerformanceManagement() {
       {/* Statistics */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Goals"
+          title={t('total_goals')}
           value={totalGoals}
           icon={Target}
           bgColor="from-blue-500 to-blue-600"
         />
         <StatCard
-          title="Completed Goals"
+          title={t('completed_goals')}
           value={completedGoals}
           icon={CheckCircle}
           bgColor="from-emerald-500 to-emerald-600"
         />
         <StatCard
-          title="In Progress"
+          title={t('in_progress')}
           value={inProgressGoals}
           icon={TrendingUp}
           bgColor="from-amber-500 to-amber-600"
         />
         <StatCard
-          title="Avg Progress"
+          title={t('avg_progress')}
           value={`${avgProgress}%`}
           icon={Star}
           bgColor="from-purple-500 to-purple-600"
@@ -288,21 +292,21 @@ export default function PerformanceManagement() {
       {lastReview && (
         <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
                   <Star className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Last Performance Review</h3>
+                <div className={isRTL ? 'text-right' : ''}>
+                  <h3 className="text-lg font-bold text-slate-900">{t('last_performance_review')}</h3>
                   <p className="text-sm text-slate-600">
                     {lastReview.review_period} • {format(new Date(lastReview.review_date), 'MMM dd, yyyy')}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-600 mb-1">Overall Rating</p>
-                <div className="flex items-center gap-2">
+              <div className={isRTL ? 'text-left' : 'text-right'}>
+                <p className="text-sm text-slate-600 mb-1">{t('overall_rating')}</p>
+                <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <span className="text-3xl font-bold text-blue-600">{lastReview.overall_rating}</span>
                   <span className="text-slate-600">/ 5.0</span>
                   <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
@@ -321,7 +325,7 @@ export default function PerformanceManagement() {
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <Target className="w-4 h-4 mr-2" />
-            My Goals
+            {t('my_goals')}
           </TabsTrigger>
           {userRole === 'admin' && (
             <TabsTrigger
@@ -329,7 +333,7 @@ export default function PerformanceManagement() {
               className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
             >
               <Target className="w-4 h-4 mr-2" />
-              All Goals
+              {t('all_goals')}
             </TabsTrigger>
           )}
           <TabsTrigger
@@ -337,7 +341,7 @@ export default function PerformanceManagement() {
             className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
           >
             <FileText className="w-4 h-4 mr-2" />
-            Reviews
+            {t('reviews')}
           </TabsTrigger>
           {userRole === 'admin' && (
             <TabsTrigger
@@ -345,7 +349,7 @@ export default function PerformanceManagement() {
               className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
             >
               <Star className="w-4 h-4 mr-2" />
-              Conduct Review
+              {t('conduct_review')}
             </TabsTrigger>
           )}
         </TabsList>
@@ -361,8 +365,8 @@ export default function PerformanceManagement() {
               ) : myGoals.length === 0 ? (
                 <div className="text-center py-12">
                   <Target className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <p className="text-slate-500 mb-4">No goals set yet</p>
-                  <p className="text-sm text-slate-400">Your manager will assign goals for you to track</p>
+                  <p className="text-slate-500 mb-4">{t('no_goals_set')}</p>
+                  <p className="text-sm text-slate-400">{t('manager_will_assign')}</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
@@ -392,22 +396,22 @@ export default function PerformanceManagement() {
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6 space-y-4">
                 {/* Search and Filters */}
-                <div className="flex gap-3">
+                <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
                     <Input
-                      placeholder="Search goals by title, description, or employee..."
+                      placeholder={t('search_goals_placeholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className={isRTL ? 'pr-10' : 'pl-10'}
                     />
                   </div>
                   <Popover open={showFilters} onOpenChange={setShowFilters}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="relative">
                         <Filter className="w-4 h-4 mr-2" />
-                        Filters
-                        {Object.values(goalFilters).some(f => f !== 'all') && ( // Only show badge if actual filters are applied, not just search term
+                        {t('filters')}
+                        {Object.values(goalFilters).some(f => f !== 'all') && (
                           <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
                         )}
                       </Button>
@@ -415,43 +419,43 @@ export default function PerformanceManagement() {
                     <PopoverContent className="w-80" align="end">
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-slate-900">Filter Goals</h3>
+                          <h3 className="font-semibold text-slate-900">{t('filter_goals')}</h3>
                           {hasActiveGoalFilters && (
                             <Button variant="ghost" size="sm" onClick={clearGoalFilters}>
                               <X className="w-4 h-4 mr-1" />
-                              Clear
+                              {t('clear')}
                             </Button>
                           )}
                         </div>
 
                         <div className="space-y-3">
                           <div>
-                            <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
                             <Select
                               value={goalFilters.status}
                               onValueChange={(val) => setGoalFilters({ ...goalFilters, status: val })}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="not_started">Not Started</SelectItem>
-                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                                <SelectItem value="overdue">Overdue</SelectItem>
+                                <SelectItem value="all">{t('all_status')}</SelectItem>
+                                <SelectItem value="not_started">{t('not_started')}</SelectItem>
+                                <SelectItem value="in_progress">{t('in_progress')}</SelectItem>
+                                <SelectItem value="completed">{t('completed')}</SelectItem>
+                                <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
+                                <SelectItem value="overdue">{t('overdue')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-slate-700 mb-1 block">Employee</label>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">{t('employee')}</label>
                             <Select
                               value={goalFilters.employee}
                               onValueChange={(val) => setGoalFilters({ ...goalFilters, employee: val })}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All Employees</SelectItem>
+                                <SelectItem value="all">{t('all_employees')}</SelectItem>
                                 {employees.map(emp => (
                                   <SelectItem key={emp.id} value={emp.id}>
                                     {emp.first_name} {emp.last_name}
@@ -462,35 +466,35 @@ export default function PerformanceManagement() {
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-slate-700 mb-1 block">Priority</label>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">{t('priority')}</label>
                             <Select
                               value={goalFilters.priority}
                               onValueChange={(val) => setGoalFilters({ ...goalFilters, priority: val })}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All Priorities</SelectItem>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
-                                <SelectItem value="critical">Critical</SelectItem>
+                                <SelectItem value="all">{t('all_priorities')}</SelectItem>
+                                <SelectItem value="low">{t('low')}</SelectItem>
+                                <SelectItem value="medium">{t('medium')}</SelectItem>
+                                <SelectItem value="high">{t('high')}</SelectItem>
+                                <SelectItem value="critical">{t('critical')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-slate-700 mb-1 block">Category</label>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">{t('category')}</label>
                             <Select
                               value={goalFilters.category}
                               onValueChange={(val) => setGoalFilters({ ...goalFilters, category: val })}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
-                                <SelectItem value="individual">Individual</SelectItem>
-                                <SelectItem value="team">Team</SelectItem>
-                                <SelectItem value="organizational">Organizational</SelectItem>
-                                <SelectItem value="development">Development</SelectItem>
+                                <SelectItem value="all">{t('all_categories')}</SelectItem>
+                                <SelectItem value="individual">{t('individual')}</SelectItem>
+                                <SelectItem value="team">{t('team')}</SelectItem>
+                                <SelectItem value="organizational">{t('organizational')}</SelectItem>
+                                <SelectItem value="development">{t('development')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -505,7 +509,7 @@ export default function PerformanceManagement() {
                   <div className="flex flex-wrap gap-2 items-center">
                     {searchTerm && (
                       <Badge variant="secondary" className="gap-1">
-                        Search: {searchTerm}
+                        {t('search')}: {searchTerm}
                         <X
                           className="w-3 h-3 cursor-pointer"
                           onClick={() => setSearchTerm('')}
@@ -515,10 +519,10 @@ export default function PerformanceManagement() {
                     {Object.entries(goalFilters).map(([key, value]) => {
                       if (value === 'all') return null;
                       const employee = key === 'employee' ? employees.find(e => e.id === value) : null;
-                      const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : value.replace(/_/g, ' ');
+                      const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : t(value);
                       return (
                         <Badge key={key} variant="secondary" className="gap-1 capitalize">
-                          {key}: {displayValue}
+                          {t(key)}: {displayValue}
                           <X
                             className="w-3 h-3 cursor-pointer"
                             onClick={() => setGoalFilters({ ...goalFilters, [key]: 'all' })}
@@ -528,14 +532,14 @@ export default function PerformanceManagement() {
                     })}
                     {(Object.values(goalFilters).some(f => f !== 'all') || searchTerm !== '') && (
                       <Button variant="ghost" size="sm" onClick={clearGoalFilters} className="h-auto px-2 py-1 text-xs">
-                        Clear All
+                        {t('clear_all')}
                       </Button>
                     )}
                   </div>
                 )}
 
                 <p className="text-sm text-slate-600">
-                  Showing <strong>{filteredGoals.length}</strong> of <strong>{goals.length}</strong> goals
+                  {t('showing')} <strong>{filteredGoals.length}</strong> {t('of')} <strong>{goals.length}</strong> {t('goals_plural')}
                 </p>
 
                 {loadingGoals ? (
@@ -546,16 +550,16 @@ export default function PerformanceManagement() {
                   <div className="text-center py-12">
                     <Target className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                     <p className="text-slate-500 mb-4">
-                      {hasActiveGoalFilters ? 'No goals match the selected filters or search term' : 'No goals set yet'}
+                      {hasActiveGoalFilters ? t('no_goals_match_filters') : t('no_goals_set')}
                     </p>
                     {hasActiveGoalFilters ? (
                       <Button variant="outline" onClick={clearGoalFilters}>
-                        Clear All Filters
+                        {t('clear_all_filters')}
                       </Button>
                     ) : (
                       <Button onClick={() => setShowGoalForm(true)}>
                         <Plus className="w-4 h-4 mr-2" />
-                        Set First Goal
+                        {t('set_first_goal')}
                       </Button>
                     )}
                   </div>
@@ -591,22 +595,22 @@ export default function PerformanceManagement() {
           <Card className="border-0 shadow-lg">
             <CardContent className="p-6 space-y-4">
               {/* Search and Filters */}
-              <div className="flex gap-3">
+              <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400`} />
                   <Input
-                    placeholder="Search reviews by employee or period..."
+                    placeholder={t('search_reviews_placeholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className={isRTL ? 'pr-10' : 'pl-10'}
                   />
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="relative">
                       <Filter className="w-4 h-4 mr-2" />
-                      Filters
-                      {Object.values(reviewFilters).some(f => f !== 'all') && ( // Only show badge if actual filters are applied, not just search term
+                      {t('filters')}
+                      {Object.values(reviewFilters).some(f => f !== 'all') && (
                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-600 rounded-full" />
                       )}
                     </Button>
@@ -614,44 +618,44 @@ export default function PerformanceManagement() {
                   <PopoverContent className="w-80" align="end">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-slate-900">Filter Reviews</h3>
+                        <h3 className="font-semibold text-slate-900">{t('filter_reviews')}</h3>
                         {hasActiveReviewFilters && (
                           <Button variant="ghost" size="sm" onClick={clearReviewFilters}>
                             <X className="w-4 h-4 mr-1" />
-                            Clear
+                            {t('clear')}
                           </Button>
                         )}
                       </div>
 
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">{t('status')}</label>
                           <Select
                             value={reviewFilters.status}
                             onValueChange={(val) => setReviewFilters({ ...reviewFilters, status: val })}
                           >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Status</SelectItem>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="self_assessment_pending">Self Assessment Pending</SelectItem>
-                              <SelectItem value="manager_review_pending">Manager Review Pending</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                              <SelectItem value="all">{t('all_status')}</SelectItem>
+                              <SelectItem value="draft">{t('draft')}</SelectItem>
+                              <SelectItem value="self_assessment_pending">{t('self_assessment_pending')}</SelectItem>
+                              <SelectItem value="manager_review_pending">{t('manager_review_pending')}</SelectItem>
+                              <SelectItem value="completed">{t('completed')}</SelectItem>
+                              <SelectItem value="acknowledged">{t('acknowledged')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         {userRole === 'admin' && (
                           <div>
-                            <label className="text-sm font-medium text-slate-700 mb-1 block">Employee</label>
+                            <label className="text-sm font-medium text-slate-700 mb-1 block">{t('employee')}</label>
                             <Select
                               value={reviewFilters.employee}
                               onValueChange={(val) => setReviewFilters({ ...reviewFilters, employee: val })}
                             >
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All Employees</SelectItem>
+                                <SelectItem value="all">{t('all_employees')}</SelectItem>
                                 {employees.map(emp => (
                                   <SelectItem key={emp.id} value={emp.id}>
                                     {emp.first_name} {emp.last_name}
@@ -663,14 +667,14 @@ export default function PerformanceManagement() {
                         )}
 
                         <div>
-                          <label className="text-sm font-medium text-slate-700 mb-1 block">Review Period</label>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">{t('review_period')}</label>
                           <Select
                             value={reviewFilters.reviewPeriod}
                             onValueChange={(val) => setReviewFilters({ ...reviewFilters, reviewPeriod: val })}
                           >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Periods</SelectItem>
+                              <SelectItem value="all">{t('all_periods')}</SelectItem>
                               {reviewPeriods.map(period => (
                                 <SelectItem key={period} value={period}>{period}</SelectItem>
                               ))}
@@ -679,19 +683,19 @@ export default function PerformanceManagement() {
                         </div>
 
                         <div>
-                          <label className="text-sm font-medium text-slate-700 mb-1 block">Review Type</label>
+                          <label className="text-sm font-medium text-slate-700 mb-1 block">{t('review_type')}</label>
                           <Select
                             value={reviewFilters.reviewType}
                             onValueChange={(val) => setReviewFilters({ ...reviewFilters, reviewType: val })}
                           >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Types</SelectItem>
-                              <SelectItem value="quarterly">Quarterly</SelectItem>
-                              <SelectItem value="mid_year">Mid Year</SelectItem>
-                              <SelectItem value="annual">Annual</SelectItem>
-                              <SelectItem value="probation">Probation</SelectItem>
-                              <SelectItem value="project_based">Project Based</SelectItem>
+                              <SelectItem value="all">{t('all_types')}</SelectItem>
+                              <SelectItem value="quarterly">{t('quarterly')}</SelectItem>
+                              <SelectItem value="mid_year">{t('mid_year')}</SelectItem>
+                              <SelectItem value="annual">{t('annual')}</SelectItem>
+                              <SelectItem value="probation">{t('probation')}</SelectItem>
+                              <SelectItem value="project_based">{t('project_based')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -706,7 +710,7 @@ export default function PerformanceManagement() {
                 <div className="flex flex-wrap gap-2 items-center">
                   {searchTerm && (
                     <Badge variant="secondary" className="gap-1">
-                      Search: {searchTerm}
+                      {t('search')}: {searchTerm}
                       <X
                         className="w-3 h-3 cursor-pointer"
                         onClick={() => setSearchTerm('')}
@@ -716,10 +720,10 @@ export default function PerformanceManagement() {
                   {Object.entries(reviewFilters).map(([key, value]) => {
                     if (value === 'all') return null;
                     const employee = key === 'employee' ? employees.find(e => e.id === value) : null;
-                    const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : value.replace(/_/g, ' ');
+                    const displayValue = employee ? `${employee.first_name} ${employee.last_name}` : t(value);
                     return (
                       <Badge key={key} variant="secondary" className="gap-1 capitalize">
-                        {key}: {displayValue}
+                        {t(key)}: {displayValue}
                         <X
                           className="w-3 h-3 cursor-pointer"
                           onClick={() => setReviewFilters({ ...reviewFilters, [key]: 'all' })}
@@ -729,14 +733,14 @@ export default function PerformanceManagement() {
                   })}
                   {(Object.values(reviewFilters).some(f => f !== 'all') || searchTerm !== '') && (
                     <Button variant="ghost" size="sm" onClick={clearReviewFilters} className="h-auto px-2 py-1 text-xs">
-                      Clear All
+                      {t('clear_all')}
                     </Button>
                   )}
                 </div>
               )}
 
               <p className="text-sm text-slate-600">
-                Showing <strong>{filteredReviews.length}</strong> of <strong>{reviews.length}</strong> reviews
+                {t('showing')} <strong>{filteredReviews.length}</strong> {t('of')} <strong>{reviews.length}</strong> {t('reviews_plural')}
               </p>
 
               {loadingReviews ? (
@@ -747,11 +751,11 @@ export default function PerformanceManagement() {
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <p className="text-slate-500 mb-4">
-                    {hasActiveReviewFilters ? 'No reviews match the selected filters or search term' : 'No performance reviews yet'}
+                    {hasActiveReviewFilters ? t('no_reviews_match_filters') : t('no_performance_reviews_yet')}
                   </p>
                   {hasActiveReviewFilters && (
                     <Button variant="outline" onClick={clearReviewFilters}>
-                      Clear All Filters
+                      {t('clear_all_filters')}
                     </Button>
                   )}
                 </div>
@@ -774,24 +778,24 @@ export default function PerformanceManagement() {
                                   review.status === 'manager_review_pending' ? 'bg-amber-100 text-amber-700' :
                                   'bg-blue-100 text-blue-700'
                                 }>
-                                  {review.status.replace(/_/g, ' ')}
+                                  {t(review.status)}
                                 </Badge>
                               </div>
                               <div className="grid md:grid-cols-4 gap-3 text-sm text-slate-600">
-                                <p><strong>Period:</strong> {review.review_period}</p>
-                                <p><strong>Type:</strong> {review.review_type.replace(/_/g, ' ')}</p>
-                                <p><strong>Date:</strong> {format(new Date(review.review_date), 'MMM dd, yyyy')}</p>
-                                <p><strong>Rating:</strong> {review.overall_rating}/5.0</p>
+                                <p><strong>{t('period')}:</strong> {review.review_period}</p>
+                                <p><strong>{t('type')}:</strong> {t(review.review_type)}</p>
+                                <p><strong>{t('date')}:</strong> {format(new Date(review.review_date), 'MMM dd, yyyy')}</p>
+                                <p><strong>{t('rating')}:</strong> {review.overall_rating}/5.0</p>
                               </div>
                               {reviewer && (
                                 <p className="text-xs text-slate-500 mt-2">
-                                  Reviewed by: {reviewer.first_name} {reviewer.last_name}
+                                  {t('reviewed_by')}: {reviewer.first_name} {reviewer.last_name}
                                 </p>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="text-right">
-                                <p className="text-sm text-slate-500">Overall</p>
+                                <p className="text-sm text-slate-500">{t('overall')}</p>
                                 <div className="flex items-center gap-1">
                                   <span className="text-2xl font-bold text-blue-600">{review.overall_rating}</span>
                                   <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
@@ -814,12 +818,12 @@ export default function PerformanceManagement() {
           <TabsContent value="conduct-review">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Select Employee to Review</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">{t('select_employee_to_review')}</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {employees.filter(e => e.status === 'active').map((employee) => {
                     const employeeGoals = goals.filter(g => g.employee_id === employee.id);
                     const completedGoals = employeeGoals.filter(g => g.status === 'completed').length;
-                    
+
                     return (
                       <Card key={employee.id} className="border border-slate-200 hover:shadow-md transition-all">
                         <CardContent className="p-4">
@@ -829,11 +833,11 @@ export default function PerformanceManagement() {
                           <p className="text-sm text-slate-600 mb-3">{employee.job_title}</p>
                           <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                             <div className="bg-blue-50 p-2 rounded">
-                              <p className="text-blue-600">Goals</p>
+                              <p className="text-blue-600">{t('goals')}</p>
                               <p className="font-semibold">{employeeGoals.length}</p>
                             </div>
                             <div className="bg-emerald-50 p-2 rounded">
-                              <p className="text-emerald-600">Completed</p>
+                              <p className="text-emerald-600">{t('completed')}</p>
                               <p className="font-semibold">{completedGoals}</p>
                             </div>
                           </div>
@@ -843,7 +847,7 @@ export default function PerformanceManagement() {
                             size="sm"
                           >
                             <Star className="w-4 h-4 mr-2" />
-                            Start Review
+                            {t('start_review')}
                           </Button>
                         </CardContent>
                       </Card>
@@ -860,7 +864,7 @@ export default function PerformanceManagement() {
       <Dialog open={showGoalForm} onOpenChange={setShowGoalForm}>
         <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingGoal ? 'Edit Goal' : 'Set New Goal'}</DialogTitle>
+            <DialogTitle>{editingGoal ? t('edit_goal') : t('set_new_goal')}</DialogTitle>
           </DialogHeader>
           <GoalForm
             goal={editingGoal}
@@ -878,7 +882,7 @@ export default function PerformanceManagement() {
       <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Performance Review</DialogTitle>
+            <DialogTitle>{t('performance_review')}</DialogTitle>
           </DialogHeader>
           {selectedEmployee && (
             <ReviewForm
