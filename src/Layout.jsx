@@ -10,8 +10,8 @@ import {
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 
 function LayoutContent({ children }) {
   const location = useLocation();
@@ -187,7 +187,7 @@ function LayoutContent({ children }) {
             <Button
               variant="outline"
               onClick={() => base44.auth.logout()}
-              className={`w-full text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200 ${isRTL ? 'flex-row-reverse' : ''}`}
+              className={`w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 ${isRTL ? 'flex-row-reverse' : ''}`}
             >
               <LogOut className="w-4 h-4 mr-2" />
               {t('logout') || 'Logout'}
