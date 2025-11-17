@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
 import { TranslationProvider, useTranslation } from '@/components/TranslationContext';
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
@@ -173,7 +172,7 @@ function LayoutContent({ children }) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-emerald-100/50 p-4 space-y-3">
+          <div className="border-t border-emerald-100/50 p-4">
             <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shrink-0">
                 <span className="text-white font-semibold text-sm">HR</span>
@@ -183,12 +182,6 @@ function LayoutContent({ children }) {
                 <p className="text-xs text-slate-500 truncate">admin@company.sa</p>
               </div>
             </div>
-            <button
-              onClick={() => base44.auth.logout()}
-              className="w-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
           </div>
         </div>
       </aside>
