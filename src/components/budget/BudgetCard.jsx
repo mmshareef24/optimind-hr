@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 export default function BudgetCard({ budget, employees, positions, onEdit, onDelete }) {
   const position = positions.find(p => p.id === budget.position_id);
   const variance = budget.total_budgeted_cost - budget.total_actual_cost;
+  const salaryInScale = position && position.min_salary && position.max_salary
+    ? budget.budgeted_salary_cost >= position.min_salary && budget.budgeted_salary_cost <= position.max_salary
+    : true;
   const variancePercentage = budget.total_budgeted_cost > 0 
     ? ((Math.abs(variance) / budget.total_budgeted_cost) * 100).toFixed(1) 
     : 0;
@@ -48,6 +51,26 @@ export default function BudgetCard({ budget, employees, positions, onEdit, onDel
             <p className="text-sm text-slate-500">
               {budget.budget_period} • {budget.budget_type}
             </p>
+            {position && (
+              <div className="mt-2 flex items-center gap-2 text-sm">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  {position.position_title}
+                </Badge>
+                {position.min_salary && position.max_salary && (
+                  <>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-600">
+                      Scale: {position.min_salary.toLocaleString()} - {position.max_salary.toLocaleString()} SAR
+                    </span>
+                    {!salaryInScale && (
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                        Outside Scale
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button size="icon" variant="ghost" onClick={() => onEdit(budget)}>

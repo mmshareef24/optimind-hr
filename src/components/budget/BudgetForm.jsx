@@ -22,6 +22,12 @@ export default function BudgetForm({ budget, departments, positions, employees, 
     notes: ''
   });
 
+  const selectedPosition = positions.find(p => p.id === formData.position_id);
+  const salaryInRange = selectedPosition 
+    ? formData.budgeted_salary_cost >= (selectedPosition.min_salary || 0) && 
+      formData.budgeted_salary_cost <= (selectedPosition.max_salary || Infinity)
+    : true;
+
   useEffect(() => {
     if (budget) {
       setFormData(budget);
@@ -151,7 +157,13 @@ export default function BudgetForm({ budget, departments, positions, employees, 
                 type="number"
                 value={formData.budgeted_salary_cost}
                 onChange={(e) => setFormData({...formData, budgeted_salary_cost: parseFloat(e.target.value) || 0})}
+                className={!salaryInRange ? 'border-amber-500' : ''}
               />
+              {!salaryInRange && selectedPosition && (
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Outside position salary scale
+                </p>
+              )}
             </div>
 
             <div>
