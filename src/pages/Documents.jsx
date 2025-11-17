@@ -1,20 +1,29 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { FileText, Upload } from "lucide-react";
+import { FileText, Upload, Download, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import DocumentUploadForm from "../components/documents/DocumentUploadForm";
+import { format } from "date-fns";
 
 export default function Documents() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const queryClient = useQueryClient();
   
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list('-created_date'),
+  });
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => base44.entities.Employee.list(),
   });
 
   return (
@@ -24,7 +33,10 @@ export default function Documents() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('documents')}</h1>
           <p className="text-slate-600">{t('documents_desc')}</p>
         </div>
-        <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg">
+        <Button 
+          onClick={() => setShowUploadForm(true)}
+          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+        >
           <Upload className="w-4 h-4 mr-2" /> {t('upload_document')}
         </Button>
       </div>
@@ -45,26 +57,61 @@ export default function Documents() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {documents.map((doc) => (
-                <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:shadow-md transition-all ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                      <FileText className="w-6 h-6 text-white" />
+              {documents.map((doc) => {
+                const employee = employees.find(e => e.id === doc.employee_id);
+                return (
+                  <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:shadow-md transition-all ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div className={isRTL ? 'text-right' : ''}>
+                        <h3 className="font-semibold text-slate-900">{doc.document_name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {doc.document_type}
+                          </Badge>
+                          {employee && (
+                            <span className="text-xs text-slate-500">
+                              {employee.first_name} {employee.last_name}
+                            </span>
+                          )}
+                        </div>
+                        {doc.issue_date && (
+                          <p className="text-xs text-slate-400 mt-1">
+                            Issued: {format(new Date(doc.issue_date), 'MMM dd, yyyy')}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className={isRTL ? 'text-right' : ''}>
-                      <h3 className="font-semibold text-slate-900">{doc.document_name}</h3>
-                      <p className="text-sm text-slate-500">{doc.document_type}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                        {doc.status}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(doc.file_url, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                    {doc.status}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <DocumentUploadForm
+        open={showUploadForm}
+        onOpenChange={setShowUploadForm}
+        employees={employees}
+        onSuccess={() => {
+          queryClient.invalidateQueries(['documents']);
+        }}
+      />
     </div>
   );
 }
