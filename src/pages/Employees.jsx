@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Users, Plus, Search, Mail, Phone, Calendar, Building2, Briefcase, Shield
+  Users, Plus, Search, Mail, Phone, Calendar, Building2, Briefcase, Shield, Trash2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -91,6 +91,17 @@ export default function EmployeesPage() {
     }
   });
 
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: (id) => base44.entities.Employee.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['filtered-employees']);
+      toast.success('Employee deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete employee');
+    }
+  });
+
   const handleSubmit = (data) => {
     const employeeData = data.employee || data;
     
@@ -98,6 +109,13 @@ export default function EmployeesPage() {
       updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData });
     } else {
       createEmployeeMutation.mutate(employeeData);
+    }
+  };
+
+  const handleDelete = (employee, e) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete ${employee.first_name} ${employee.last_name}? This action cannot be undone.`)) {
+      deleteEmployeeMutation.mutate(employee.id);
     }
   };
 
@@ -201,7 +219,7 @@ export default function EmployeesPage() {
               {employees.map((employee) => (
                 <Card 
                   key={employee.id} 
-                  className="border border-slate-200 hover:shadow-lg transition-all cursor-pointer"
+                  className="border border-slate-200 hover:shadow-lg transition-all cursor-pointer group"
                   onClick={() => { setEditingEmployee(employee); setShowForm(true); }}
                 >
                   <CardContent className="p-5">
@@ -217,9 +235,21 @@ export default function EmployeesPage() {
                           <p className="text-sm text-slate-500">{employee.employee_id}</p>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(employee.status)}>
-                        {employee.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(employee.status)}>
+                          {employee.status}
+                        </Badge>
+                        {accessLevel === 'admin' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDelete(employee, e)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-sm">
