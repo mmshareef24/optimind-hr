@@ -193,19 +193,19 @@ export default function OffboardingProcessCard({ process, employee, tasks, onEdi
       </CardContent>
     </Card>
 
-    <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Clearance Forms - {employee?.first_name} {employee?.last_name}</DialogTitle>
-        </DialogHeader>
-        <ClearancePrintForm
-          process={process}
-          employee={employee}
-          clearanceItems={clearanceItems}
-          company={company}
-        />
-      </DialogContent>
-    </Dialog>
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Clearance Forms - {employee?.first_name} {employee?.last_name}</DialogTitle>
+          </DialogHeader>
+          <ClearancePrintForm
+            process={process}
+            employee={employee}
+            clearanceItems={clearanceItems}
+            company={company}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
