@@ -5,7 +5,7 @@ import { TranslationProvider, useTranslation } from '@/components/TranslationCon
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
-  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag, LogOut
+  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag, LogOut, UserX
 } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -40,6 +40,7 @@ function LayoutContent({ children }) {
       items: [
         { title: t('nav_employee_management'), url: createPageUrl("Employees"), icon: Users },
         { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserPlus },
+        { title: language === 'ar' ? 'إنهاء الخدمة' : 'Offboarding', url: createPageUrl("Offboarding"), icon: UserX },
         { title: t('nav_documents'), url: createPageUrl("Documents"), icon: FileText }
       ]
     },
