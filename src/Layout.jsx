@@ -8,6 +8,7 @@ import {
   Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag
 } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function LayoutContent({ children }) {
