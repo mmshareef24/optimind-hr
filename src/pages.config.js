@@ -32,6 +32,7 @@ import QIWA from './pages/QIWA';
 import SINAD from './pages/SINAD';
 import EOSBManagement from './pages/EOSBManagement';
 import BudgetManagement from './pages/BudgetManagement';
+import Offboarding from './pages/Offboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "SINAD": SINAD,
     "EOSBManagement": EOSBManagement,
     "BudgetManagement": BudgetManagement,
+    "Offboarding": Offboarding,
 }
 
 export const pagesConfig = {
