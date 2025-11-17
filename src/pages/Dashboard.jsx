@@ -1,22 +1,32 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText, Clock3 } from "lucide-react";
+import { Users, Building2, Calendar, Clock, DollarSign, TrendingUp, AlertCircle, CheckCircle, Filter, FileText, Clock3, Settings } from "lucide-react";
 import StatCard from "../components/hrms/StatCard";
 import ReportExporter from "../components/reports/ReportExporter";
+import DashboardCustomizer from "../components/dashboard/DashboardCustomizer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   const [selectedCompany, setSelectedCompany] = useState('all');
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me()
+  });
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ['companies'],
@@ -48,6 +58,12 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ShiftAssignment.list(),
   });
 
+  const { data: dashboardLayouts = [] } = useQuery({
+    queryKey: ['dashboard-layout', currentUser?.email],
+    queryFn: () => base44.entities.DashboardLayout.filter({ user_email: currentUser.email }),
+    enabled: !!currentUser?.email
+  });
+
   const employees = selectedCompany === 'all' 
     ? allEmployees 
     : allEmployees.filter(e => e.company_id === selectedCompany);
@@ -61,76 +77,15 @@ export default function Dashboard() {
     shiftAssignments.filter(a => a.status === 'active').map(a => a.employee_id)
   ).size;
 
-  return (
-    <div className="p-6 lg:p-8 space-y-8">
-      {/* Header */}
-      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
-        <div className={isRTL ? 'text-right' : ''}>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('dashboard')}</h1>
-          <p className="text-slate-600">{t('welcome_back')}</p>
-        </div>
-        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <ReportExporter
-            reportType="employees"
-            filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
-            buttonText={t('export_report')}
-          />
-          <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
-            <span className="text-slate-500">{t('today')}: </span>
-            <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
-          </div>
-          <div className={`flex items-center gap-2 min-w-[280px] ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <Filter className="w-5 h-5 text-slate-400" />
-            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder={t('select_company')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <Building2 className="w-4 h-4" />
-                    <span>{t('all_companies')}</span>
-                  </div>
-                </SelectItem>
-                {companies.map(company => (
-                  <SelectItem key={company.id} value={company.id}>
-                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                      <Building2 className="w-4 h-4" />
-                      <span>{company.name_en}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Selected Company Info */}
-      {selectedCompanyData && (
-        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
-          <CardContent className="p-4">
-            <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
-                <h3 className="font-bold text-slate-900">{selectedCompanyData.name_en}</h3>
-                <p className="text-sm text-slate-600">
-                  {selectedCompanyData.industry} • CR: {selectedCompanyData.cr_number}
-                </p>
-              </div>
-              <div className={isRTL ? 'text-left' : 'text-right'}>
-                <p className="text-sm text-slate-500">{t('total_employees')}</p>
-                <p className="text-2xl font-bold text-blue-600">{employees.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  // Available dashboard cards
+  const availableCards = [
+    {
+      id: 'employees',
+      title: t('total_employees'),
+      description: 'Active employees count',
+      icon: Users,
+      color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+      render: () => (
         <StatCard
           title={t('total_employees')}
           value={loadingEmployees ? "..." : activeEmployees}
@@ -139,12 +94,30 @@ export default function Dashboard() {
           trendValue="+12%"
           bgColor="from-emerald-500 to-emerald-600"
         />
+      )
+    },
+    {
+      id: 'companies-shifts',
+      title: selectedCompany === 'all' ? t('total_companies') : t('active_shifts'),
+      description: 'Companies or shifts overview',
+      icon: selectedCompany === 'all' ? Building2 : Clock3,
+      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      render: () => (
         <StatCard
           title={selectedCompany === 'all' ? t('total_companies') : t('active_shifts')}
           value={loadingCompanies ? "..." : selectedCompany === 'all' ? companies.length : activeShifts}
           icon={selectedCompany === 'all' ? Building2 : Clock3}
           bgColor="from-blue-500 to-blue-600"
         />
+      )
+    },
+    {
+      id: 'pending-leaves',
+      title: t('pending_leaves'),
+      description: 'Leave requests awaiting approval',
+      icon: Calendar,
+      color: 'bg-gradient-to-br from-amber-500 to-amber-600',
+      render: () => (
         <StatCard
           title={t('pending_leaves')}
           value={loadingLeaves ? "..." : pendingLeaves}
@@ -153,6 +126,15 @@ export default function Dashboard() {
           trendValue="-5%"
           bgColor="from-amber-500 to-amber-600"
         />
+      )
+    },
+    {
+      id: 'attendance',
+      title: t('attendance_today'),
+      description: 'Today\'s attendance statistics',
+      icon: Clock,
+      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      render: () => (
         <StatCard
           title={t('attendance_today')}
           value={loadingAttendance ? "..." : attendance.filter(a => a.status === 'present').length}
@@ -161,11 +143,15 @@ export default function Dashboard() {
           trendValue="+8%"
           bgColor="from-purple-500 to-purple-600"
         />
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Leave Requests */}
+      )
+    },
+    {
+      id: 'leave-requests',
+      title: t('recent_leave_requests'),
+      description: 'Recent leave request submissions',
+      icon: Calendar,
+      color: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+      render: () => (
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-emerald-50/30">
             <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -213,8 +199,15 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-
-        {/* Quick Stats */}
+      )
+    },
+    {
+      id: 'hr-metrics',
+      title: t('hr_metrics'),
+      description: 'Key HR performance indicators',
+      icon: TrendingUp,
+      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      render: () => (
         <Card className="border-0 shadow-lg">
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-blue-50/30">
             <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -274,45 +267,224 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      )
+    },
+    {
+      id: 'departments',
+      title: t('department_distribution'),
+      description: 'Employee distribution by department',
+      icon: Users,
+      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      render: () => (
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-purple-50/30">
+            <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <Users className="w-5 h-5 text-purple-600" />
+              {t('department_distribution')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loadingEmployees ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {['IT', 'HR', 'Finance', 'Operations'].map((dept, idx) => {
+                  const count = employees.filter(e => e.department === dept).length;
+                  const colors = [
+                    'from-emerald-500 to-emerald-600',
+                    'from-blue-500 to-blue-600',
+                    'from-amber-500 to-amber-600',
+                    'from-purple-500 to-purple-600'
+                  ];
+                  return (
+                    <div key={dept} className="p-4 rounded-xl bg-white border border-slate-100 hover:shadow-md transition-shadow">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[idx]} flex items-center justify-center mb-3 shadow-lg`}>
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900 mb-1">{count}</p>
+                      <p className="text-sm text-slate-500">{dept}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )
+    }
+  ];
+
+  const currentLayout = dashboardLayouts[0];
+  
+  const orderedCards = useMemo(() => {
+    if (!currentLayout?.cards) {
+      return availableCards.filter(c => ['employees', 'companies-shifts', 'pending-leaves', 'attendance'].includes(c.id));
+    }
+    
+    return currentLayout.cards
+      .filter(c => c.enabled)
+      .sort((a, b) => a.order - b.order)
+      .map(layoutCard => availableCards.find(c => c.id === layoutCard.id))
+      .filter(Boolean);
+  }, [currentLayout, availableCards]);
+
+  const saveLayoutMutation = useMutation({
+    mutationFn: async (cards) => {
+      const layoutData = {
+        user_email: currentUser.email,
+        cards: cards,
+        layout_name: 'default'
+      };
+
+      if (currentLayout) {
+        return base44.entities.DashboardLayout.update(currentLayout.id, layoutData);
+      } else {
+        return base44.entities.DashboardLayout.create(layoutData);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['dashboard-layout']);
+      setShowCustomizer(false);
+      toast.success('Dashboard layout saved');
+    },
+    onError: () => {
+      toast.error('Failed to save layout');
+    }
+  });
+
+  const resetLayoutMutation = useMutation({
+    mutationFn: async () => {
+      if (currentLayout) {
+        await base44.entities.DashboardLayout.delete(currentLayout.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['dashboard-layout']);
+      toast.success('Dashboard reset to default');
+    }
+  });
+
+  return (
+    <div className="p-6 lg:p-8 space-y-8">
+      {/* Header */}
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+        <div className={isRTL ? 'text-right' : ''}>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('dashboard')}</h1>
+          <p className="text-slate-600">{t('welcome_back')}</p>
+        </div>
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <Button
+            variant="outline"
+            onClick={() => setShowCustomizer(true)}
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Customize
+          </Button>
+          <ReportExporter
+            reportType="employees"
+            filters={selectedCompany !== 'all' ? { company_id: selectedCompany } : {}}
+            buttonText={t('export_report')}
+          />
+          <div className="px-4 py-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
+            <span className="text-slate-500">{t('today')}: </span>
+            <span className="font-semibold text-slate-900">{format(new Date(), 'dd MMM yyyy')}</span>
+          </div>
+          <div className={`flex items-center gap-2 min-w-[280px] ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Filter className="w-5 h-5 text-slate-400" />
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder={t('select_company')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Building2 className="w-4 h-4" />
+                    <span>{t('all_companies')}</span>
+                  </div>
+                </SelectItem>
+                {companies.map(company => (
+                  <SelectItem key={company.id} value={company.id}>
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <Building2 className="w-4 h-4" />
+                      <span>{company.name_en}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
-      {/* Department Overview */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-white to-purple-50/30">
-          <CardTitle className={`flex items-center gap-2 text-slate-900 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <Users className="w-5 h-5 text-purple-600" />
-            {t('department_distribution')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {loadingEmployees ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
+      {/* Selected Company Info */}
+      {selectedCompanyData && (
+        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
+          <CardContent className="p-4">
+            <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
+                <h3 className="font-bold text-slate-900">{selectedCompanyData.name_en}</h3>
+                <p className="text-sm text-slate-600">
+                  {selectedCompanyData.industry} • CR: {selectedCompanyData.cr_number}
+                </p>
+              </div>
+              <div className={isRTL ? 'text-left' : 'text-right'}>
+                <p className="text-sm text-slate-500">{t('total_employees')}</p>
+                <p className="text-2xl font-bold text-blue-600">{employees.length}</p>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {['IT', 'HR', 'Finance', 'Operations'].map((dept, idx) => {
-                const count = employees.filter(e => e.department === dept).length;
-                const colors = [
-                  'from-emerald-500 to-emerald-600',
-                  'from-blue-500 to-blue-600',
-                  'from-amber-500 to-amber-600',
-                  'from-purple-500 to-purple-600'
-                ];
-                return (
-                  <div key={dept} className="p-4 rounded-xl bg-white border border-slate-100 hover:shadow-md transition-shadow">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors[idx]} flex items-center justify-center mb-3 shadow-lg`}>
-                      <Users className="w-6 h-6 text-white" />
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900 mb-1">{count}</p>
-                    <p className="text-sm text-slate-500">{dept}</p>
-                  </div>
-                );
-              })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dynamic Cards */}
+      <div className="space-y-6">
+        {/* Stat Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {orderedCards
+            .filter(card => ['employees', 'companies-shifts', 'pending-leaves', 'attendance'].includes(card.id))
+            .map(card => (
+              <div key={card.id}>
+                {card.render()}
+              </div>
+            ))}
+        </div>
+
+        {/* Large Cards */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {orderedCards
+            .filter(card => ['leave-requests', 'hr-metrics'].includes(card.id))
+            .map(card => (
+              <div key={card.id}>
+                {card.render()}
+              </div>
+            ))}
+        </div>
+
+        {/* Full Width Cards */}
+        {orderedCards
+          .filter(card => card.id === 'departments')
+          .map(card => (
+            <div key={card.id}>
+              {card.render()}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          ))}
+      </div>
+
+      {/* Customizer Dialog */}
+      <DashboardCustomizer
+        availableCards={availableCards}
+        currentLayout={currentLayout?.cards || availableCards.map((c, i) => ({ id: c.id, enabled: true, order: i }))}
+        onSave={(cards) => saveLayoutMutation.mutate(cards)}
+        onReset={() => resetLayoutMutation.mutate()}
+        open={showCustomizer}
+        onOpenChange={setShowCustomizer}
+      />
     </div>
   );
 }
