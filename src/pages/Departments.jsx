@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Plus, Edit, Users, Briefcase, TrendingUp, Building } from "lucide-react";
+import { Plus, Edit, Users, Briefcase, TrendingUp, Building, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,17 @@ export default function Departments() {
     },
     onError: (error) => {
       toast.error('Failed to update department: ' + error.message);
+    }
+  });
+
+  const deleteDepartmentMutation = useMutation({
+    mutationFn: (id) => base44.entities.Department.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['departments']);
+      toast.success(t('department') + ' deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete department: ' + error.message);
     }
   });
 
@@ -148,6 +159,17 @@ export default function Departments() {
       status: 'active'
     });
     setShowDialog(true);
+  };
+
+  const handleDelete = (dept) => {
+    if (!dept.isEntity || !dept.id) {
+      toast.error('Cannot delete auto-created departments. Please remove employees from this department first.');
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to delete ${dept.name}? This action cannot be undone.`)) {
+      deleteDepartmentMutation.mutate(dept.id);
+    }
   };
 
   const getDepartmentStats = (dept) => {
@@ -262,14 +284,26 @@ export default function Departments() {
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(dept)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(dept)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          {dept.isEntity && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(dept)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Manager */}
