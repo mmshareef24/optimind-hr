@@ -132,12 +132,20 @@ export default function MasterDataUpload() {
   };
 
   const downloadTemplate = () => {
-    if (!entitySchema) return;
+    if (!entitySchema) {
+      toast.error('Schema not loaded yet. Please wait...');
+      return;
+    }
 
     const properties = entitySchema.properties || {};
     const headers = Object.keys(properties).filter(key => 
       !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
     );
+
+    if (headers.length === 0) {
+      toast.error('No fields available for this entity');
+      return;
+    }
 
     let csv = headers.join(',') + '\n';
     
@@ -158,7 +166,7 @@ export default function MasterDataUpload() {
     });
     csv += sampleRow.join(',') + '\n';
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -167,7 +175,7 @@ export default function MasterDataUpload() {
     a.click();
     window.URL.revokeObjectURL(url);
     a.remove();
-    toast.success('Template downloaded');
+    toast.success(`Template downloaded: ${selectedEntity}_template.csv`);
   };
 
   return (
