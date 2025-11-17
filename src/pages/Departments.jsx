@@ -75,28 +75,50 @@ export default function Departments() {
   const departments = React.useMemo(() => {
     const deptMap = new Map();
     
+    // First, add all departments from the Department entity
+    departmentEntities.forEach(dept => {
+      deptMap.set(dept.name, {
+        id: dept.id,
+        name: dept.name,
+        code: dept.code,
+        description: dept.description,
+        manager_id: dept.manager_id,
+        employees: [],
+        manager: null,
+        isEntity: true
+      });
+    });
+    
+    // Then add employees to their respective departments
     employees.forEach(emp => {
       if (emp.department) {
         if (!deptMap.has(emp.department)) {
+          // Create department from employee data if not in entity
           deptMap.set(emp.department, {
             name: emp.department,
             employees: [],
-            manager: null
+            manager: null,
+            isEntity: false
           });
         }
         deptMap.get(emp.department).employees.push(emp);
         
-        // Find potential manager (first person with subordinates or highest in hierarchy)
-        const currentManager = deptMap.get(emp.department).manager;
-        const empSubordinates = employees.filter(e => e.manager_id === emp.id).length;
-        if (!currentManager || empSubordinates > 0) {
-          deptMap.get(emp.department).manager = emp;
+        // Set manager from entity or find potential manager
+        const dept = deptMap.get(emp.department);
+        if (dept.manager_id && emp.id === dept.manager_id) {
+          dept.manager = emp;
+        } else if (!dept.manager) {
+          const empSubordinates = employees.filter(e => e.manager_id === emp.id).length;
+          const currentManager = dept.manager;
+          if (!currentManager || empSubordinates > 0) {
+            dept.manager = emp;
+          }
         }
       }
     });
 
     return Array.from(deptMap.values());
-  }, [employees]);
+  }, [employees, departmentEntities]);
 
   const handleEdit = (dept) => {
     setEditingDepartment(dept);
