@@ -12,6 +12,7 @@ import StatCard from "../components/hrms/StatCard";
 import OffboardingForm from "../components/offboarding/OffboardingForm";
 import OffboardingProcessCard from "../components/offboarding/OffboardingProcessCard";
 import OffboardingTaskBoard from "../components/offboarding/OffboardingTaskBoard";
+import ClearanceBoard from "../components/offboarding/ClearanceBoard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
@@ -44,6 +45,11 @@ export default function Offboarding() {
   const { data: offboardingTasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['offboarding-tasks'],
     queryFn: () => base44.entities.OffboardingTask.list('-due_date')
+  });
+
+  const { data: clearanceItems = [], isLoading: loadingClearances } = useQuery({
+    queryKey: ['clearance-items'],
+    queryFn: () => base44.entities.ClearanceItem.list()
   });
 
   const createProcessMutation = useMutation({
@@ -83,6 +89,22 @@ export default function Offboarding() {
     onError: () => toast.error('Failed to update task')
   });
 
+  const createClearanceMutation = useMutation({
+    mutationFn: (data) => base44.entities.ClearanceItem.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clearance-items']);
+    }
+  });
+
+  const updateClearanceMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ClearanceItem.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clearance-items']);
+      toast.success('Clearance updated');
+    },
+    onError: () => toast.error('Failed to update clearance')
+  });
+
   const handleSubmit = async (processData) => {
     const process = editingProcess 
       ? await updateProcessMutation.mutateAsync({ id: editingProcess.id, data: processData })
@@ -116,6 +138,53 @@ export default function Offboarding() {
           priority: task.priority,
           status: 'pending'
         });
+      }
+
+      // Create clearance items
+      const employee = employees.find(e => e.id === processData.employee_id);
+      const clearances = [
+        {
+          offboarding_process_id: process.id,
+          employee_id: processData.employee_id,
+          department: 'warehouse',
+          clearance_type: 'Tools & Equipment Return',
+          description: 'Return all company tools, equipment, and assets',
+          requires_documentation: true
+        },
+        {
+          offboarding_process_id: process.id,
+          employee_id: processData.employee_id,
+          department: 'finance_loans',
+          clearance_type: 'Loan & Advance Settlement',
+          description: 'Clear all outstanding employee loans and salary advances',
+          requires_documentation: true
+        },
+        {
+          offboarding_process_id: process.id,
+          employee_id: processData.employee_id,
+          department: 'hr_manager',
+          clearance_type: 'HR Manager Final Approval',
+          description: 'Final review and approval of complete offboarding process',
+          requires_documentation: false
+        }
+      ];
+
+      // Conditional clearance for salesmen
+      if (employee?.job_title?.toLowerCase().includes('sales') || 
+          employee?.department?.toLowerCase().includes('sales')) {
+        clearances.push({
+          offboarding_process_id: process.id,
+          employee_id: processData.employee_id,
+          department: 'finance_customer_balances',
+          clearance_type: 'Customer Account Settlement',
+          description: 'Verify all customer accounts are settled and no outstanding balances',
+          requires_documentation: true,
+          is_conditional: true
+        });
+      }
+
+      for (const clearance of clearances) {
+        await createClearanceMutation.mutateAsync(clearance);
       }
     }
   };
@@ -205,8 +274,12 @@ export default function Offboarding() {
             <UserX className="w-4 h-4 mr-2" />
             Offboarding Processes
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+          <TabsTrigger value="clearances" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <CheckCircle className="w-4 h-4 mr-2" />
+            Clearance Board
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <Clock className="w-4 h-4 mr-2" />
             Task Board
           </TabsTrigger>
         </TabsList>
@@ -270,6 +343,14 @@ export default function Offboarding() {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="clearances">
+          <ClearanceBoard
+            clearanceItems={clearanceItems}
+            employee={null}
+            onUpdate={(id, data) => updateClearanceMutation.mutate({ id, data })}
+          />
         </TabsContent>
 
         <TabsContent value="tasks">
