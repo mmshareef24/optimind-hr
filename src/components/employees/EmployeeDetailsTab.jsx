@@ -9,7 +9,7 @@ import { ExternalLink } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 import { createPageUrl } from "@/utils";
 
-export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [] }) {
+export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [], departments = [] }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
 
@@ -267,10 +267,21 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Department</Label>
-          <Input
+          <Select
             value={formData.department}
-            onChange={(e) => setFormData({...formData, department: e.target.value})}
-          />
+            onValueChange={(val) => setFormData({...formData, department: val})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map(dept => (
+                <SelectItem key={dept.id} value={dept.name}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Reporting Manager</Label>

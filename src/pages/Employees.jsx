@@ -65,6 +65,11 @@ export default function EmployeesPage() {
     queryFn: () => base44.entities.Position.list()
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => base44.entities.Department.list()
+  });
+
   const createEmployeeMutation = useMutation({
     mutationFn: (data) => base44.entities.Employee.create(data),
     onSuccess: () => {
@@ -307,6 +312,7 @@ export default function EmployeesPage() {
             companies={companies}
             positions={positions}
             employees={employees}
+            departments={departments}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);

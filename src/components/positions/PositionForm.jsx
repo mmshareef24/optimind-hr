@@ -120,18 +120,21 @@ export default function PositionForm({ position, positions, companies, employees
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <Label className={isRTL ? 'text-right block' : ''}>Department *</Label>
-            <Input
+            <Select
               value={formData.department}
-              onChange={(e) => setFormData({...formData, department: e.target.value})}
-              placeholder="e.g., Engineering"
-              list="departments-list"
-              required
-            />
-            <datalist id="departments-list">
-              {departmentsList.map(dept => (
-                <option key={dept} value={dept} />
-              ))}
-            </datalist>
+              onValueChange={(val) => setFormData({...formData, department: val})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {(departments || departmentsList).map(dept => (
+                  <SelectItem key={typeof dept === 'string' ? dept : dept.id} value={typeof dept === 'string' ? dept : dept.name}>
+                    {typeof dept === 'string' ? dept : dept.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className={isRTL ? 'text-right block' : ''}>Reports To (Position)</Label>
