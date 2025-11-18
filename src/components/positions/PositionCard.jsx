@@ -2,10 +2,10 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Users, DollarSign, TrendingUp, Edit, Eye } from "lucide-react";
+import { Briefcase, Users, DollarSign, TrendingUp, Edit, Eye, Trash2 } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 
-export default function PositionCard({ position, employeeCount = 0, onView, onEdit }) {
+export default function PositionCard({ position, employeeCount = 0, onView, onEdit, onDelete }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   
@@ -149,6 +149,16 @@ export default function PositionCard({ position, employeeCount = 0, onView, onEd
             <Edit className="w-4 h-4 mr-2" />
             {t('edit')}
           </Button>
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(position)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
