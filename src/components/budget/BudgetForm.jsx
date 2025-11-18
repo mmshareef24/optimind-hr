@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function BudgetForm({ budget, departments, positions, employees, onSubmit, onCancel, open, onOpenChange }) {
+export default function BudgetForm({ budget, departments = [], positions, employees, onSubmit, onCancel, open, onOpenChange }) {
   const [formData, setFormData] = useState({
     budget_year: new Date().getFullYear(),
     budget_period: `${new Date().getFullYear()}-Annual`,
@@ -112,7 +112,9 @@ export default function BudgetForm({ budget, departments, positions, employees, 
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={typeof dept === 'string' ? dept : dept.id} value={typeof dept === 'string' ? dept : dept.name}>
+                      {typeof dept === 'string' ? dept : dept.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

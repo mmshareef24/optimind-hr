@@ -33,6 +33,11 @@ export default function BudgetManagement() {
     queryFn: () => base44.entities.Employee.list()
   });
 
+  const { data: departmentEntities = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => base44.entities.Department.list()
+  });
+
   const { data: positions = [] } = useQuery({
     queryKey: ['positions'],
     queryFn: () => base44.entities.Position.list()
