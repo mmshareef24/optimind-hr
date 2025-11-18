@@ -12,6 +12,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import { Toaster } from "sonner";
 
 function LayoutContent({ children }) {
   const location = useLocation();
