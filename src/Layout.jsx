@@ -246,6 +246,7 @@ export default function Layout({ children }) {
   return (
     <TranslationProvider>
       <LayoutContent>{children}</LayoutContent>
+      <Toaster position="top-right" richColors />
     </TranslationProvider>
   );
-}
+  }
