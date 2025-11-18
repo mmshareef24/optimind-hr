@@ -59,6 +59,11 @@ export default function OrgStructure() {
     queryFn: () => base44.entities.Position.list('-created_date'),
   });
 
+  const { data: departmentsData = [], isLoading: loadingDepartments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => base44.entities.Department.list(),
+  });
+
   const createPositionMutation = useMutation({
     mutationFn: (data) => base44.entities.Position.create(data),
     onSuccess: () => {
@@ -607,6 +612,8 @@ export default function OrgStructure() {
             position={editingPosition}
             positions={positions}
             companies={companies}
+            employees={employees}
+            departments={departmentsData}
             onSubmit={handleSubmitPosition}
             onCancel={() => {
               setShowPositionForm(false);
