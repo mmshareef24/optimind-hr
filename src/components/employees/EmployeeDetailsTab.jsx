@@ -1,19 +1,22 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { ExternalLink } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
+import { createPageUrl } from "@/utils";
 
 export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [] }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
 
-  // Filter positions by selected company
+  // Filter positions by selected company (show all positions, not just published)
   const availablePositions = formData.company_id
-    ? positions.filter(p => p.company_id === formData.company_id && p.status === 'active')
-    : positions.filter(p => p.status === 'active');
+    ? positions.filter(p => p.company_id === formData.company_id)
+    : positions;
   
   // Get potential managers (exclude the current employee being edited)
   const potentialManagers = employees.filter(emp => emp.id !== formData.id && emp.status === 'active');
@@ -211,7 +214,19 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
         <h3 className={`font-semibold text-slate-900 mb-4 ${isRTL ? 'text-right' : ''}`}>Position & Role</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label className={isRTL ? 'text-right block' : ''}>Position</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className={isRTL ? 'text-right block' : ''}>Position</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open(createPageUrl('OrgStructure'), '_blank')}
+                className="text-xs text-blue-600 hover:text-blue-700 h-auto py-1"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Create Position
+              </Button>
+            </div>
             <Select
               value={formData.position_id}
               onValueChange={handlePositionChange}
@@ -221,15 +236,20 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None (Use Job Title)</SelectItem>
-                {availablePositions.map(position => (
-                  <SelectItem key={position.id} value={position.id}>
-                    {position.position_title} ({position.department})
-                  </SelectItem>
-                ))}
+                {availablePositions.length === 0 ? (
+                  <SelectItem value="none" disabled>No positions - Create one first</SelectItem>
+                ) : (
+                  availablePositions.map(position => (
+                    <SelectItem key={position.id} value={position.id}>
+                      {position.position_title} ({position.department})
+                      {position.salary_range_max > 0 && ` • Budget: ${position.salary_range_min?.toLocaleString() || 0}-${position.salary_range_max.toLocaleString()} SAR`}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <p className={`text-xs text-slate-500 mt-1 ${isRTL ? 'text-right' : ''}`}>
-              Select a position to auto-fill job title and department
+              Salary must be within position budget. Create positions with salary ranges first.
             </p>
           </div>
           <div>
