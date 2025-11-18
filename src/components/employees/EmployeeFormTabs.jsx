@@ -94,41 +94,25 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
     if (formData.position_id && formData.basic_salary) {
       const selectedPosition = positions.find(p => p.id === formData.position_id);
       
-      console.log('=== SALARY VALIDATION DEBUG ===');
-      console.log('Position ID:', formData.position_id);
-      console.log('Basic Salary:', formData.basic_salary);
-      console.log('Selected Position:', selectedPosition);
-      console.log('All Positions:', positions);
-      
       if (selectedPosition) {
         const minSalary = parseFloat(selectedPosition.salary_range_min) || 0;
         const maxSalary = parseFloat(selectedPosition.salary_range_max) || 0;
         const basicSalary = parseFloat(formData.basic_salary);
 
-        console.log('Min Salary:', minSalary);
-        console.log('Max Salary:', maxSalary);
-        console.log('Basic Salary (parsed):', basicSalary);
-
         if (maxSalary > 0 && basicSalary > maxSalary) {
-          toast.error(`Salary ${basicSalary.toLocaleString()} SAR exceeds position budget (Max: ${maxSalary.toLocaleString()} SAR)`, {
-            duration: 5000
+          toast.error(`❌ Cannot save! Salary ${basicSalary.toLocaleString()} SAR exceeds position budget. Maximum allowed: ${maxSalary.toLocaleString()} SAR`, {
+            duration: 6000
           });
-          return;
+          return; // Block submission
         }
 
         if (minSalary > 0 && basicSalary < minSalary) {
-          toast.error(`Salary ${basicSalary.toLocaleString()} SAR is below position minimum (Min: ${minSalary.toLocaleString()} SAR)`, {
-            duration: 5000
+          toast.error(`❌ Cannot save! Salary ${basicSalary.toLocaleString()} SAR is below position minimum. Minimum required: ${minSalary.toLocaleString()} SAR`, {
+            duration: 6000
           });
-          return;
+          return; // Block submission
         }
-      } else {
-        console.log('WARNING: Position not found in positions array!');
       }
-    } else {
-      console.log('Skipping validation - no position_id or basic_salary');
-      console.log('position_id:', formData.position_id);
-      console.log('basic_salary:', formData.basic_salary);
     }
 
     onSubmit({
