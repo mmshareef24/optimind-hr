@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Save, ArrowLeft, ArrowRight, Clock } from "lucide-react";
+import { toast } from "sonner";
 import EmployeeDetailsTab from './EmployeeDetailsTab';
 import DependentDetailsTab from './DependentDetailsTab';
 import IDDetailsTab from './IDDetailsTab';
@@ -89,6 +90,27 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   };
 
   const handleSubmit = () => {
+    // Validate salary against position budget
+    if (formData.position_id && formData.basic_salary) {
+      const selectedPosition = positions.find(p => p.id === formData.position_id);
+      
+      if (selectedPosition) {
+        const minSalary = selectedPosition.salary_range_min || 0;
+        const maxSalary = selectedPosition.salary_range_max || 0;
+        const basicSalary = parseFloat(formData.basic_salary);
+
+        if (maxSalary > 0 && basicSalary > maxSalary) {
+          toast.error(`Salary ${basicSalary.toLocaleString()} SAR exceeds position budget (Max: ${maxSalary.toLocaleString()} SAR)`);
+          return;
+        }
+
+        if (minSalary > 0 && basicSalary < minSalary) {
+          toast.error(`Salary ${basicSalary.toLocaleString()} SAR is below position minimum (Min: ${minSalary.toLocaleString()} SAR)`);
+          return;
+        }
+      }
+    }
+
     onSubmit({
       employee: formData,
       dependents,
