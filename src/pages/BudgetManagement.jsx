@@ -107,9 +107,10 @@ export default function BudgetManagement() {
   }, [budgets, selectedYear, selectedDepartment]);
 
   const departments = useMemo(() => {
-    const depts = new Set(employees.map(e => e.department).filter(Boolean));
-    return Array.from(depts);
-  }, [employees]);
+    const deptNames = departmentEntities.map(d => d.name);
+    const employeeDepts = employees.map(e => e.department).filter(Boolean);
+    return [...new Set([...deptNames, ...employeeDepts])];
+  }, [employees, departmentEntities]);
 
   const stats = useMemo(() => {
     const currentYearBudgets = budgets.filter(b => b.budget_year === selectedYear);
