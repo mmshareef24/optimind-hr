@@ -91,6 +91,17 @@ export default function OrgStructure() {
     }
   });
 
+  const deletePositionMutation = useMutation({
+    mutationFn: (id) => base44.entities.Position.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['positions']);
+      toast.success('Position deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete position');
+    }
+  });
+
   const updateEmployeeMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
     onSuccess: () => {
@@ -571,6 +582,11 @@ export default function OrgStructure() {
                       onEdit={(pos) => {
                         setEditingPosition(pos);
                         setShowPositionForm(true);
+                      }}
+                      onDelete={(pos) => {
+                        if (window.confirm(`Delete position "${pos.position_title}"? This cannot be undone.`)) {
+                          deletePositionMutation.mutate(pos.id);
+                        }
                       }}
                     />
                   ))}
