@@ -3,11 +3,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DollarSign, TrendingUp, Shield, Info } from "lucide-react";
+import { DollarSign, TrendingUp, Shield, Info, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function SalaryDetailsTab({ formData, setFormData }) {
+export default function SalaryDetailsTab({ formData, setFormData, selectedPosition }) {
   const [autoCalculate, setAutoCalculate] = useState(true);
+  const [salaryWarning, setSalaryWarning] = useState(null);
+
+  // Check salary against position budget
+  useEffect(() => {
+    if (selectedPosition && formData.basic_salary > 0) {
+      const minSalary = parseFloat(selectedPosition.salary_range_min) || 0;
+      const maxSalary = parseFloat(selectedPosition.salary_range_max) || 0;
+      const basicSalary = parseFloat(formData.basic_salary);
+
+      if (maxSalary > 0 && basicSalary > maxSalary) {
+        setSalaryWarning({
+          type: 'error',
+          message: `⚠️ Salary ${basicSalary.toLocaleString()} SAR exceeds position budget! Maximum allowed: ${maxSalary.toLocaleString()} SAR`
+        });
+      } else if (minSalary > 0 && basicSalary < minSalary) {
+        setSalaryWarning({
+          type: 'warning',
+          message: `⚠️ Salary ${basicSalary.toLocaleString()} SAR is below position minimum. Minimum: ${minSalary.toLocaleString()} SAR`
+        });
+      } else {
+        setSalaryWarning(null);
+      }
+    } else {
+      setSalaryWarning(null);
+    }
+  }, [formData.basic_salary, selectedPosition]);
 
   // Auto-calculate housing and transport allowances
   useEffect(() => {
@@ -60,6 +86,16 @@ export default function SalaryDetailsTab({ formData, setFormData }) {
 
   return (
     <div className="space-y-6">
+      {/* Salary Budget Warning */}
+      {salaryWarning && (
+        <Alert className={salaryWarning.type === 'error' ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-300'}>
+          <AlertCircle className={`h-5 w-5 ${salaryWarning.type === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
+          <AlertDescription className={`text-sm font-semibold ${salaryWarning.type === 'error' ? 'text-red-900' : 'text-amber-900'}`}>
+            {salaryWarning.message}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Basic Salary */}
       <Card className="border-emerald-200">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-white border-b">

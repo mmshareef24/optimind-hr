@@ -195,7 +195,8 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
         <TabsContent value="salary" className="mt-6">
           <SalaryDetailsTab 
             formData={formData} 
-            setFormData={setFormData} 
+            setFormData={setFormData}
+            selectedPosition={positions.find(p => p.id === formData.position_id)}
           />
         </TabsContent>
 
