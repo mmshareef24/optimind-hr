@@ -13,6 +13,7 @@ import LeaveBalanceTab from './LeaveBalanceTab';
 import LoanBalanceTab from './LoanBalanceTab';
 import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 import EOSBTab from './EOSBTab';
+import SharedServiceTab from './SharedServiceTab';
 
 export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], onSubmit, onCancel, onSaveDraft }) {
   const [activeTab, setActiveTab] = useState('details');
@@ -68,7 +69,8 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
     { value: 'leave', label: 'Leave', icon: '📅', onlyEdit: true },
     { value: 'loans', label: 'Loans', icon: '💵', onlyEdit: true },
     { value: 'benefits', label: 'Benefits', icon: '🎁', onlyEdit: true },
-    { value: 'eosb', label: 'EOSB', icon: '💼', onlyEdit: true }
+    { value: 'eosb', label: 'EOSB', icon: '💼', onlyEdit: true },
+    { value: 'shared-service', label: 'Shared Services', icon: '🏢', onlyEdit: true }
   ];
 
   const availableTabs = employee ? tabs : tabs.filter(t => !t.onlyEdit);
@@ -194,6 +196,10 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
 
             <TabsContent value="eosb" className="mt-6">
               <EOSBTab employeeId={employee.id} employee={employee} />
+            </TabsContent>
+
+            <TabsContent value="shared-service" className="mt-6">
+              <SharedServiceTab employee={employee} />
             </TabsContent>
           </>
         )}
