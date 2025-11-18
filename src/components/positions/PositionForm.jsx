@@ -10,7 +10,7 @@ import {
 import { Clock } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 
-export default function PositionForm({ position, positions, companies, onSubmit, onCancel, onSaveDraft }) {
+export default function PositionForm({ position, positions, companies, employees, departments, onSubmit, onCancel, onSaveDraft }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   
@@ -45,11 +45,20 @@ export default function PositionForm({ position, positions, companies, onSubmit,
     }
   };
 
-  const departments = [...new Set(positions.map(p => p.department).filter(Boolean))];
-  const parentPositions = positions.filter(p => 
-    p.id !== position?.id && 
-    (formData.company_id ? p.company_id === formData.company_id : true)
-  );
+  const departmentsList = departments || [...new Set(positions.map(p => p.department).filter(Boolean))];
+  
+  // Filter positions based on selected department
+  const parentPositions = positions.filter(p => {
+    if (p.id === position?.id) return false;
+    if (formData.company_id && p.company_id !== formData.company_id) return false;
+    if (formData.department && p.department !== formData.department) return false;
+    return true;
+  });
+
+  // Get employees in selected department
+  const departmentEmployees = formData.department 
+    ? (employees || []).filter(emp => emp.department === formData.department && emp.status === 'active')
+    : [];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -119,7 +128,7 @@ export default function PositionForm({ position, positions, companies, onSubmit,
               required
             />
             <datalist id="departments-list">
-              {departments.map(dept => (
+              {departmentsList.map(dept => (
                 <option key={dept} value={dept} />
               ))}
             </datalist>
@@ -131,17 +140,32 @@ export default function PositionForm({ position, positions, companies, onSubmit,
               onValueChange={(val) => setFormData({...formData, reports_to_position_id: val})}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select parent position" />
+                <SelectValue placeholder={formData.department ? "Select parent position in department" : "Select department first"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None (Top Level)</SelectItem>
                 {parentPositions.map(p => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.position_title} ({p.department})
+                    {p.position_title}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {formData.department && departmentEmployees.length > 0 && (
+              <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-xs font-medium text-slate-700 mb-2">Department Employees ({departmentEmployees.length})</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {departmentEmployees.slice(0, 5).map(emp => (
+                    <div key={emp.id} className="text-xs text-slate-600">
+                      • {emp.first_name} {emp.last_name} {emp.job_title ? `- ${emp.job_title}` : ''}
+                    </div>
+                  ))}
+                  {departmentEmployees.length > 5 && (
+                    <p className="text-xs text-slate-500 italic">+{departmentEmployees.length - 5} more</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <Label className={isRTL ? 'text-right block' : ''}>Organizational Level</Label>
