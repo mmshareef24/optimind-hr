@@ -105,6 +105,17 @@ export default function Offboarding() {
     onError: () => toast.error('Failed to update clearance')
   });
 
+  const deleteProcessMutation = useMutation({
+    mutationFn: (id) => base44.entities.OffboardingProcess.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['offboarding-processes']);
+      queryClient.invalidateQueries(['offboarding-tasks']);
+      queryClient.invalidateQueries(['clearance-items']);
+      toast.success('Offboarding process deleted');
+    },
+    onError: () => toast.error('Failed to delete offboarding process')
+  });
+
   const handleSubmit = async (processData) => {
     const process = editingProcess 
       ? await updateProcessMutation.mutateAsync({ id: editingProcess.id, data: processData })
@@ -336,6 +347,11 @@ export default function Offboarding() {
                     onEdit={() => {
                       setEditingProcess(process);
                       setShowForm(true);
+                    }}
+                    onDelete={() => {
+                      if (window.confirm('Are you sure you want to delete this offboarding process? This will also delete all associated tasks and clearances.')) {
+                        deleteProcessMutation.mutate(process.id);
+                      }
                     }}
                     onUpdateProcess={(data) => updateProcessMutation.mutate({ id: process.id, data })}
                   />
