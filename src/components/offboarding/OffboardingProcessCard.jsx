@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { UserX, Calendar, Edit, CheckCircle, AlertCircle, FileText, Printer } from "lucide-react";
+import { UserX, Calendar, Edit, CheckCircle, AlertCircle, FileText, Printer, Trash2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ClearancePrintForm from "./ClearancePrintForm";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-export default function OffboardingProcessCard({ process, employee, tasks, onEdit, onUpdateProcess }) {
+export default function OffboardingProcessCard({ process, employee, tasks, onEdit, onDelete, onUpdateProcess }) {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
   const { data: clearanceItems = [] } = useQuery({
@@ -86,6 +86,10 @@ export default function OffboardingProcessCard({ process, employee, tasks, onEdi
             <Button variant="outline" size="sm" onClick={onEdit}>
               <Edit className="w-4 h-4 mr-2" />
               Edit
+            </Button>
+            <Button variant="outline" size="sm" onClick={onDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
             </Button>
           </div>
         </div>
