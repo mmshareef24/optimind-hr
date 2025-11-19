@@ -100,7 +100,8 @@ function LayoutContent({ children }) {
       items: [
         { title: t('nav_user_management'), url: createPageUrl("UserManagement"), icon: Shield },
         { title: t('nav_master_data'), url: createPageUrl("MasterData"), icon: FileText },
-        { title: t('nav_public_holidays'), url: createPageUrl("PublicHolidays"), icon: Calendar }
+        { title: t('nav_public_holidays'), url: createPageUrl("PublicHolidays"), icon: Calendar },
+        { title: language === 'ar' ? 'سجل التغييرات' : 'Change Log', url: createPageUrl("ChangeLog"), icon: FileText }
       ]
     }
   ];

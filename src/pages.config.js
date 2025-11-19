@@ -33,6 +33,7 @@ import SINAD from './pages/SINAD';
 import EOSBManagement from './pages/EOSBManagement';
 import BudgetManagement from './pages/BudgetManagement';
 import Offboarding from './pages/Offboarding';
+import ChangeLog from './pages/ChangeLog';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "EOSBManagement": EOSBManagement,
     "BudgetManagement": BudgetManagement,
     "Offboarding": Offboarding,
+    "ChangeLog": ChangeLog,
 }
 
 export const pagesConfig = {
