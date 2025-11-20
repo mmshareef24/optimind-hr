@@ -9,15 +9,18 @@ import { Upload, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-export default function DocumentUploadForm({ open, onOpenChange, onSuccess, employees }) {
+export default function DocumentUploadForm({ open, onOpenChange, onSuccess, employees, companies = [] }) {
   const [uploading, setUploading] = useState(false);
+  const [documentScope, setDocumentScope] = useState("employee");
   const [formData, setFormData] = useState({
     employee_id: "",
+    company_id: "",
     document_type: "other",
     document_name: "",
     notes: "",
     issue_date: "",
-    expiry_date: ""
+    expiry_date: "",
+    alert_days: 30
   });
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -68,13 +71,16 @@ export default function DocumentUploadForm({ open, onOpenChange, onSuccess, empl
       // Reset form
       setFormData({
         employee_id: "",
+        company_id: "",
         document_type: "other",
         document_name: "",
         notes: "",
         issue_date: "",
-        expiry_date: ""
+        expiry_date: "",
+        alert_days: 30
       });
       setSelectedFile(null);
+      setDocumentScope("employee");
     } catch (error) {
       toast.error("Failed to upload document");
       console.error(error);
@@ -92,24 +98,63 @@ export default function DocumentUploadForm({ open, onOpenChange, onSuccess, empl
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Employee (Optional)</Label>
+            <Label>Document Scope *</Label>
             <Select 
-              value={formData.employee_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, employee_id: value }))}
+              value={documentScope} 
+              onValueChange={(value) => {
+                setDocumentScope(value);
+                setFormData(prev => ({ ...prev, employee_id: "", company_id: "" }));
+              }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select employee or leave blank for company document" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={null}>Company Document (No Employee)</SelectItem>
-                {employees.map(emp => (
-                  <SelectItem key={emp.id} value={emp.id}>
-                    {emp.first_name} {emp.last_name} - {emp.employee_id}
-                  </SelectItem>
-                ))}
+                <SelectItem value="employee">Employee Document</SelectItem>
+                <SelectItem value="company">Company Document</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {documentScope === "employee" ? (
+            <div>
+              <Label>Employee *</Label>
+              <Select 
+                value={formData.employee_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, employee_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.first_name} {emp.last_name} - {emp.employee_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <Label>Company *</Label>
+              <Select 
+                value={formData.company_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, company_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map(comp => (
+                    <SelectItem key={comp.id} value={comp.id}>
+                      {comp.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label>Document Type *</Label>
@@ -121,14 +166,29 @@ export default function DocumentUploadForm({ open, onOpenChange, onSuccess, empl
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="contract">Contract</SelectItem>
-                <SelectItem value="id_copy">ID Copy</SelectItem>
-                <SelectItem value="passport">Passport</SelectItem>
-                <SelectItem value="certificate">Certificate</SelectItem>
-                <SelectItem value="visa">Visa</SelectItem>
-                <SelectItem value="insurance">Insurance</SelectItem>
-                <SelectItem value="policy">Policy</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {documentScope === "employee" ? (
+                  <>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="id_copy">ID Copy</SelectItem>
+                    <SelectItem value="passport">Passport</SelectItem>
+                    <SelectItem value="certificate">Certificate</SelectItem>
+                    <SelectItem value="visa">Visa</SelectItem>
+                    <SelectItem value="insurance">Insurance</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="cr_certificate">CR Certificate</SelectItem>
+                    <SelectItem value="tax_certificate">Tax Certificate</SelectItem>
+                    <SelectItem value="gosi_certificate">GOSI Certificate</SelectItem>
+                    <SelectItem value="chamber_certificate">Chamber Certificate</SelectItem>
+                    <SelectItem value="trade_license">Trade License</SelectItem>
+                    <SelectItem value="insurance">Insurance</SelectItem>
+                    <SelectItem value="policy">Policy</SelectItem>
+                    <SelectItem value="license">License</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -176,6 +236,23 @@ export default function DocumentUploadForm({ open, onOpenChange, onSuccess, empl
               />
             </div>
           </div>
+
+          {formData.expiry_date && (
+            <div>
+              <Label>Alert Before Expiry (Days)</Label>
+              <Input
+                type="number"
+                value={formData.alert_days}
+                onChange={(e) => setFormData(prev => ({ ...prev, alert_days: parseInt(e.target.value) || 30 }))}
+                min="1"
+                max="365"
+                placeholder="30"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Email alerts will be sent {formData.alert_days} days before expiry
+              </p>
+            </div>
+          )}
 
           <div>
             <Label>Notes</Label>
