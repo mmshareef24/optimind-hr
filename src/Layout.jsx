@@ -40,7 +40,8 @@ function LayoutContent({ children }) {
       title: t('nav_personal_administration'),
       items: [
         { title: t('nav_employee_management'), url: createPageUrl("Employees"), icon: Users },
-        { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserPlus },
+        { title: language === 'ar' ? 'التوظيف' : 'Recruitment', url: createPageUrl("Recruitment"), icon: UserPlus },
+        { title: t('nav_onboarding'), url: createPageUrl("Onboarding"), icon: UserCheck },
         { title: language === 'ar' ? 'إنهاء الخدمة' : 'Offboarding', url: createPageUrl("Offboarding"), icon: UserX },
         { title: t('nav_documents'), url: createPageUrl("Documents"), icon: FileText }
       ]
