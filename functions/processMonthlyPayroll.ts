@@ -75,6 +75,13 @@ Deno.serve(async (req) => {
       date: { $gte: `${month}-01`, $lte: `${month}-31` }
     });
 
+    // Fetch approved leave requests for the month
+    const leaveRequests = await base44.asServiceRole.entities.LeaveRequest.filter({
+      status: 'approved',
+      start_date: { $lte: `${month}-31` },
+      end_date: { $gte: `${month}-01` }
+    });
+
     // Fetch loan requests for active loans
     const activeLoans = await base44.asServiceRole.entities.LoanRequest.filter({
       status: { $in: ['approved', 'disbursed'] }
@@ -96,13 +103,38 @@ Deno.serve(async (req) => {
         const presentDays = employeeAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
         const absentDays = workingDays - presentDays;
         
+        // Calculate unpaid leave days for the month
+        const employeeLeaves = leaveRequests.filter(l => l.employee_id === employee.id);
+        let unpaidLeaveDays = 0;
+        
+        for (const leave of employeeLeaves) {
+          if (leave.leave_type === 'unpaid') {
+            const leaveStart = new Date(leave.start_date);
+            const leaveEnd = new Date(leave.end_date);
+            const monthStart = new Date(`${month}-01`);
+            const monthEnd = new Date(year, parseInt(monthNum), 0); // Last day of month
+            
+            // Calculate overlap between leave period and payroll month
+            const overlapStart = leaveStart > monthStart ? leaveStart : monthStart;
+            const overlapEnd = leaveEnd < monthEnd ? leaveEnd : monthEnd;
+            
+            if (overlapStart <= overlapEnd) {
+              const daysInMonth = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+              unpaidLeaveDays += daysInMonth;
+            }
+          }
+        }
+        
         // Calculate overtime
         const overtimeHours = employeeAttendance.reduce((sum, a) => sum + (a.overtime_hours || 0), 0);
         const hourlyRate = basicSalary / (workingDays * 8); // Assuming 8 hour workday
         const overtimePay = overtimeHours * hourlyRate * 1.5; // 1.5x for overtime
         
-        // Calculate absence deduction
-        const absenceDeduction = (basicSalary / workingDays) * absentDays;
+        // Calculate total absence deduction (attendance absence + unpaid leave)
+        const dailyRate = basicSalary / workingDays;
+        const attendanceAbsenceDeduction = dailyRate * absentDays;
+        const unpaidLeaveDeduction = dailyRate * unpaidLeaveDays;
+        const absenceDeduction = attendanceAbsenceDeduction + unpaidLeaveDeduction;
         
         // Get variable allowances and bonuses (from deductions or custom)
         let bonus = 0;
@@ -154,6 +186,18 @@ Deno.serve(async (req) => {
         const totalDeductions = gosi.employee_contribution + loanDeduction + 
                                advanceDeduction + absenceDeduction + 
                                otherDeductions + benefitContributions;
+        
+        // Create deduction record for unpaid leave if applicable
+        if (unpaidLeaveDeduction > 0) {
+          await base44.asServiceRole.entities.Deduction.create({
+            employee_id: employee.id,
+            payroll_month: month,
+            deduction_type: 'absence',
+            amount: unpaidLeaveDeduction,
+            description: `Unpaid leave deduction: ${unpaidLeaveDays} day(s)`,
+            status: 'deducted'
+          });
+        }
         
         // Calculate net salary
         const netSalary = grossSalary - totalDeductions;

@@ -64,6 +64,7 @@ export default function PayrollProcessor() {
               <li>Apply GOSI contributions (10% employee, 12% employer for Saudis)</li>
               <li>Deduct active loans and advances</li>
               <li>Calculate attendance-based deductions for absences</li>
+              <li>Deduct unpaid leave days from salary automatically</li>
               <li>Process benefit contributions</li>
               <li>Generate payroll records with net salary</li>
             </ul>
