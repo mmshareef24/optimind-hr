@@ -34,6 +34,7 @@ import EOSBManagement from './pages/EOSBManagement';
 import BudgetManagement from './pages/BudgetManagement';
 import Offboarding from './pages/Offboarding';
 import ChangeLog from './pages/ChangeLog';
+import Recruitment from './pages/Recruitment';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +75,7 @@ export const PAGES = {
     "BudgetManagement": BudgetManagement,
     "Offboarding": Offboarding,
     "ChangeLog": ChangeLog,
+    "Recruitment": Recruitment,
 }
 
 export const pagesConfig = {
