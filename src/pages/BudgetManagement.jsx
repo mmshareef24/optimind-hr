@@ -12,6 +12,8 @@ import StatCard from "../components/hrms/StatCard";
 import BudgetForm from "../components/budget/BudgetForm";
 import BudgetCard from "../components/budget/BudgetCard";
 import BudgetAnalytics from "../components/budget/BudgetAnalytics";
+import BudgetForecasting from "../components/budget/BudgetForecasting";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 export default function BudgetManagement() {
@@ -205,16 +207,34 @@ export default function BudgetManagement() {
         />
       </div>
 
-      {/* Analytics */}
-      <BudgetAnalytics
-        budgets={filteredBudgets}
-        employees={employees}
-        positions={positions}
-        payrolls={payrolls}
-      />
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="bg-white border border-slate-200 p-1">
+          <TabsTrigger value="overview">Overview & Analytics</TabsTrigger>
+          <TabsTrigger value="forecasting">Budget Forecasting</TabsTrigger>
+          <TabsTrigger value="allocations">Budget Allocations</TabsTrigger>
+        </TabsList>
 
-      {/* Budgets List */}
-      <Card className="border-0 shadow-lg">
+        <TabsContent value="overview">
+          <BudgetAnalytics
+            budgets={filteredBudgets}
+            employees={employees}
+            positions={positions}
+            payrolls={payrolls}
+          />
+        </TabsContent>
+
+        <TabsContent value="forecasting">
+          <BudgetForecasting
+            budgets={budgets}
+            employees={employees}
+            departments={departments}
+            positions={positions}
+          />
+        </TabsContent>
+
+        <TabsContent value="allocations">
+          <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-slate-100">
           <CardTitle className={isRTL ? 'text-right' : ''}>
             Budget Allocations ({selectedYear})
@@ -250,6 +270,8 @@ export default function BudgetManagement() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Budget Form Dialog */}
       {showForm && (
