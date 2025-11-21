@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import StatCard from "../components/hrms/StatCard";
-import RequisitionForm from "../components/recruitment/RequisitionForm";
-import RequisitionCard from "../components/recruitment/RequisitionCard";
-import CandidateBoard from "../components/recruitment/CandidateBoard";
-import InterviewScheduler from "../components/recruitment/InterviewScheduler";
+import StatCard from "@/components/hrms/StatCard";
+import RequisitionForm from "@/components/recruitment/RequisitionForm";
+import RequisitionCard from "@/components/recruitment/RequisitionCard";
+import CandidateBoard from "@/components/recruitment/CandidateBoard";
+import InterviewScheduler from "@/components/recruitment/InterviewScheduler";
 import { toast } from "sonner";
 
 export default function Recruitment() {

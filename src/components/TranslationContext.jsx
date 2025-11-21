@@ -624,7 +624,6 @@ const translations = {
     holidays: "Holidays",
     
     // Leave Form
-    select_employee: "Select Employee",
     leave_type: "Leave Type",
     reason_for_leave: "Reason for Leave",
     reason_placeholder: "Please provide a detailed explanation for your leave request...",
