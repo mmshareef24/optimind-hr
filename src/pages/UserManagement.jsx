@@ -1,11 +1,13 @@
-
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, AlertCircle } from "lucide-react";
-import UserManagement from "../components/admin/UserManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, AlertCircle, Users, Key } from "lucide-react";
+import UserManagement from "@/components/admin/UserManagement";
+import RoleManagement from "@/components/admin/RoleManagement";
+import UserRoleAssignment from "@/components/admin/UserRoleAssignment";
 
 export default function UserManagementPage() {
   const { t, language } = useTranslation();
@@ -71,8 +73,35 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
-      {/* User Management Component */}
-      <UserManagement />
+      {/* Tabs for Users, Roles, Permissions */}
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList className="bg-white border border-slate-200 p-1">
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="w-4 h-4" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="gap-2">
+            <Shield className="w-4 h-4" />
+            Roles
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="gap-2">
+            <Key className="w-4 h-4" />
+            Role Assignments
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users">
+          <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <RoleManagement />
+        </TabsContent>
+
+        <TabsContent value="assignments">
+          <UserRoleAssignment />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
