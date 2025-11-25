@@ -76,7 +76,8 @@ function LayoutContent({ children }) {
       title: t('nav_performance_projects'),
       items: [
         { title: t('nav_performance'), url: createPageUrl("PerformanceManagement"), icon: TrendingUp },
-        { title: t('nav_project_management'), url: createPageUrl("Projects"), icon: FolderKanban }
+        { title: t('nav_project_management'), url: createPageUrl("Projects"), icon: FolderKanban },
+        { title: language === 'ar' ? 'التدريب والتطوير' : 'Training', url: createPageUrl("Training"), icon: Flag }
       ]
     },
     {
