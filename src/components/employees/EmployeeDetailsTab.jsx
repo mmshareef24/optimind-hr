@@ -6,6 +6,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useTranslation } from '@/components/TranslationContext';
 import { createPageUrl } from "@/utils";
 
@@ -378,6 +379,20 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
               <SelectItem value="temporary">Temporary</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div>
+            <Label className={`font-medium ${isRTL ? 'text-right block' : ''}`}>
+              {language === 'ar' ? 'تمكين الخدمة الذاتية' : 'ESS Portal Access'}
+            </Label>
+            <p className={`text-xs text-slate-500 mt-1 ${isRTL ? 'text-right' : ''}`}>
+              {language === 'ar' ? 'السماح للموظف بالوصول إلى بوابة الخدمة الذاتية' : 'Allow employee to access Employee Self-Service portal'}
+            </p>
+          </div>
+          <Switch
+            checked={formData.ess_enabled !== false}
+            onCheckedChange={(checked) => setFormData({...formData, ess_enabled: checked})}
+          />
         </div>
       </div>
 
