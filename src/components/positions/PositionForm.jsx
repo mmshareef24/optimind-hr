@@ -47,13 +47,8 @@ export default function PositionForm({ position, positions, companies, employees
 
   const departmentsList = departments || [...new Set(positions.map(p => p.department).filter(Boolean))];
   
-  // Filter positions based on selected department
-  const parentPositions = positions.filter(p => {
-    if (p.id === position?.id) return false;
-    if (formData.company_id && p.company_id !== formData.company_id) return false;
-    if (formData.department && p.department !== formData.department) return false;
-    return true;
-  });
+  // Filter positions for 'Reports To' dropdown - only exclude current position
+  const parentPositions = positions.filter(p => p.id !== position?.id);
 
   // Get employees in selected department
   const departmentEmployees = formData.department 
@@ -143,7 +138,7 @@ export default function PositionForm({ position, positions, companies, employees
               onValueChange={(val) => setFormData({...formData, reports_to_position_id: val})}
             >
               <SelectTrigger>
-                <SelectValue placeholder={formData.department ? "Select parent position in department" : "Select department first"} />
+                <SelectValue placeholder="Select parent position (optional)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None (Top Level)</SelectItem>
