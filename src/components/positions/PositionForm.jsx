@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +12,29 @@ import {
 import { Clock } from "lucide-react";
 import { useTranslation } from '@/components/TranslationContext';
 
+const DEFAULT_LEVELS = [
+  { level_number: 1, name_en: "Executive", name_ar: "تنفيذي" },
+  { level_number: 2, name_en: "Senior Manager", name_ar: "مدير أول" },
+  { level_number: 3, name_en: "Manager", name_ar: "مدير" },
+  { level_number: 4, name_en: "Team Lead", name_ar: "قائد فريق" },
+  { level_number: 5, name_en: "Senior Staff", name_ar: "موظف أول" },
+  { level_number: 6, name_en: "Staff", name_ar: "موظف" },
+  { level_number: 7, name_en: "Junior Staff", name_ar: "موظف مبتدئ" },
+];
+
 export default function PositionForm({ position, positions, companies, employees, departments, onSubmit, onCancel, onSaveDraft }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+
+  const { data: orgLevels = [] } = useQuery({
+    queryKey: ['org-levels'],
+    queryFn: () => base44.entities.OrgLevel.list(),
+  });
+
+  // Use custom levels if available, otherwise use defaults
+  const levels = orgLevels.length > 0 
+    ? [...orgLevels].sort((a, b) => a.level_number - b.level_number)
+    : DEFAULT_LEVELS;
   
   const [formData, setFormData] = useState(position || {
     position_title: "",
@@ -175,13 +197,11 @@ export default function PositionForm({ position, positions, companies, employees
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 - Executive</SelectItem>
-                <SelectItem value="2">2 - Senior Manager</SelectItem>
-                <SelectItem value="3">3 - Manager</SelectItem>
-                <SelectItem value="4">4 - Team Lead</SelectItem>
-                <SelectItem value="5">5 - Senior Staff</SelectItem>
-                <SelectItem value="6">6 - Staff</SelectItem>
-                <SelectItem value="7">7 - Junior Staff</SelectItem>
+                {levels.map(level => (
+                  <SelectItem key={level.level_number} value={level.level_number.toString()}>
+                    {level.level_number} - {language === 'ar' ? (level.name_ar || level.name_en) : level.name_en}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
