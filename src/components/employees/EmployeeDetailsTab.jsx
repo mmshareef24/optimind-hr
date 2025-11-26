@@ -228,24 +228,20 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
               </Button>
             </div>
             <Select
-              value={formData.position_id}
-              onValueChange={handlePositionChange}
+              value={formData.position_id || 'none'}
+              onValueChange={(val) => handlePositionChange(val === 'none' ? null : val)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select position" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={null}>None (Use Job Title)</SelectItem>
-                {availablePositions.length === 0 ? (
-                  <SelectItem value="none" disabled>No positions - Create one first</SelectItem>
-                ) : (
-                  availablePositions.map(position => (
-                    <SelectItem key={position.id} value={position.id}>
-                      {position.position_title} ({position.department})
-                      {position.salary_range_max > 0 && ` • Budget: ${position.salary_range_min?.toLocaleString() || 0}-${position.salary_range_max.toLocaleString()} SAR`}
-                    </SelectItem>
-                  ))
-                )}
+                <SelectItem value="none">None (Use Job Title)</SelectItem>
+                {availablePositions.map(position => (
+                  <SelectItem key={position.id} value={position.id}>
+                    {position.position_title} ({position.department})
+                    {position.salary_range_max > 0 && ` • Budget: ${position.salary_range_min?.toLocaleString() || 0}-${position.salary_range_max.toLocaleString()} SAR`}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className={`text-xs text-slate-500 mt-1 ${isRTL ? 'text-right' : ''}`}>
@@ -286,14 +282,14 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Reporting Manager</Label>
           <Select
-            value={formData.manager_id || ''}
-            onValueChange={(val) => setFormData({...formData, manager_id: val || null})}
+            value={formData.manager_id || 'none'}
+            onValueChange={(val) => setFormData({...formData, manager_id: val === 'none' ? null : val})}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select reporting manager" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {potentialManagers.map(manager => (
                 <SelectItem key={manager.id} value={manager.id}>
                   {manager.first_name} {manager.last_name} - {manager.job_title}
