@@ -192,11 +192,74 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
+          <Label className={isRTL ? 'text-right block' : ''}>Country</Label>
+          <Select
+            value={formData.country || ''}
+            onValueChange={(val) => setFormData({...formData, country: val})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={language === 'ar' ? 'اختر الدولة' : 'Select country'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+              <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+              <SelectItem value="Qatar">Qatar</SelectItem>
+              <SelectItem value="Kuwait">Kuwait</SelectItem>
+              <SelectItem value="Bahrain">Bahrain</SelectItem>
+              <SelectItem value="Oman">Oman</SelectItem>
+              <SelectItem value="Egypt">Egypt</SelectItem>
+              <SelectItem value="Jordan">Jordan</SelectItem>
+              <SelectItem value="Lebanon">Lebanon</SelectItem>
+              <SelectItem value="Syria">Syria</SelectItem>
+              <SelectItem value="Iraq">Iraq</SelectItem>
+              <SelectItem value="Yemen">Yemen</SelectItem>
+              <SelectItem value="Morocco">Morocco</SelectItem>
+              <SelectItem value="Algeria">Algeria</SelectItem>
+              <SelectItem value="Tunisia">Tunisia</SelectItem>
+              <SelectItem value="Sudan">Sudan</SelectItem>
+              <SelectItem value="Libya">Libya</SelectItem>
+              <SelectItem value="Palestine">Palestine</SelectItem>
+              <SelectItem value="India">India</SelectItem>
+              <SelectItem value="Pakistan">Pakistan</SelectItem>
+              <SelectItem value="Bangladesh">Bangladesh</SelectItem>
+              <SelectItem value="Philippines">Philippines</SelectItem>
+              <SelectItem value="Indonesia">Indonesia</SelectItem>
+              <SelectItem value="Sri Lanka">Sri Lanka</SelectItem>
+              <SelectItem value="Nepal">Nepal</SelectItem>
+              <SelectItem value="United States">United States</SelectItem>
+              <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+              <SelectItem value="Canada">Canada</SelectItem>
+              <SelectItem value="Australia">Australia</SelectItem>
+              <SelectItem value="Germany">Germany</SelectItem>
+              <SelectItem value="France">France</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <Label className={isRTL ? 'text-right block' : ''}>Nationality</Label>
           <Input
             value={formData.nationality}
             onChange={(e) => setFormData({...formData, nationality: e.target.value})}
           />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <Label className={isRTL ? 'text-right block' : ''}>{language === 'ar' ? 'أهلية التأمينات' : 'GOSI Eligibility'}</Label>
+          <Select
+            value={formData.gosi_eligibility || ''}
+            onValueChange={(val) => setFormData({...formData, gosi_eligibility: val})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={language === 'ar' ? 'اختر الأهلية' : 'Select eligibility'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="saudi">{language === 'ar' ? 'سعودي' : 'Saudi'}</SelectItem>
+              <SelectItem value="non_saudi">{language === 'ar' ? 'غير سعودي' : 'Non-Saudi'}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Hire Date *</Label>
