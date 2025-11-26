@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase, Plus, GitBranch } from "lucide-react";
+import { Network, Users, TrendingUp, Layers, Building2, Crown, Briefcase, Plus, GitBranch, Settings } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import PositionForm from "../components/positions/PositionForm";
 import PositionCard from "../components/positions/PositionCard";
 import PositionDetailsModal from "../components/positions/PositionDetailsModal";
 import PositionHierarchyChart from "../components/positions/PositionHierarchyChart";
+import OrgLevelManager from "../components/org/OrgLevelManager";
 import StatCard from "../components/hrms/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ export default function OrgStructure() {
   const [selectedCompany, setSelectedCompany] = useState('all');
   const [viewType, setViewType] = useState('unified');
   const [hierarchyView, setHierarchyView] = useState('employee');
+  const [showLevelManager, setShowLevelManager] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -328,6 +330,14 @@ export default function OrgStructure() {
         
         {/* View Type Toggle & Create Position */}
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <Button
+            variant="outline"
+            onClick={() => setShowLevelManager(true)}
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {language === 'ar' ? 'المستويات' : 'Levels'}
+          </Button>
           <Button
             onClick={() => { setEditingPosition(null); setShowPositionForm(true); }}
             className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
@@ -638,6 +648,12 @@ export default function OrgStructure() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Org Level Manager */}
+      <OrgLevelManager
+        isOpen={showLevelManager}
+        onClose={() => setShowLevelManager(false)}
+      />
 
       {/* Position Details Modal */}
       <PositionDetailsModal
