@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { Plus, Edit, Users, Briefcase, TrendingUp, Building, Trash2 } from "lucide-react";
+import { Plus, Edit, Users, Briefcase, TrendingUp, Building, Building2, Trash2, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +25,17 @@ export default function Departments() {
   
   const [showDialog, setShowDialog] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    company_id: '',
     description: '',
     manager_id: '',
     parent_department_id: '',
     cost_center: '',
     location: '',
+    headcount_budget: 0,
     status: 'active'
   });
 
@@ -46,6 +49,16 @@ export default function Departments() {
   const { data: departmentEntities = [] } = useQuery({
     queryKey: ['departments'],
     queryFn: () => base44.entities.Department.list(),
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list(),
+  });
+
+  const { data: budgets = [] } = useQuery({
+    queryKey: ['budgets'],
+    queryFn: () => base44.entities.Budget.list(),
   });
 
   const createDepartmentMutation = useMutation({
@@ -83,17 +96,22 @@ export default function Departments() {
     }
   });
 
-  const departments = React.useMemo(() => {
+  const departments = useMemo(() => {
     const deptMap = new Map();
     
     // First, add all departments from the Department entity
     departmentEntities.forEach(dept => {
-      deptMap.set(dept.name, {
+      const company = companies.find(c => c.id === dept.company_id);
+      deptMap.set(dept.id || dept.name, {
         id: dept.id,
         name: dept.name,
         code: dept.code,
+        company_id: dept.company_id,
+        company: company,
         description: dept.description,
         manager_id: dept.manager_id,
+        parent_department_id: dept.parent_department_id,
+        headcount_budget: dept.headcount_budget || 0,
         employees: [],
         manager: null,
         isEntity: true
@@ -103,25 +121,38 @@ export default function Departments() {
     // Then add employees to their respective departments
     employees.forEach(emp => {
       if (emp.department) {
-        if (!deptMap.has(emp.department)) {
+        // Find matching department entity by name
+        let deptKey = null;
+        for (const [key, dept] of deptMap.entries()) {
+          if (dept.name === emp.department) {
+            deptKey = key;
+            break;
+          }
+        }
+        
+        if (!deptKey) {
           // Create department from employee data if not in entity
-          deptMap.set(emp.department, {
+          deptKey = emp.department;
+          const empCompany = companies.find(c => c.id === emp.company_id);
+          deptMap.set(deptKey, {
             name: emp.department,
+            company_id: emp.company_id,
+            company: empCompany,
             employees: [],
             manager: null,
             isEntity: false
           });
         }
-        deptMap.get(emp.department).employees.push(emp);
+        
+        deptMap.get(deptKey).employees.push(emp);
         
         // Set manager from entity or find potential manager
-        const dept = deptMap.get(emp.department);
+        const dept = deptMap.get(deptKey);
         if (dept.manager_id && emp.id === dept.manager_id) {
           dept.manager = emp;
         } else if (!dept.manager) {
           const empSubordinates = employees.filter(e => e.manager_id === emp.id).length;
-          const currentManager = dept.manager;
-          if (!currentManager || empSubordinates > 0) {
+          if (empSubordinates > 0) {
             dept.manager = emp;
           }
         }
@@ -129,18 +160,25 @@ export default function Departments() {
     });
 
     return Array.from(deptMap.values());
-  }, [employees, departmentEntities]);
+  }, [employees, departmentEntities, companies]);
+
+  const filteredDepartments = useMemo(() => {
+    if (selectedCompany === 'all') return departments;
+    return departments.filter(d => d.company_id === selectedCompany);
+  }, [departments, selectedCompany]);
 
   const handleEdit = (dept) => {
     setEditingDepartment(dept);
     setFormData({
       name: dept.name,
-      code: dept.name.substring(0, 3).toUpperCase(),
-      description: `${dept.name} ${t('department')}`,
-      manager_id: dept.manager?.id || '',
-      parent_department_id: '',
-      cost_center: '',
-      location: '',
+      code: dept.code || dept.name.substring(0, 3).toUpperCase(),
+      company_id: dept.company_id || '',
+      description: dept.description || `${dept.name} ${t('department')}`,
+      manager_id: dept.manager_id || dept.manager?.id || '',
+      parent_department_id: dept.parent_department_id || '',
+      cost_center: dept.cost_center || '',
+      location: dept.location || '',
+      headcount_budget: dept.headcount_budget || 0,
       status: 'active'
     });
     setShowDialog(true);
@@ -151,11 +189,13 @@ export default function Departments() {
     setFormData({
       name: '',
       code: '',
+      company_id: selectedCompany !== 'all' ? selectedCompany : '',
       description: '',
       manager_id: '',
       parent_department_id: '',
       cost_center: '',
       location: '',
+      headcount_budget: 0,
       status: 'active'
     });
     setShowDialog(true);
@@ -194,10 +234,11 @@ export default function Departments() {
     return Object.entries(titleCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
   };
 
-  const totalEmployees = employees.length;
-  const activeDepartments = departments.length;
+  const totalEmployees = filteredDepartments.reduce((sum, d) => sum + d.employees.length, 0);
+  const activeDepartments = filteredDepartments.length;
   const avgDeptSize = totalEmployees / activeDepartments || 0;
-  const departmentsWithManagers = departments.filter(d => d.manager).length;
+  const departmentsWithManagers = filteredDepartments.filter(d => d.manager).length;
+  const totalHeadcountBudget = filteredDepartments.reduce((sum, d) => sum + (d.headcount_budget || 0), 0);
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -206,12 +247,28 @@ export default function Departments() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('department_management')}</h1>
           <p className="text-slate-600">{t('departments_desc')}</p>
         </div>
-        <Button
-          onClick={handleAdd}
-          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
-        >
-          <Plus className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} /> {t('add_department')}
-        </Button>
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+            <SelectTrigger className="w-48">
+              <Building2 className="w-4 h-4 mr-2" />
+              <SelectValue placeholder={t('all_companies')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('all_companies')}</SelectItem>
+              {companies.map(company => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name_en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={handleAdd}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+          >
+            <Plus className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} /> {t('add_department')}
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -252,7 +309,7 @@ export default function Departments() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-64" />)}
             </div>
-          ) : departments.length === 0 ? (
+          ) : filteredDepartments.length === 0 ? (
             <div className="text-center py-12">
               <Building className="w-16 h-16 mx-auto mb-4 text-slate-300" />
               <p className="text-slate-500 mb-4">{t('no_departments_found')}</p>
@@ -260,7 +317,7 @@ export default function Departments() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {departments.map((dept) => {
+              {filteredDepartments.map((dept) => {
                 const stats = getDepartmentStats(dept);
                 const topTitles = getEmployeesByJobTitle(dept);
                 
@@ -278,9 +335,16 @@ export default function Departments() {
                             </div>
                             <div className={isRTL ? 'text-right' : ''}>
                               <h3 className="font-bold text-lg text-slate-900">{dept.name}</h3>
-                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 mt-1">
-                                {t('active')}
-                              </Badge>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                                  {t('active')}
+                                </Badge>
+                                {dept.company && (
+                                  <Badge variant="outline" className="text-blue-600 border-blue-200">
+                                    {dept.company.name_en}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -345,6 +409,16 @@ export default function Departments() {
                           </div>
                           <span className="font-bold text-purple-700">{stats.avgSalary} SAR</span>
                         </div>
+
+                        {dept.headcount_budget > 0 && (
+                          <div className={`flex items-center justify-between p-2 bg-amber-50 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
+                            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                              <Users className="w-4 h-4 text-amber-600" />
+                              <span className="text-sm text-amber-700">{language === 'ar' ? 'ميزانية العدد' : 'Headcount Budget'}</span>
+                            </div>
+                            <span className="font-bold text-amber-700">{stats.totalEmployees}/{dept.headcount_budget}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Top Job Titles */}
@@ -402,6 +476,25 @@ export default function Departments() {
             </div>
 
             <div className={isRTL ? 'text-right' : ''}>
+              <Label>{language === 'ar' ? 'الشركة' : 'Company'} *</Label>
+              <Select
+                value={formData.company_id}
+                onValueChange={(val) => setFormData({...formData, company_id: val})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={language === 'ar' ? 'اختر الشركة' : 'Select Company'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={isRTL ? 'text-right' : ''}>
               <Label>{t('description')}</Label>
               <Textarea
                 value={formData.description}
@@ -453,7 +546,7 @@ export default function Departments() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className={isRTL ? 'text-right' : ''}>
                 <Label>{t('cost_center')}</Label>
                 <Input
@@ -469,6 +562,16 @@ export default function Departments() {
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                   placeholder={t('location_placeholder')}
+                  className={isRTL ? 'text-right' : ''}
+                />
+              </div>
+              <div className={isRTL ? 'text-right' : ''}>
+                <Label>{language === 'ar' ? 'ميزانية العدد' : 'Headcount Budget'}</Label>
+                <Input
+                  type="number"
+                  value={formData.headcount_budget}
+                  onChange={(e) => setFormData({...formData, headcount_budget: parseInt(e.target.value) || 0})}
+                  placeholder="0"
                   className={isRTL ? 'text-right' : ''}
                 />
               </div>
