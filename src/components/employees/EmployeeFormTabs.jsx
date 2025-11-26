@@ -35,6 +35,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
     position_id: '',
     job_title: '',
     department: '',
+    manager_id: '',
     employment_type: 'full_time',
     status: 'active',
     national_id: '',
