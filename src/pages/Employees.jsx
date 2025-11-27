@@ -107,13 +107,61 @@ export default function EmployeesPage() {
     }
   });
 
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     const employeeData = data.employee || data;
+    const shiftAssignments = data.shiftAssignments || [];
     
     if (editingEmployee) {
-      updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData });
+      updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData }, {
+        onSuccess: async () => {
+          // Handle shift assignments
+          if (shiftAssignments.length > 0) {
+            try {
+              // Get existing assignments
+              const existingAssignments = await base44.entities.ShiftAssignment.filter({ employee_id: editingEmployee.id });
+              
+              // Delete old assignments
+              for (const existing of existingAssignments) {
+                await base44.entities.ShiftAssignment.delete(existing.id);
+              }
+              
+              // Create new assignments
+              for (const assignment of shiftAssignments) {
+                if (assignment.shift_id) {
+                  await base44.entities.ShiftAssignment.create({
+                    ...assignment,
+                    employee_id: editingEmployee.id
+                  });
+                }
+              }
+              queryClient.invalidateQueries(['shift-assignments']);
+            } catch (err) {
+              console.error('Error saving shift assignments:', err);
+            }
+          }
+        }
+      });
     } else {
-      createEmployeeMutation.mutate(employeeData);
+      createEmployeeMutation.mutate(employeeData, {
+        onSuccess: async (newEmployee) => {
+          // Handle shift assignments for new employee
+          if (shiftAssignments.length > 0 && newEmployee?.id) {
+            try {
+              for (const assignment of shiftAssignments) {
+                if (assignment.shift_id) {
+                  await base44.entities.ShiftAssignment.create({
+                    ...assignment,
+                    employee_id: newEmployee.id
+                  });
+                }
+              }
+              queryClient.invalidateQueries(['shift-assignments']);
+            } catch (err) {
+              console.error('Error saving shift assignments:', err);
+            }
+          }
+        }
+      });
     }
   };
 
