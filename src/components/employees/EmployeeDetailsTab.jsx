@@ -193,13 +193,13 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <Label className={isRTL ? 'text-right block' : ''}>Country</Label>
+          <Label className={isRTL ? 'text-right block' : ''}>{language === 'ar' ? 'الجنسية' : 'Nationality'}</Label>
           <Select
-            value={formData.country || ''}
-            onValueChange={(val) => setFormData({...formData, country: val})}
+            value={formData.nationality || ''}
+            onValueChange={(val) => setFormData({...formData, nationality: val})}
           >
             <SelectTrigger>
-              <SelectValue placeholder={language === 'ar' ? 'اختر الدولة' : 'Select country'} />
+              <SelectValue placeholder={language === 'ar' ? 'اختر الجنسية' : 'Select nationality'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
@@ -238,16 +238,6 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
           </Select>
         </div>
         <div>
-          <Label className={isRTL ? 'text-right block' : ''}>Nationality</Label>
-          <Input
-            value={formData.nationality}
-            onChange={(e) => setFormData({...formData, nationality: e.target.value})}
-          />
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
           <Label className={isRTL ? 'text-right block' : ''}>{language === 'ar' ? 'أهلية التأمينات' : 'GOSI Eligibility'}</Label>
           <Select
             value={formData.gosi_eligibility || ''}
@@ -262,6 +252,9 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
         <div>
           <Label className={isRTL ? 'text-right block' : ''}>Hire Date *</Label>
           <Input
