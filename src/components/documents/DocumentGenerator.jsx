@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, Sparkles, Download, Send, Check, Loader2, 
-  AlertCircle, Eye, Edit, RefreshCw, Copy
+  AlertCircle, Eye, Edit, RefreshCw, Copy, Printer
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
@@ -212,6 +212,131 @@ Generate the complete document ready for review and signature.`;
     toast.success('Document downloaded');
   };
 
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!generatedContent) {
+      toast.error('No document to download');
+      return;
+    }
+
+    setIsDownloadingPDF(true);
+    try {
+      const employee = selectedEmployeeData;
+      const company = companies.find(c => c.id === employee?.company_id) || companies[0];
+
+      const response = await base44.functions.invoke('generateDocumentPDF', {
+        content: generatedContent,
+        companyId: company?.id,
+        employeeName: `${employee?.first_name || ''} ${employee?.last_name || ''}`.trim(),
+        documentType: selectedType
+      });
+
+      // Create blob from response data
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedType}_${employee?.employee_id || 'document'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    const employee = selectedEmployeeData;
+    const company = companies.find(c => c.id === employee?.company_id) || companies[0];
+    
+    const cleanContent = generatedContent
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br/>');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${selectedType?.replace(/_/g, ' ')} - ${employee?.first_name} ${employee?.last_name}</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            max-width: 800px; 
+            margin: 0 auto;
+            line-height: 1.6;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+          }
+          .logo { 
+            max-width: 150px; 
+            max-height: 80px; 
+            margin-bottom: 15px; 
+          }
+          .company-name { 
+            font-size: 24px; 
+            font-weight: bold; 
+            margin: 10px 0 5px 0; 
+          }
+          .company-name-ar { 
+            font-size: 20px; 
+            margin-bottom: 10px; 
+          }
+          .company-info { 
+            font-size: 12px; 
+            color: #666; 
+          }
+          .content { 
+            margin-top: 20px; 
+            text-align: justify;
+          }
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+          }
+          @media print {
+            body { padding: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          ${company?.logo_url ? `<img src="${company.logo_url}" class="logo" alt="Company Logo" />` : ''}
+          <div class="company-name">${company?.name_en || 'Company'}</div>
+          ${company?.name_ar ? `<div class="company-name-ar">${company.name_ar}</div>` : ''}
+          <div class="company-info">
+            ${company?.address ? company.address + '<br/>' : ''}
+            ${[company?.phone, company?.email].filter(Boolean).join(' | ')}<br/>
+            ${company?.cr_number ? 'CR: ' + company.cr_number : ''}
+          </div>
+        </div>
+        <div class="content">${cleanContent}</div>
+        <div class="footer">
+          Generated on ${new Date().toLocaleDateString('en-GB')} | ${company?.name_en || 'Company'}
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -390,14 +515,27 @@ Generate the complete document ready for review and signature.`;
                       </div>
                     )}
                     
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2">
                       <Button onClick={handleSave} className="flex-1">
                         <Check className="w-4 h-4 mr-2" />
                         Save as Draft
                       </Button>
-                      <Button variant="outline" onClick={handleDownload}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
+                      <Button 
+                        variant="default" 
+                        onClick={handleDownloadPDF}
+                        disabled={isDownloadingPDF}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {isDownloadingPDF ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4 mr-2" />
+                        )}
+                        PDF
+                      </Button>
+                      <Button variant="outline" onClick={handlePrint}>
+                        <Printer className="w-4 h-4 mr-2" />
+                        Print
                       </Button>
                       <Button variant="outline" onClick={handleGenerate}>
                         <RefreshCw className="w-4 h-4 mr-2" />
