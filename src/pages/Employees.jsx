@@ -115,6 +115,7 @@ export default function EmployeesPage() {
     if (editingEmployee) {
       updateEmployeeMutation.mutate({ id: editingEmployee.id, data: employeeData }, {
         onSuccess: async () => {
+          setHasUnsavedChanges(false);
           // Handle shift assignments
           if (shiftAssignments.length > 0) {
             try {
@@ -145,6 +146,7 @@ export default function EmployeesPage() {
     } else {
       createEmployeeMutation.mutate(employeeData, {
         onSuccess: async (newEmployee) => {
+          setHasUnsavedChanges(false);
           // Handle shift assignments for new employee
           if (shiftAssignments.length > 0 && newEmployee?.id) {
             try {
