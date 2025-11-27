@@ -25,7 +25,8 @@ function LayoutContent({ children }) {
       title: t('nav_main'),
       items: [
         { title: t('nav_dashboard'), url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-        { title: t('nav_ai_assistant'), url: createPageUrl("AIAssistant"), icon: Sparkles }
+        { title: t('nav_ai_assistant'), url: createPageUrl("AIAssistant"), icon: Sparkles },
+        { title: language === 'ar' ? 'مولد المستندات' : 'Document Generator', url: createPageUrl("HRDocumentGenerator"), icon: FileText }
       ]
     },
     {
