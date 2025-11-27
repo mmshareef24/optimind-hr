@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { base44 } from "@/api/base44Client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Save, ArrowLeft, ArrowRight, Clock } from "lucide-react";
@@ -59,6 +60,17 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   const [dependents, setDependents] = useState([]);
   const [insurance, setInsurance] = useState([]);
   const [shiftAssignments, setShiftAssignments] = useState([]);
+
+  // Load existing shift assignments when editing an employee
+  useEffect(() => {
+    if (employee?.id) {
+      base44.entities.ShiftAssignment.filter({ employee_id: employee.id })
+        .then(assignments => {
+          setShiftAssignments(assignments || []);
+        })
+        .catch(() => {});
+    }
+  }, [employee?.id]);
 
   const tabs = [
     { value: 'details', label: 'Details', icon: '👤' },
