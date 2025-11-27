@@ -36,6 +36,7 @@ import Offboarding from './pages/Offboarding';
 import ChangeLog from './pages/ChangeLog';
 import Recruitment from './pages/Recruitment';
 import Training from './pages/Training';
+import HRDocumentGenerator from './pages/HRDocumentGenerator';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +79,7 @@ export const PAGES = {
     "ChangeLog": ChangeLog,
     "Recruitment": Recruitment,
     "Training": Training,
+    "HRDocumentGenerator": HRDocumentGenerator,
 }
 
 export const pagesConfig = {
