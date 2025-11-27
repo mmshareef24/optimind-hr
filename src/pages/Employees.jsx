@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Users, Plus, Search, Mail, Phone, Calendar, Building2, Briefcase, Shield, Trash2
+  Users, Plus, Search, Mail, Phone, Calendar, Building2, Briefcase, Shield, Trash2, LayoutGrid, List
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import EmployeeFormTabs from "../components/employees/EmployeeFormTabs";
+import EmployeeListView from "../components/employees/EmployeeListView";
 import { toast } from "sonner";
 
 export default function EmployeesPage() {
@@ -23,6 +24,7 @@ export default function EmployeesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [viewMode, setViewMode] = useState('card');
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -223,14 +225,34 @@ export default function EmployeesPage() {
       <div className="grid lg:grid-cols-4 gap-6">
         <Card className="lg:col-span-3 border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="relative">
-              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
-              <Input
-                placeholder={t('search_employees_placeholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Input
+                  placeholder={t('search_employees_placeholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
+                />
+              </div>
+              <div className="flex items-center border rounded-lg p-1 bg-slate-100">
+                <Button
+                  variant={viewMode === 'card' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('card')}
+                  className={viewMode === 'card' ? 'bg-white shadow-sm' : ''}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className={viewMode === 'list' ? 'bg-white shadow-sm' : ''}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -270,6 +292,13 @@ export default function EmployeesPage() {
                 </Button>
               )}
             </div>
+          ) : viewMode === 'list' ? (
+            <EmployeeListView
+              employees={employees}
+              onEdit={(employee) => { setEditingEmployee(employee); setShowForm(true); }}
+              onDelete={handleDelete}
+              accessLevel={accessLevel}
+            />
           ) : (
             <div className="grid lg:grid-cols-2 gap-4">
               {employees.map((employee) => (
