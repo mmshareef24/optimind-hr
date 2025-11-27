@@ -19,7 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserManagement() {
   const [showDialog, setShowDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [inviteData, setInviteData] = useState({ email: '', full_name: '', role: 'user' });
   const queryClient = useQueryClient();
 
   // Fetch all users
@@ -70,6 +72,19 @@ export default function UserManagement() {
     }
   });
 
+  const inviteUserMutation = useMutation({
+    mutationFn: (data) => base44.auth.inviteUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['all-users']);
+      setShowInviteDialog(false);
+      setInviteData({ email: '', full_name: '', role: 'user' });
+      toast.success('User invitation sent successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to invite user');
+    }
+  });
+
   const handleEdit = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -94,6 +109,14 @@ export default function UserManagement() {
       userId: selectedUser.id,
       data: formData
     });
+  };
+
+  const handleInviteSubmit = () => {
+    if (!inviteData.email || !inviteData.full_name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    inviteUserMutation.mutate(inviteData);
   };
 
   const toggleDepartment = (dept) => {
@@ -136,10 +159,16 @@ export default function UserManagement() {
     <>
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-purple-50 to-white">
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-purple-600" />
-            User Access Management
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-purple-600" />
+              User Access Management
+            </CardTitle>
+            <Button onClick={() => setShowInviteDialog(true)} className="bg-purple-600 hover:bg-purple-700">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Invite User
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -374,6 +403,76 @@ export default function UserManagement() {
               className="bg-purple-600 hover:bg-purple-700"
             >
               {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite User Dialog */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-purple-600" />
+              Invite New User
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Full Name *</Label>
+              <Input
+                value={inviteData.full_name}
+                onChange={(e) => setInviteData({ ...inviteData, full_name: e.target.value })}
+                placeholder="Enter full name"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label>Email Address *</Label>
+              <Input
+                type="email"
+                value={inviteData.email}
+                onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
+                placeholder="Enter email address"
+                className="mt-1"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                An invitation email will be sent to this address
+              </p>
+            </div>
+
+            <div>
+              <Label>Role</Label>
+              <Select
+                value={inviteData.role}
+                onValueChange={(val) => setInviteData({ ...inviteData, role: val })}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                Admins have full access to all system features
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleInviteSubmit}
+              disabled={inviteUserMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </DialogContent>
