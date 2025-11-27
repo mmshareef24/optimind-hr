@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from '@/components/TranslationContext';
 import { createPageUrl } from "@/utils";
 
-export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [], departments = [] }) {
+export default function EmployeeDetailsTab({ formData, setFormData, companies = [], positions = [], employees = [], departments = [], refetchPositions }) {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
 
@@ -273,16 +273,32 @@ export default function EmployeeDetailsTab({ formData, setFormData, companies = 
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className={isRTL ? 'text-right block' : ''}>Position</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => window.open(createPageUrl('OrgStructure'), '_blank')}
-                className="text-xs text-blue-600 hover:text-blue-700 h-auto py-1"
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                Create Position
-              </Button>
+              <div className="flex items-center gap-2">
+                {refetchPositions && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      refetchPositions();
+                    }}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 h-auto py-1"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Refresh
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(createPageUrl('OrgStructure'), '_blank')}
+                  className="text-xs text-blue-600 hover:text-blue-700 h-auto py-1"
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Create Position
+                </Button>
+              </div>
             </div>
             <Select
               value={formData.position_id || 'none'}

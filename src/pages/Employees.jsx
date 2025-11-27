@@ -60,7 +60,7 @@ export default function EmployeesPage() {
     queryFn: () => base44.entities.Company.list()
   });
 
-  const { data: positions = [] } = useQuery({
+  const { data: positions = [], refetch: refetchPositions } = useQuery({
     queryKey: ['positions'],
     queryFn: () => base44.entities.Position.list()
   });
@@ -366,6 +366,7 @@ export default function EmployeesPage() {
               setShowForm(false);
               setEditingEmployee(null);
             }}
+            refetchPositions={refetchPositions}
           />
         </DialogContent>
       </Dialog>

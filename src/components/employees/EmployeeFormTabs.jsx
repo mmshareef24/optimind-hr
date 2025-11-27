@@ -17,7 +17,7 @@ import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 import EOSBTab from './EOSBTab';
 import SharedServiceTab from './SharedServiceTab';
 
-export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], departments = [], onSubmit, onCancel, onSaveDraft }) {
+export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], departments = [], onSubmit, onCancel, onSaveDraft, refetchPositions }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     employee_id: '',
@@ -173,6 +173,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
             positions={positions}
             employees={employees}
             departments={departments}
+            refetchPositions={refetchPositions}
           />
         </TabsContent>
 
@@ -278,13 +279,25 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
           )}
           
           {currentTabIndex < availableTabs.length - 1 ? (
-            <Button
-              onClick={handleNext}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Next
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <>
+              {employee && (
+                <Button
+                  onClick={handleSubmit}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+              )}
+              <Button
+                onClick={handleNext}
+                variant={employee ? "outline" : "default"}
+                className={employee ? "" : "bg-emerald-600 hover:bg-emerald-700"}
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </>
           ) : (
             <Button
               onClick={handleSubmit}
