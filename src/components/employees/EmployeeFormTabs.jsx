@@ -17,7 +17,7 @@ import BenefitsEnrollmentTab from './BenefitsEnrollmentTab';
 import EOSBTab from './EOSBTab';
 import SharedServiceTab from './SharedServiceTab';
 
-export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], departments = [], onSubmit, onCancel, onSaveDraft, refetchPositions }) {
+export default function EmployeeFormTabs({ employee, shifts = [], companies = [], positions = [], employees = [], departments = [], onSubmit, onCancel, onSaveDraft, refetchPositions, onFormChange }) {
   const [activeTab, setActiveTab] = useState('details');
   const [formData, setFormData] = useState(employee || {
     employee_id: '',
@@ -60,6 +60,27 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
   const [dependents, setDependents] = useState([]);
   const [insurance, setInsurance] = useState([]);
   const [shiftAssignments, setShiftAssignments] = useState([]);
+
+  // Track form changes
+  const handleFormDataChange = (newData) => {
+    setFormData(newData);
+    if (onFormChange) onFormChange();
+  };
+
+  const handleDependentsChange = (newDependents) => {
+    setDependents(newDependents);
+    if (onFormChange) onFormChange();
+  };
+
+  const handleInsuranceChange = (newInsurance) => {
+    setInsurance(newInsurance);
+    if (onFormChange) onFormChange();
+  };
+
+  const handleShiftAssignmentsChange = (newAssignments) => {
+    setShiftAssignments(newAssignments);
+    if (onFormChange) onFormChange();
+  };
 
   // Load existing shift assignments when editing an employee
   useEffect(() => {
@@ -168,7 +189,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
         <TabsContent value="details" className="mt-6">
           <EmployeeDetailsTab 
             formData={formData} 
-            setFormData={setFormData}
+            setFormData={handleFormDataChange}
             companies={companies}
             positions={positions}
             employees={employees}
@@ -180,21 +201,21 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
         <TabsContent value="dependents" className="mt-6">
           <DependentDetailsTab 
             dependents={dependents}
-            setDependents={setDependents}
+            setDependents={handleDependentsChange}
           />
         </TabsContent>
 
         <TabsContent value="ids" className="mt-6">
           <IDDetailsTab 
             formData={formData} 
-            setFormData={setFormData} 
+            setFormData={handleFormDataChange} 
           />
         </TabsContent>
 
         <TabsContent value="salary" className="mt-6">
           <SalaryDetailsTab 
             formData={formData} 
-            setFormData={setFormData}
+            setFormData={handleFormDataChange}
             selectedPosition={positions.find(p => p.id === formData.position_id)}
           />
         </TabsContent>
@@ -202,14 +223,14 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
         <TabsContent value="bank" className="mt-6">
           <BankDetailsTab 
             formData={formData} 
-            setFormData={setFormData} 
+            setFormData={handleFormDataChange} 
           />
         </TabsContent>
 
         <TabsContent value="insurance" className="mt-6">
           <InsuranceDetailsTab 
             insurance={insurance}
-            setInsurance={setInsurance}
+            setInsurance={handleInsuranceChange}
             dependents={dependents}
           />
         </TabsContent>
@@ -218,7 +239,7 @@ export default function EmployeeFormTabs({ employee, shifts = [], companies = []
           <ShiftAssignmentTab 
             shifts={shifts}
             currentAssignments={shiftAssignments}
-            onAssignmentsChange={setShiftAssignments}
+            onAssignmentsChange={handleShiftAssignmentsChange}
           />
         </TabsContent>
 

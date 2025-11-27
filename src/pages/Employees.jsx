@@ -22,6 +22,7 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -347,7 +348,21 @@ export default function EmployeesPage() {
       </Card>
 
       {/* Employee Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={(open) => {
+          if (!open && hasUnsavedChanges) {
+            if (window.confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+              setShowForm(false);
+              setEditingEmployee(null);
+              setHasUnsavedChanges(false);
+            }
+          } else {
+            setShowForm(open);
+            if (!open) {
+              setEditingEmployee(null);
+              setHasUnsavedChanges(false);
+            }
+          }
+        }}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -363,9 +378,18 @@ export default function EmployeesPage() {
             departments={departments}
             onSubmit={handleSubmit}
             onCancel={() => {
-              setShowForm(false);
-              setEditingEmployee(null);
+              if (hasUnsavedChanges) {
+                if (window.confirm('You have unsaved changes. Are you sure you want to close without saving?')) {
+                  setShowForm(false);
+                  setEditingEmployee(null);
+                  setHasUnsavedChanges(false);
+                }
+              } else {
+                setShowForm(false);
+                setEditingEmployee(null);
+              }
             }}
+            onFormChange={() => setHasUnsavedChanges(true)}
             refetchPositions={refetchPositions}
           />
         </DialogContent>
