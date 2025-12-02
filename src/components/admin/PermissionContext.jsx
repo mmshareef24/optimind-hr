@@ -89,6 +89,10 @@ export const MODULE_STRUCTURE = {
 export const ACTIONS = ['view', 'create', 'edit', 'delete', 'approve', 'export'];
 
 export function PermissionProvider({ children }) {
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [permissions, setPermissions] = useState([]);
+  const [accessibleCompanyIds, setAccessibleCompanyIds] = useState([]);
+
   const { data: user } = useQuery({
     queryKey: ['current-user'],
     queryFn: () => base44.auth.me()
@@ -105,21 +109,41 @@ export function PermissionProvider({ children }) {
     queryFn: () => base44.entities.Role.filter({ status: 'active' })
   });
 
-  const [permissions, setPermissions] = useState([]);
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.filter({ status: 'active' })
+  });
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      // Admin has all permissions
+      // Admin has all permissions and access to all companies
       setPermissions(['*']);
+      setAccessibleCompanyIds(companies.map(c => c.id));
+      if (!selectedCompanyId && companies.length > 0) {
+        setSelectedCompanyId(companies[0].id);
+      }
       return;
     }
 
-    // Collect permissions from assigned roles
-    const userRoleIds = userRoles.map(ur => ur.role_id);
+    // Get unique company IDs from user's roles
+    const companyIds = [...new Set(userRoles.map(ur => ur.company_id).filter(Boolean))];
+    setAccessibleCompanyIds(companyIds);
+
+    // Set default selected company if not already set
+    if (!selectedCompanyId && companyIds.length > 0) {
+      setSelectedCompanyId(companyIds[0]);
+    }
+
+    // Collect permissions from assigned roles (filtered by selected company if applicable)
+    const relevantUserRoles = selectedCompanyId 
+      ? userRoles.filter(ur => ur.company_id === selectedCompanyId)
+      : userRoles;
+    
+    const userRoleIds = relevantUserRoles.map(ur => ur.role_id);
     const assignedRoles = roles.filter(r => userRoleIds.includes(r.id));
     const allPermissions = assignedRoles.flatMap(r => r.permissions || []);
     setPermissions(allPermissions);
-  }, [user, userRoles, roles]);
+  }, [user, userRoles, roles, companies, selectedCompanyId]);
 
   const hasPermission = (module, subModule, tab = null, action = 'view') => {
     // Admin bypass
@@ -149,14 +173,43 @@ export function PermissionProvider({ children }) {
     );
   };
 
+  const hasCompanyAccess = (companyId) => {
+    if (permissions.includes('*')) return true;
+    return accessibleCompanyIds.includes(companyId);
+  };
+
+  const getAccessibleCompanies = () => {
+    return companies.filter(c => accessibleCompanyIds.includes(c.id));
+  };
+
+  // Get user type based on roles
+  const getUserType = () => {
+    if (user?.role === 'admin') return 'admin';
+    
+    const roleIds = userRoles.map(ur => ur.role_id);
+    const assignedRoleCodes = roles.filter(r => roleIds.includes(r.id)).map(r => r.role_code);
+    
+    if (assignedRoleCodes.includes('mss') || assignedRoleCodes.includes('manager')) return 'mss';
+    if (assignedRoleCodes.includes('ess') || assignedRoleCodes.includes('employee')) return 'ess';
+    if (assignedRoleCodes.length > 0) return 'limited';
+    
+    return 'ess'; // Default to ESS
+  };
+
   return (
     <PermissionContext.Provider value={{ 
       permissions, 
       hasPermission, 
       hasModuleAccess, 
       hasSubModuleAccess,
+      hasCompanyAccess,
+      getAccessibleCompanies,
       isAdmin: permissions.includes('*'),
-      user
+      user,
+      userType: getUserType(),
+      selectedCompanyId,
+      setSelectedCompanyId,
+      accessibleCompanyIds
     }}>
       {children}
     </PermissionContext.Provider>
