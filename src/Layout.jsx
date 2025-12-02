@@ -191,11 +191,13 @@ function LayoutContent({ children }) {
           <div className="border-t border-emerald-100/50 p-4 space-y-3">
             <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shrink-0">
-                <span className="text-white font-semibold text-sm">HR</span>
+                <span className="text-white font-semibold text-sm">
+                  {currentUser?.full_name ? currentUser.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() : 'U'}
+                </span>
               </div>
               <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : ''}`}>
-                <p className="font-semibold text-slate-900 text-sm truncate">HR Admin</p>
-                <p className="text-xs text-slate-500 truncate">admin@company.sa</p>
+                <p className="font-semibold text-slate-900 text-sm truncate">{currentUser?.full_name || 'User'}</p>
+                <p className="text-xs text-slate-500 truncate">{currentUser?.email || ''}</p>
               </div>
             </div>
             <Button
