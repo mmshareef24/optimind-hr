@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Upload, Search, FileText, Image, File, Trash2, ExternalLink, 
-  Loader2, FolderOpen, Download, Eye, HardDrive
+  Loader2, FolderOpen, Download, Eye, HardDrive, RefreshCw, LogOut
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -140,6 +140,15 @@ export default function GoogleDriveManager() {
             <p className="text-sm text-slate-500">Manage company documents stored in Google Drive</p>
           </div>
         </div>
+
+        <Button
+          variant="outline"
+          onClick={() => window.location.href = '/api/connectors/googledrive/authorize?force=true'}
+          className="border-slate-300"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Change Account
+        </Button>
 
         <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
           <DialogTrigger asChild>
