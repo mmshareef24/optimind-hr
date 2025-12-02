@@ -91,7 +91,8 @@ export default function UserRoleAssignment() {
       .filter(ur => ur.user_email === email && ur.status === 'active')
       .map(ur => ({
         ...ur,
-        role: roles.find(r => r.id === ur.role_id)
+        role: roles.find(r => r.id === ur.role_id),
+        company: companies.find(c => c.id === ur.company_id)
       }));
   };
 
@@ -103,8 +104,8 @@ export default function UserRoleAssignment() {
           <CardTitle className="text-lg">Assign Role to User</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
+          <div className="flex items-end gap-4 flex-wrap">
+            <div className="flex-1 min-w-[200px]">
               <label className="text-sm text-slate-600 mb-1 block">User</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
@@ -117,7 +118,20 @@ export default function UserRoleAssignment() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-sm text-slate-600 mb-1 block">Company</label>
+              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectContent>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
               <label className="text-sm text-slate-600 mb-1 block">Role</label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
