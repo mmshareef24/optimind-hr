@@ -148,6 +148,10 @@ export default function Documents() {
           <TabsTrigger value="all">All Documents</TabsTrigger>
           <TabsTrigger value="company">Company Documents</TabsTrigger>
           <TabsTrigger value="employee">Employee Documents</TabsTrigger>
+          <TabsTrigger value="googledrive" className="gap-2">
+            <HardDrive className="w-4 h-4" />
+            Google Drive
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
