@@ -74,18 +74,25 @@ export default function GoogleDriveManager() {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      formData.append('folderName', 'HRMS Documents');
-      formData.append('documentType', uploadCategory);
-
-      const response = await fetch('/api/functions/googleDriveUpload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+      // First, upload the file to Base44 storage
+      const uploadResult = await base44.integrations.Core.UploadFile({
+        file: uploadFile
       });
 
-      const result = await response.json();
+      if (!uploadResult || !uploadResult.file_url) {
+        throw new Error('Failed to upload file to Base44 storage.');
+      }
+
+      // Then, invoke the Google Drive upload function with the file URL
+      const response = await base44.functions.invoke('googleDriveUpload', {
+        fileUrl: uploadResult.file_url,
+        fileName: uploadFile.name,
+        mimeType: uploadFile.type,
+        folderName: 'HRMS Documents',
+        documentType: uploadCategory
+      });
+
+      const result = response.data;
 
       if (result.success) {
         toast.success('File uploaded to Google Drive successfully');

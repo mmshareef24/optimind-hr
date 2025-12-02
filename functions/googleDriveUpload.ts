@@ -9,15 +9,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get('file');
-    const folderName = formData.get('folderName') || 'HRMS Documents';
-    const documentType = formData.get('documentType') || 'other';
-    const description = formData.get('description') || '';
+    const { fileUrl, fileName, mimeType, folderName = 'HRMS Documents', documentType = 'other', description = '' } = await req.json();
 
-    if (!file) {
-      return Response.json({ error: 'No file provided' }, { status: 400 });
+    if (!fileUrl || !fileName || !mimeType) {
+      return Response.json({ error: 'Missing fileUrl, fileName, or mimeType' }, { status: 400 });
     }
+
+    // Fetch the file from Base44 storage
+    const fileResponse = await fetch(fileUrl);
+    if (!fileResponse.ok) {
+      return Response.json({ error: 'Failed to fetch file from provided URL' }, { status: fileResponse.status });
+    }
+    const fileBuffer = await fileResponse.arrayBuffer();
+    const fileBlob = new Blob([fileBuffer], { type: mimeType });
 
     // Get Google Drive access token
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googledrive');
@@ -53,12 +57,8 @@ Deno.serve(async (req) => {
       folderId = newFolder.id;
     }
 
-    // Upload file to Google Drive
-    const fileBuffer = await file.arrayBuffer();
-    const fileBlob = new Blob([fileBuffer], { type: file.type });
-
     const metadata = {
-      name: file.name,
+      name: fileName,
       parents: [folderId],
       description: description
     };
