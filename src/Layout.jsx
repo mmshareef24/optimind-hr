@@ -17,8 +17,15 @@ import { Toaster } from "sonner";
 function LayoutContent({ children }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      setCurrentUser(user);
+    }).catch(() => {});
+  }, []);
 
   const navigationSections = [
     {
