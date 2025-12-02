@@ -191,13 +191,15 @@ export default function UserRoleAssignment() {
                   {assignedRoles.length > 0 && (
                     <div className="mt-3 pl-13 flex flex-wrap gap-2">
                       {assignedRoles.map(ur => (
-                        <div key={ur.id} className="flex items-center gap-1 bg-emerald-50 rounded-full pl-3 pr-1 py-1">
+                        <div key={ur.id} className="flex items-center gap-1 bg-emerald-50 rounded-lg pl-3 pr-1 py-1.5 border border-emerald-200">
                           <Shield className="w-3 h-3 text-emerald-600" />
-                          <span className="text-sm text-emerald-700">{ur.role?.role_name}</span>
+                          <span className="text-sm text-emerald-700 font-medium">{ur.role?.role_name}</span>
+                          <span className="text-xs text-slate-500 mx-1">@</span>
+                          <span className="text-sm text-blue-600">{ur.company?.name_en || 'Unknown Company'}</span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 text-red-500 hover:text-red-700"
+                            className="h-5 w-5 text-red-500 hover:text-red-700 ml-1"
                             onClick={() => removeRoleMutation.mutate(ur.id)}
                           >
                             <Trash2 className="w-3 h-3" />
