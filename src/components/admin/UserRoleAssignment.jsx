@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { User, Shield, Plus, Trash2, Search } from "lucide-react";
+import { User, Shield, Plus, Trash2, Search, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function UserRoleAssignment() {
