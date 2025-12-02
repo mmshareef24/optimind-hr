@@ -14,6 +14,7 @@ export default function UserRoleAssignment() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -23,6 +24,11 @@ export default function UserRoleAssignment() {
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: () => base44.entities.Role.filter({ status: 'active' })
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.filter({ status: 'active' })
   });
 
   const { data: userRoles = [] } = useQuery({
@@ -36,6 +42,7 @@ export default function UserRoleAssignment() {
       queryClient.invalidateQueries(['all-user-roles']);
       setSelectedUser("");
       setSelectedRole("");
+      setSelectedCompany("");
       toast.success('Role assigned successfully');
     }
   });
@@ -49,21 +56,26 @@ export default function UserRoleAssignment() {
   });
 
   const handleAssign = () => {
-    if (!selectedUser || !selectedRole) {
-      toast.error('Please select a user and role');
+    if (!selectedUser || !selectedRole || !selectedCompany) {
+      toast.error('Please select a user, role, and company');
       return;
     }
 
     // Check if already assigned
-    const exists = userRoles.some(ur => ur.user_email === selectedUser && ur.role_id === selectedRole);
+    const exists = userRoles.some(ur => 
+      ur.user_email === selectedUser && 
+      ur.role_id === selectedRole && 
+      ur.company_id === selectedCompany
+    );
     if (exists) {
-      toast.error('This role is already assigned to this user');
+      toast.error('This role is already assigned to this user for this company');
       return;
     }
 
     assignRoleMutation.mutate({
       user_email: selectedUser,
       role_id: selectedRole,
+      company_id: selectedCompany,
       effective_from: new Date().toISOString().split('T')[0],
       status: 'active'
     });
