@@ -225,6 +225,10 @@ export default function Documents() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="googledrive">
+          <GoogleDriveManager />
+        </TabsContent>
       </Tabs>
 
       <DocumentUploadForm
