@@ -5,7 +5,7 @@ import { TranslationProvider, useTranslation } from '@/components/TranslationCon
 import {
   LayoutDashboard, Building2, Users, Clock, Calendar, UserPlus,
   FolderKanban, DollarSign, Gift, Plane, MessageSquare, Package,
-  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag, LogOut, UserX
+  Shield, FileText, User, UserCheck, Network, Clock3, Menu, X, ChevronDown, Sparkles, TrendingUp, CheckCircle2, Flag, LogOut, UserX, BarChart3
 } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -111,6 +111,7 @@ function LayoutContent({ children }) {
         { title: t('nav_user_management'), url: createPageUrl("UserManagement"), icon: Shield },
         { title: t('nav_master_data'), url: createPageUrl("MasterData"), icon: FileText },
         { title: t('nav_public_holidays'), url: createPageUrl("PublicHolidays"), icon: Calendar },
+        { title: language === 'ar' ? 'منشئ التقارير' : 'Report Builder', url: createPageUrl("ReportBuilder"), icon: BarChart3 },
         { title: language === 'ar' ? 'سجل التغييرات' : 'Change Log', url: createPageUrl("ChangeLog"), icon: FileText }
       ]
     }
