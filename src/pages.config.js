@@ -37,6 +37,7 @@ import ChangeLog from './pages/ChangeLog';
 import Recruitment from './pages/Recruitment';
 import Training from './pages/Training';
 import HRDocumentGenerator from './pages/HRDocumentGenerator';
+import ReportBuilder from './pages/ReportBuilder';
 import __Layout from './Layout.jsx';
 
 
@@ -80,6 +81,7 @@ export const PAGES = {
     "Recruitment": Recruitment,
     "Training": Training,
     "HRDocumentGenerator": HRDocumentGenerator,
+    "ReportBuilder": ReportBuilder,
 }
 
 export const pagesConfig = {
