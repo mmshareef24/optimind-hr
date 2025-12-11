@@ -40,6 +40,7 @@ export default function UserRoleAssignment() {
     mutationFn: (data) => base44.entities.UserRole.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['all-user-roles']);
+      queryClient.invalidateQueries(['user-roles']);
       setSelectedUser("");
       setSelectedRole("");
       setSelectedCompany("");
@@ -51,6 +52,7 @@ export default function UserRoleAssignment() {
     mutationFn: (id) => base44.entities.UserRole.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['all-user-roles']);
+      queryClient.invalidateQueries(['user-roles']);
       toast.success('Role removed');
     }
   });
