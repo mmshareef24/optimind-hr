@@ -41,6 +41,7 @@ export default function UserRoleAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries(['all-user-roles']);
       queryClient.invalidateQueries(['user-roles']);
+      queryClient.invalidateQueries(['current-user']);
       setSelectedUser("");
       setSelectedRole("");
       setSelectedCompany("");
@@ -53,6 +54,7 @@ export default function UserRoleAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries(['all-user-roles']);
       queryClient.invalidateQueries(['user-roles']);
+      queryClient.invalidateQueries(['current-user']);
       toast.success('Role removed');
     }
   });
