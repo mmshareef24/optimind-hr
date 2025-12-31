@@ -28,11 +28,11 @@ Deno.serve(async (req) => {
         // ADMIN/HR USERS - Full or scoped access
         if (user.role === 'admin') {
             // If user has specific company/department access restrictions
-            if (user.company_access && user.company_access.length > 0) {
+            if (user.company_access?.length > 0) {
                 accessibleEmployees = allEmployees.filter(emp => 
                     user.company_access.includes(emp.company_id)
                 );
-            } else if (user.department_access && user.department_access.length > 0) {
+            } else if (user.department_access?.length > 0) {
                 accessibleEmployees = allEmployees.filter(emp => 
                     user.department_access.includes(emp.department)
                 );
@@ -77,12 +77,20 @@ Deno.serve(async (req) => {
                 (e.email?.toLowerCase().includes(searchLower))
             );
         }
+
+        // Calculate access level properly
+        let accessLevel = 'employee';
+        if (user.role === 'admin') {
+            accessLevel = 'admin';
+        } else if (currentEmployee && currentEmployee.id && allEmployees.some(emp => emp.manager_id === currentEmployee.id)) {
+            accessLevel = 'manager';
+        }
         
         return Response.json({ 
             success: true,
             employees: accessibleEmployees,
             total: accessibleEmployees.length,
-            access_level: user.role === 'admin' ? 'admin' : (currentEmployee?.id ? 'manager' : 'employee'),
+            access_level: accessLevel,
             current_employee_id: currentEmployee?.id
         });
         
