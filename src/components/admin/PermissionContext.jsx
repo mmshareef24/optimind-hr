@@ -115,6 +115,7 @@ export function PermissionProvider({ children }) {
   });
 
   useEffect(() => {
+    console.log("PermissionProvider: User object on effect run", user);
     if (user?.role === 'admin') {
       // Admin has all permissions and access to all companies
       setPermissions(['*']);
@@ -122,6 +123,7 @@ export function PermissionProvider({ children }) {
       if (!selectedCompanyId && companies.length > 0) {
         setSelectedCompanyId(companies[0].id);
       }
+      console.log("PermissionProvider: Admin detected, permissions set to ['*']");
       return;
     }
 
@@ -143,29 +145,44 @@ export function PermissionProvider({ children }) {
     const assignedRoles = roles.filter(r => userRoleIds.includes(r.id));
     const allPermissions = assignedRoles.flatMap(r => r.permissions || []);
     setPermissions(allPermissions);
+    console.log("PermissionProvider: Non-admin user, calculated permissions", allPermissions);
   }, [user, userRoles, roles, companies, selectedCompanyId]);
 
   const hasPermission = (module, subModule, tab = null, action = 'view') => {
+    console.log(`Checking permission for: module=${module}, subModule=${subModule}, tab=${tab}, action=${action}`);
+    console.log("Current permissions in hasPermission:", permissions);
+
     // Admin bypass
-    if (permissions.includes('*')) return true;
+    if (permissions.includes('*')) {
+      console.log("Admin bypass: Access granted for all.");
+      return true;
+    }
     
     // Check for matching permission
-    return permissions.some(p => {
+    const granted = permissions.some(p => {
       const moduleMatch = p.module === module || p.module === '*';
       const subModuleMatch = !subModule || p.sub_module === subModule || p.sub_module === '*';
       const tabMatch = !tab || !p.tab || p.tab === tab || p.tab === '*';
       const actionMatch = !p.actions || p.actions.includes(action) || p.actions.includes('*');
       
-      return moduleMatch && subModuleMatch && tabMatch && actionMatch;
+      const match = moduleMatch && subModuleMatch && tabMatch && actionMatch;
+      if (match) {
+        console.log(`Matching permission found: module=${p.module}, subModule=${p.sub_module}, tab=${p.tab}, actions=${p.actions}`);
+      }
+      return match;
     });
+    console.log(`Permission check result for ${module}.${subModule}: ${granted}`);
+    return granted;
   };
 
   const hasModuleAccess = (module) => {
+    console.log(`Checking module access for: ${module}`);
     if (permissions.includes('*')) return true;
     return permissions.some(p => p.module === module || p.module === '*');
   };
 
   const hasSubModuleAccess = (module, subModule) => {
+    console.log(`Checking submodule access for: ${module}.${subModule}`);
     if (permissions.includes('*')) return true;
     return permissions.some(p => 
       (p.module === module || p.module === '*') && 
@@ -174,6 +191,7 @@ export function PermissionProvider({ children }) {
   };
 
   const hasCompanyAccess = (companyId) => {
+    console.log(`Checking company access for: ${companyId}`);
     if (permissions.includes('*')) return true;
     return accessibleCompanyIds.includes(companyId);
   };
