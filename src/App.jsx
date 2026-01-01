@@ -12,6 +12,7 @@ import { createPageUrl } from '@/utils';
 import { appParams } from '@/lib/app-params';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import ErrorBoundary from '@/lib/ErrorBoundary';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { isSupabaseConfigured } from '@/api/supabaseClient';
 
@@ -52,7 +53,12 @@ const AuthenticatedApp = () => {
 
   // If redirecting to Login, render nothing here
   if (isSupabaseConfigured && !isAuthenticated) {
-    return null;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+        <div className="mt-2 text-sm text-slate-600">Redirecting to login…</div>
+      </div>
+    );
   }
 
   // Render the main app
@@ -97,7 +103,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationTracker />
-          <AuthenticatedApp />
+          <ErrorBoundary>
+            <AuthenticatedApp />
+          </ErrorBoundary>
         </Router>
         <Toaster />
         <VisualEditAgent />
