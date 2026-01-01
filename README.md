@@ -40,3 +40,17 @@ This app is configured for static deployment on Vercel.
 - Deploy options:
   - Using the Vercel CLI: `npm i -g vercel` then `vercel` (first deploy) and `vercel --prod` (production)
   - Or import the repository in the Vercel dashboard and configure env vars there
+
+## PR Workflow
+
+We prefer a PR-based workflow for changes:
+
+1. Create a feature branch from `main` (e.g., `feature/<topic>`).
+2. Make changes and commit with clear messages.
+3. Push the branch to GitHub.
+4. Open a Pull Request targeting `main`, including context and verification steps.
+5. After review and checks, merge the PR.
+
+Notes:
+- `.env` is ignored by git; configure environment variables in Vercel for production.
+- `vercel.json` ensures SPA routing works correctly.
