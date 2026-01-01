@@ -26,6 +26,7 @@ export default function EmployeesPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [viewMode, setViewMode] = useState('card');
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -38,11 +39,12 @@ export default function EmployeesPage() {
   });
 
   const { data: employeesData, isLoading } = useQuery({
-    queryKey: ['filtered-employees', searchTerm],
+    queryKey: ['filtered-employees', searchTerm, selectedCompany],
     queryFn: async () => {
       const response = await base44.functions.invoke('getFilteredEmployees', {
         filters: {
-          search: searchTerm
+          search: searchTerm,
+          company: selectedCompany !== 'all' ? selectedCompany : undefined
         }
       });
       return response.data;
@@ -235,6 +237,20 @@ export default function EmployeesPage() {
                   className={`${isRTL ? 'pr-10' : 'pl-10'} h-12 text-base`}
                 />
               </div>
+              {accessLevel === 'admin' && companies.length > 1 && (
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="h-12 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t('all_companies')}</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>
+                      {company.name_en}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="flex items-center border rounded-lg p-1 bg-slate-100">
                 <Button
                   variant={viewMode === 'card' ? 'default' : 'ghost'}
