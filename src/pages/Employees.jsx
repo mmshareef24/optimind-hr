@@ -27,6 +27,8 @@ export default function EmployeesPage() {
   const [viewMode, setViewMode] = useState('card');
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedCompany, setSelectedCompany] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -39,12 +41,14 @@ export default function EmployeesPage() {
   });
 
   const { data: employeesData, isLoading } = useQuery({
-    queryKey: ['filtered-employees', searchTerm, selectedCompany],
+    queryKey: ['filtered-employees', searchTerm, selectedCompany, selectedDepartment, selectedStatus],
     queryFn: async () => {
       const response = await base44.functions.invoke('getFilteredEmployees', {
         filters: {
           search: searchTerm,
-          company: selectedCompany !== 'all' ? selectedCompany : undefined
+          company: selectedCompany !== 'all' ? selectedCompany : undefined,
+          department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
+          status: selectedStatus !== 'all' ? selectedStatus : undefined
         }
       });
       return response.data;
@@ -251,6 +255,31 @@ export default function EmployeesPage() {
                   ))}
                 </select>
               )}
+              {departments.length > 0 && (
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="h-12 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t('all_departments') || 'All Departments'}</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="h-12 px-4 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">{t('all_statuses') || 'All Statuses'}</option>
+                <option value="active">{t('active') || 'Active'}</option>
+                <option value="inactive">{t('inactive') || 'Inactive'}</option>
+                <option value="on_leave">{t('on_leave') || 'On Leave'}</option>
+                <option value="terminated">{t('terminated') || 'Terminated'}</option>
+              </select>
               <div className="flex items-center border rounded-lg p-1 bg-slate-100">
                 <Button
                   variant={viewMode === 'card' ? 'default' : 'ghost'}

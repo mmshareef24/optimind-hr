@@ -92,9 +92,13 @@ const functionsStub = {
       const filters = payload.filters || {};
       const term = (filters.search || '').trim();
       const companyId = filters.company;
+      const status = (filters.status || '').trim();
+      const department = (filters.department || '').trim();
 
       let query = supabase.from('employees').select('*');
       if (companyId) query = query.eq('company_id', companyId);
+      if (status) query = query.eq('status', status);
+      if (department) query = query.eq('department', department);
 
       // If search term provided, search across a few text fields
       if (term) {
