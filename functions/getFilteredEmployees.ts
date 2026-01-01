@@ -59,6 +59,9 @@ Deno.serve(async (req) => {
         }
         
         // Apply additional filters if provided
+        if (filters.company) {
+            accessibleEmployees = accessibleEmployees.filter(e => e.company_id === filters.company);
+        }
         if (filters.status) {
             accessibleEmployees = accessibleEmployees.filter(e => e.status === filters.status);
         }
