@@ -25,6 +25,10 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(process.cwd(), 'src')
       }
+    },
+    // Increase the default 500kB chunk size warning limit to reduce noisy warnings
+    build: {
+      chunkSizeWarningLimit: 1600
     }
   }
 });
