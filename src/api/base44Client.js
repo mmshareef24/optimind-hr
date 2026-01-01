@@ -68,6 +68,8 @@ const entities = new Proxy({}, {
     if (isSupabaseConfigured) {
       if (prop === 'Company') return makeSupabaseEntity('companies');
       if (prop === 'Employee') return makeSupabaseEntity('employees');
+      if (prop === 'Department') return makeSupabaseEntity('departments');
+      if (prop === 'Position') return makeSupabaseEntity('positions');
     }
     return makeEntityStub();
   }
