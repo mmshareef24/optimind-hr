@@ -1,45 +1,48 @@
-import AIAssistant from './pages/AIAssistant';
-import Approvals from './pages/Approvals';
-import Assets from './pages/Assets';
-import Benefits from './pages/Benefits';
-import BudgetManagement from './pages/BudgetManagement';
-import ChangeLog from './pages/ChangeLog';
-import Companies from './pages/Companies';
-import Dashboard from './pages/Dashboard';
-import Departments from './pages/Departments';
-import Documents from './pages/Documents';
-import EOSBManagement from './pages/EOSBManagement';
-import ESS from './pages/ESS';
-import EmployeeRelations from './pages/EmployeeRelations';
-import Employees from './pages/Employees';
-import GOSIReporting from './pages/GOSIReporting';
-import HRDocumentGenerator from './pages/HRDocumentGenerator';
-import HealthSafety from './pages/HealthSafety';
-import Home from './pages/Home';
-import LeaveAccrualManagement from './pages/LeaveAccrualManagement';
-import LeaveManagement from './pages/LeaveManagement';
-import MSS from './pages/MSS';
-import MasterData from './pages/MasterData';
-import Offboarding from './pages/Offboarding';
-import Onboarding from './pages/Onboarding';
-import OrgStructure from './pages/OrgStructure';
-import Payroll from './pages/Payroll';
-import PayrollManagement from './pages/PayrollManagement';
-import PerformanceManagement from './pages/PerformanceManagement';
-import Projects from './pages/Projects';
-import PublicHolidays from './pages/PublicHolidays';
-import QIWA from './pages/QIWA';
-import Recruitment from './pages/Recruitment';
-import ReportBuilder from './pages/ReportBuilder';
-import Reports from './pages/Reports';
-import SINAD from './pages/SINAD';
-import Shifts from './pages/Shifts';
-import TimeManagement from './pages/TimeManagement';
-import TimeTracking from './pages/TimeTracking';
-import Training from './pages/Training';
-import TravelExpense from './pages/TravelExpense';
-import UserManagement from './pages/UserManagement';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import React from 'react';
+// Lazy-load pages for better performance and bundle size
+const AIAssistant = React.lazy(() => import('./pages/AIAssistant'));
+const Approvals = React.lazy(() => import('./pages/Approvals'));
+const Assets = React.lazy(() => import('./pages/Assets'));
+const Benefits = React.lazy(() => import('./pages/Benefits'));
+const BudgetManagement = React.lazy(() => import('./pages/BudgetManagement'));
+const ChangeLog = React.lazy(() => import('./pages/ChangeLog'));
+const Companies = React.lazy(() => import('./pages/Companies'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Departments = React.lazy(() => import('./pages/Departments'));
+const Documents = React.lazy(() => import('./pages/Documents'));
+const EOSBManagement = React.lazy(() => import('./pages/EOSBManagement'));
+const ESS = React.lazy(() => import('./pages/ESS'));
+const EmployeeRelations = React.lazy(() => import('./pages/EmployeeRelations'));
+const Employees = React.lazy(() => import('./pages/Employees'));
+const GOSIReporting = React.lazy(() => import('./pages/GOSIReporting'));
+const HRDocumentGenerator = React.lazy(() => import('./pages/HRDocumentGenerator'));
+const HealthSafety = React.lazy(() => import('./pages/HealthSafety'));
+const Home = React.lazy(() => import('./pages/Home'));
+const LeaveAccrualManagement = React.lazy(() => import('./pages/LeaveAccrualManagement'));
+const LeaveManagement = React.lazy(() => import('./pages/LeaveManagement'));
+const MSS = React.lazy(() => import('./pages/MSS'));
+const MasterData = React.lazy(() => import('./pages/MasterData'));
+const Offboarding = React.lazy(() => import('./pages/Offboarding'));
+const Onboarding = React.lazy(() => import('./pages/Onboarding'));
+const OrgStructure = React.lazy(() => import('./pages/OrgStructure'));
+const Payroll = React.lazy(() => import('./pages/Payroll'));
+const PayrollManagement = React.lazy(() => import('./pages/PayrollManagement'));
+const PerformanceManagement = React.lazy(() => import('./pages/PerformanceManagement'));
+const Projects = React.lazy(() => import('./pages/Projects'));
+const PublicHolidays = React.lazy(() => import('./pages/PublicHolidays'));
+const QIWA = React.lazy(() => import('./pages/QIWA'));
+const Recruitment = React.lazy(() => import('./pages/Recruitment'));
+const ReportBuilder = React.lazy(() => import('./pages/ReportBuilder'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const SINAD = React.lazy(() => import('./pages/SINAD'));
+const Shifts = React.lazy(() => import('./pages/Shifts'));
+const TimeManagement = React.lazy(() => import('./pages/TimeManagement'));
+const TimeTracking = React.lazy(() => import('./pages/TimeTracking'));
+const Training = React.lazy(() => import('./pages/Training'));
+const TravelExpense = React.lazy(() => import('./pages/TravelExpense'));
+const UserManagement = React.lazy(() => import('./pages/UserManagement'));
+const AnalyticsDashboard = React.lazy(() => import('./pages/AnalyticsDashboard'));
+const SupabaseTest = React.lazy(() => import('./pages/SupabaseTest'));
 import __Layout from './Layout.jsx';
 
 
@@ -86,6 +89,7 @@ export const PAGES = {
     "TravelExpense": TravelExpense,
     "UserManagement": UserManagement,
     "AnalyticsDashboard": AnalyticsDashboard,
+    "SupabaseTest": SupabaseTest,
 }
 
 export const pagesConfig = {

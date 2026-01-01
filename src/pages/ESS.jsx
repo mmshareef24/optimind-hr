@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
@@ -25,6 +26,7 @@ import { format } from "date-fns";
 export default function ESS() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+  const { logout } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const queryClient = useQueryClient();
@@ -237,7 +239,7 @@ export default function ESS() {
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => base44.auth.logout()}
+                onClick={logout}
               >
                 Logout
               </Button>

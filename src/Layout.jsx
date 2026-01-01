@@ -11,21 +11,15 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { Toaster } from "sonner";
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user, logout } = useAuth();
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
-
-  useEffect(() => {
-    base44.auth.me().then(user => {
-      setCurrentUser(user);
-    }).catch(() => {});
-  }, []);
 
   const navigationSections = [
     {
@@ -194,17 +188,19 @@ function LayoutContent({ children }) {
             <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-50 to-transparent ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shrink-0">
                 <span className="text-white font-semibold text-sm">
-                  {currentUser?.full_name ? currentUser.full_name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() : 'U'}
+                  {user?.user_metadata?.full_name
+                    ? String(user.user_metadata.full_name).split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()
+                    : (user?.email ? String(user.email)[0]?.toUpperCase() : 'U')}
                 </span>
               </div>
               <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : ''}`}>
-                <p className="font-semibold text-slate-900 text-sm truncate">{currentUser?.full_name || 'User'}</p>
-                <p className="text-xs text-slate-500 truncate">{currentUser?.email || ''}</p>
+                <p className="font-semibold text-slate-900 text-sm truncate">{(user?.user_metadata?.full_name) || 'User'}</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email || ''}</p>
               </div>
             </div>
             <Button
               variant="outline"
-              onClick={() => base44.auth.logout()}
+              onClick={logout}
               className={`w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 ${isRTL ? 'flex-row-reverse' : ''}`}
             >
               <LogOut className="w-4 h-4 mr-2" />

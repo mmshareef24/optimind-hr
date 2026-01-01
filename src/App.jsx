@@ -1,18 +1,23 @@
 import './App.css'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
+import { Suspense } from 'react';
 import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { appParams } from '@/lib/app-params';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
+const isDevBypass = !appParams.serverUrl || !appParams.appId;
+const effectiveMainPageKey = isDevBypass ? 'Home' : mainPageKey;
+const MainPage = effectiveMainPageKey ? Pages[effectiveMainPageKey] : <></>;
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
@@ -45,17 +50,21 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
+        <LayoutWrapper currentPageName={effectiveMainPageKey}>
+          <Suspense fallback={<div className="p-4">Loading...</div>}>
+            <MainPage />
+          </Suspense>
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).map(([path, Page]) => (
+      {Object.entries(Pages).map(([pageName, Page]) => (
         <Route
-          key={path}
-          path={`/${path}`}
+          key={pageName}
+          path={createPageUrl(pageName)}
           element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
+            <LayoutWrapper currentPageName={pageName}>
+              <Suspense fallback={<div className="p-4">Loading...</div>}>
+                <Page />
+              </Suspense>
             </LayoutWrapper>
           }
         />

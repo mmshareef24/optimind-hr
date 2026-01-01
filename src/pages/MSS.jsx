@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 export default function MSS() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
+  const { logout } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const [authUser, setAuthUser] = useState(null);
@@ -313,7 +315,7 @@ export default function MSS() {
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => base44.auth.logout()}
+                onClick={logout}
               >
                 Logout
               </Button>

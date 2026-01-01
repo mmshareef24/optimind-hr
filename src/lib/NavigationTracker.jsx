@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 import { pagesConfig } from '@/pages.config';
 
 export default function NavigationTracker() {
@@ -39,7 +40,9 @@ export default function NavigationTracker() {
             pageName = matchedKey || null;
         }
 
-        if (isAuthenticated && pageName) {
+        // Skip Base44 logging when backend is not configured locally
+        const canLog = Boolean(appParams.serverUrl && appParams.appId);
+        if (isAuthenticated && pageName && canLog) {
             base44.appLogs.logUserInApp(pageName).catch(() => {
                 // Silently fail - logging shouldn't break the app
             });
