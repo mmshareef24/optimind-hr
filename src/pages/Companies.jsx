@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { listCompanies, createCompany, updateCompany } from "@/api/companies";
 import { useTranslation } from '@/components/TranslationContext';
 import { Building2, Plus, Search, MoreVertical, Edit, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ export default function Companies() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     company_code: "", name_en: "", name_ar: "", cr_number: "", tax_number: "", gosi_number: "",
     establishment_date: "", industry: "technology", address: "", city: "",
@@ -30,24 +31,30 @@ export default function Companies() {
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['companies'],
-    queryFn: () => base44.entities.Company.list('-created_date'),
+    queryFn: () => listCompanies(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Company.create(data),
+    mutationFn: (data) => createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['companies']);
       setShowDialog(false);
       resetForm();
+    },
+    onError: (error) => {
+      setFormError(error?.message || 'Failed to create company');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Company.update(id, data),
+    mutationFn: ({ id, data }) => updateCompany(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['companies']);
       setShowDialog(false);
       resetForm();
+    },
+    onError: (error) => {
+      setFormError(error?.message || 'Failed to update company');
     }
   });
 
@@ -58,6 +65,7 @@ export default function Companies() {
       phone: "", email: "", status: "active"
     });
     setEditingCompany(null);
+    setFormError(null);
   };
 
   const handleSubmit = (e) => {
@@ -236,6 +244,11 @@ export default function Companies() {
               <Label>{t('address')}</Label>
               <Input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
             </div>
+            {formError && (
+              <div className="text-red-600 text-sm">
+                {formError}
+              </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>{t('cancel')}</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
