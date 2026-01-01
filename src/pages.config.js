@@ -39,6 +39,7 @@ import TimeTracking from './pages/TimeTracking';
 import Training from './pages/Training';
 import TravelExpense from './pages/TravelExpense';
 import UserManagement from './pages/UserManagement';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -84,6 +85,7 @@ export const PAGES = {
     "Training": Training,
     "TravelExpense": TravelExpense,
     "UserManagement": UserManagement,
+    "AnalyticsDashboard": AnalyticsDashboard,
 }
 
 export const pagesConfig = {
