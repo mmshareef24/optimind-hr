@@ -43,6 +43,7 @@ const TravelExpense = React.lazy(() => import('./pages/TravelExpense'));
 const UserManagement = React.lazy(() => import('./pages/UserManagement'));
 const AnalyticsDashboard = React.lazy(() => import('./pages/AnalyticsDashboard'));
 const SupabaseTest = React.lazy(() => import('./pages/SupabaseTest'));
+const Login = React.lazy(() => import('./pages/Login'));
 import __Layout from './Layout.jsx';
 
 
@@ -90,6 +91,7 @@ export const PAGES = {
     "UserManagement": UserManagement,
     "AnalyticsDashboard": AnalyticsDashboard,
     "SupabaseTest": SupabaseTest,
+    "Login": Login,
 }
 
 export const pagesConfig = {

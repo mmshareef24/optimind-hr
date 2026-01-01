@@ -6,12 +6,14 @@ import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { appParams } from '@/lib/app-params';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { isSupabaseConfigured } from '@/api/supabaseClient';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -24,7 +26,13 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
+  const navigate = useNavigate();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated } = useAuth();
+  React.useEffect(() => {
+    if (isSupabaseConfigured && !isAuthenticated && !isLoadingAuth) {
+      navigate(createPageUrl('Login'), { replace: true });
+    }
+  }, [isAuthenticated, isLoadingAuth]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -39,11 +47,12 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
     }
+  }
+
+  // If redirecting to Login, render nothing here
+  if (isSupabaseConfigured && !isAuthenticated) {
+    return null;
   }
 
   // Render the main app
@@ -69,6 +78,12 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      {/* Explicit Login route (without Layout) */}
+      <Route path={createPageUrl('Login')} element={
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          {Pages.Login ? <Pages.Login /> : <div>Login</div>}
+        </Suspense>
+      } />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
