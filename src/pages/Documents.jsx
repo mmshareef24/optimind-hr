@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from '@/components/TranslationContext';
-import { FileText, Upload, Download, ExternalLink, AlertCircle, Bell, HardDrive } from "lucide-react";
+import { FileText, Upload, Download, ExternalLink, AlertCircle, Bell, HardDrive, Sparkles, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DocumentUploadForm from "../components/documents/DocumentUploadForm";
 import GoogleDriveManager from "../components/documents/GoogleDriveManager";
+import AISearchBar from "../components/documents/AISearchBar";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -17,6 +18,8 @@ export default function Documents() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchExplanation, setSearchExplanation] = useState(null);
   const queryClient = useQueryClient();
   
   const { data: documents = [], isLoading } = useQuery({
@@ -42,8 +45,25 @@ export default function Documents() {
     onError: () => toast.error('Failed to send alerts')
   });
 
-  const employeeDocuments = documents.filter(doc => doc.employee_id);
-  const companyDocuments = documents.filter(doc => doc.company_id || !doc.employee_id);
+  const analyzeDocumentMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('analyzeDocument', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents']);
+      toast.success('Document analyzed with AI');
+    }
+  });
+
+  // Use search results if available, otherwise show all documents
+  const displayDocuments = searchResults || documents;
+  const employeeDocuments = displayDocuments.filter(doc => doc.employee_id);
+  const companyDocuments = displayDocuments.filter(doc => doc.company_id || !doc.employee_id);
+
+  // Get documents requiring attention (expiring within 30 days)
+  const documentsNeedingAttention = documents.filter(doc => {
+    if (!doc.expiry_date) return false;
+    const days = differenceInDays(new Date(doc.expiry_date), new Date());
+    return days >= 0 && days <= 30;
+  });
 
   const getExpiryStatus = (expiryDate) => {
     if (!expiryDate) return null;
@@ -58,19 +78,39 @@ export default function Documents() {
     const employee = employees.find(e => e.id === doc.employee_id);
     const company = companies.find(c => c.id === doc.company_id);
     const expiryStatus = getExpiryStatus(doc.expiry_date);
+    const hasAIAnalysis = doc.ai_tags || doc.ai_description;
     
     return (
-      <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:shadow-md transition-all ${isRTL ? 'flex-row-reverse' : ''}`}>
-        <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+      <div key={doc.id} className={`flex items-center justify-between p-4 rounded-xl border ${hasAIAnalysis ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200'} hover:shadow-md transition-all ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center gap-4 flex-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg relative">
             <FileText className="w-6 h-6 text-white" />
+            {hasAIAnalysis && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
+                <Sparkles className="w-3 h-3 text-emerald-600" />
+              </div>
+            )}
           </div>
-          <div className={isRTL ? 'text-right' : ''}>
+          <div className={`flex-1 ${isRTL ? 'text-right' : ''}`}>
             <h3 className="font-semibold text-slate-900">{doc.document_name}</h3>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant="outline" className="text-xs">
                 {doc.document_type.replace('_', ' ')}
               </Badge>
+              {doc.ai_priority && (
+                <Badge className={
+                  doc.ai_priority === 'high' ? 'bg-red-100 text-red-700' :
+                  doc.ai_priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                  'bg-slate-100 text-slate-700'
+                }>
+                  {doc.ai_priority}
+                </Badge>
+              )}
+              {doc.ai_compliance_category && (
+                <Badge variant="outline" className="text-xs">
+                  {doc.ai_compliance_category}
+                </Badge>
+              )}
               {employee && (
                 <span className="text-xs text-slate-500">
                   {employee.first_name} {employee.last_name}
@@ -82,6 +122,16 @@ export default function Documents() {
                 </span>
               )}
             </div>
+            {doc.ai_tags && (
+              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                {doc.ai_tags.split(', ').slice(0, 3).map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-xs bg-white">
+                    <Tag className="w-3 h-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-3 mt-1">
               {doc.issue_date && (
                 <p className="text-xs text-slate-400">
@@ -105,6 +155,20 @@ export default function Documents() {
           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
             {doc.status}
           </Badge>
+          {!hasAIAnalysis && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => analyzeDocumentMutation.mutate({
+                document_id: doc.id,
+                file_url: doc.file_url,
+                document_name: doc.document_name
+              })}
+              disabled={analyzeDocumentMutation.isPending}
+            >
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -119,28 +183,75 @@ export default function Documents() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
-        <div className={isRTL ? 'text-right' : ''}>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('documents')}</h1>
-          <p className="text-slate-600">{t('documents_desc')}</p>
+      <div className={`flex flex-col gap-4 ${isRTL ? 'text-right' : ''}`}>
+        <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${isRTL ? 'lg:flex-row-reverse' : ''}`}>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('documents')}</h1>
+            <p className="text-slate-600">{t('documents_desc')}</p>
+          </div>
+          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Button 
+              onClick={() => sendAlertsMutation.mutate()}
+              variant="outline"
+              disabled={sendAlertsMutation.isPending}
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              <Bell className="w-4 h-4 mr-2" /> 
+              {sendAlertsMutation.isPending ? 'Sending...' : 'Send Expiry Alerts'}
+            </Button>
+            <Button 
+              onClick={() => setShowUploadForm(true)}
+              className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
+            >
+              <Upload className="w-4 h-4 mr-2" /> {t('upload_document')}
+            </Button>
+          </div>
         </div>
-        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <Button 
-            onClick={() => sendAlertsMutation.mutate()}
-            variant="outline"
-            disabled={sendAlertsMutation.isPending}
-            className="border-amber-200 text-amber-700 hover:bg-amber-50"
-          >
-            <Bell className="w-4 h-4 mr-2" /> 
-            {sendAlertsMutation.isPending ? 'Sending...' : 'Send Expiry Alerts'}
-          </Button>
-          <Button 
-            onClick={() => setShowUploadForm(true)}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg"
-          >
-            <Upload className="w-4 h-4 mr-2" /> {t('upload_document')}
-          </Button>
-        </div>
+
+        {/* AI Search Bar */}
+        <AISearchBar 
+          onSearchResults={(docs, explanation) => {
+            setSearchResults(docs);
+            setSearchExplanation(explanation);
+          }}
+        />
+
+        {/* Search Results Info */}
+        {searchResults && (
+          <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-white">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-slate-900">AI Search Results</p>
+                  <p className="text-sm text-slate-600 mt-1">{searchExplanation}</p>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Found {searchResults.length} document{searchResults.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Documents Requiring Attention */}
+        {!searchResults && documentsNeedingAttention.length > 0 && (
+          <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-white">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-slate-900">
+                    {documentsNeedingAttention.length} Document{documentsNeedingAttention.length !== 1 ? 's' : ''} Requiring Attention
+                  </p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    These documents are expiring within 30 days and may need renewal
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Tabs defaultValue="all" className="space-y-6">
@@ -164,14 +275,14 @@ export default function Documents() {
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
                 </div>
-              ) : documents.length === 0 ? (
+              ) : displayDocuments.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <p className="text-slate-500">{t('no_documents_uploaded')}</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {documents.map(renderDocumentCard)}
+                  {displayDocuments.map(renderDocumentCard)}
                 </div>
               )}
             </CardContent>

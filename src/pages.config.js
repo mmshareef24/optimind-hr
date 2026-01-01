@@ -1,87 +1,89 @@
-import Dashboard from './pages/Dashboard';
-import Companies from './pages/Companies';
-import Employees from './pages/Employees';
-import LeaveManagement from './pages/LeaveManagement';
-import Payroll from './pages/Payroll';
-import TimeManagement from './pages/TimeManagement';
-import OrgStructure from './pages/OrgStructure';
-import Shifts from './pages/Shifts';
-import Onboarding from './pages/Onboarding';
-import Projects from './pages/Projects';
-import Benefits from './pages/Benefits';
-import TravelExpense from './pages/TravelExpense';
-import EmployeeRelations from './pages/EmployeeRelations';
-import Assets from './pages/Assets';
-import HealthSafety from './pages/HealthSafety';
-import Documents from './pages/Documents';
-import ESS from './pages/ESS';
-import MSS from './pages/MSS';
-import GOSIReporting from './pages/GOSIReporting';
-import PerformanceManagement from './pages/PerformanceManagement';
 import AIAssistant from './pages/AIAssistant';
-import TimeTracking from './pages/TimeTracking';
-import Reports from './pages/Reports';
 import Approvals from './pages/Approvals';
-import UserManagement from './pages/UserManagement';
-import PayrollManagement from './pages/PayrollManagement';
-import MasterData from './pages/MasterData';
+import Assets from './pages/Assets';
+import Benefits from './pages/Benefits';
+import BudgetManagement from './pages/BudgetManagement';
+import ChangeLog from './pages/ChangeLog';
+import Companies from './pages/Companies';
+import Dashboard from './pages/Dashboard';
 import Departments from './pages/Departments';
+import Documents from './pages/Documents';
+import EOSBManagement from './pages/EOSBManagement';
+import ESS from './pages/ESS';
+import EmployeeRelations from './pages/EmployeeRelations';
+import Employees from './pages/Employees';
+import GOSIReporting from './pages/GOSIReporting';
+import HRDocumentGenerator from './pages/HRDocumentGenerator';
+import HealthSafety from './pages/HealthSafety';
+import Home from './pages/Home';
 import LeaveAccrualManagement from './pages/LeaveAccrualManagement';
+import LeaveManagement from './pages/LeaveManagement';
+import MSS from './pages/MSS';
+import MasterData from './pages/MasterData';
+import Offboarding from './pages/Offboarding';
+import Onboarding from './pages/Onboarding';
+import OrgStructure from './pages/OrgStructure';
+import Payroll from './pages/Payroll';
+import PayrollManagement from './pages/PayrollManagement';
+import PerformanceManagement from './pages/PerformanceManagement';
+import Projects from './pages/Projects';
 import PublicHolidays from './pages/PublicHolidays';
 import QIWA from './pages/QIWA';
-import SINAD from './pages/SINAD';
-import EOSBManagement from './pages/EOSBManagement';
-import BudgetManagement from './pages/BudgetManagement';
-import Offboarding from './pages/Offboarding';
-import ChangeLog from './pages/ChangeLog';
 import Recruitment from './pages/Recruitment';
-import Training from './pages/Training';
-import HRDocumentGenerator from './pages/HRDocumentGenerator';
 import ReportBuilder from './pages/ReportBuilder';
+import Reports from './pages/Reports';
+import SINAD from './pages/SINAD';
+import Shifts from './pages/Shifts';
+import TimeManagement from './pages/TimeManagement';
+import TimeTracking from './pages/TimeTracking';
+import Training from './pages/Training';
+import TravelExpense from './pages/TravelExpense';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Companies": Companies,
-    "Employees": Employees,
-    "LeaveManagement": LeaveManagement,
-    "Payroll": Payroll,
-    "TimeManagement": TimeManagement,
-    "OrgStructure": OrgStructure,
-    "Shifts": Shifts,
-    "Onboarding": Onboarding,
-    "Projects": Projects,
-    "Benefits": Benefits,
-    "TravelExpense": TravelExpense,
-    "EmployeeRelations": EmployeeRelations,
-    "Assets": Assets,
-    "HealthSafety": HealthSafety,
-    "Documents": Documents,
-    "ESS": ESS,
-    "MSS": MSS,
-    "GOSIReporting": GOSIReporting,
-    "PerformanceManagement": PerformanceManagement,
     "AIAssistant": AIAssistant,
-    "TimeTracking": TimeTracking,
-    "Reports": Reports,
     "Approvals": Approvals,
-    "UserManagement": UserManagement,
-    "PayrollManagement": PayrollManagement,
-    "MasterData": MasterData,
+    "Assets": Assets,
+    "Benefits": Benefits,
+    "BudgetManagement": BudgetManagement,
+    "ChangeLog": ChangeLog,
+    "Companies": Companies,
+    "Dashboard": Dashboard,
     "Departments": Departments,
+    "Documents": Documents,
+    "EOSBManagement": EOSBManagement,
+    "ESS": ESS,
+    "EmployeeRelations": EmployeeRelations,
+    "Employees": Employees,
+    "GOSIReporting": GOSIReporting,
+    "HRDocumentGenerator": HRDocumentGenerator,
+    "HealthSafety": HealthSafety,
+    "Home": Home,
     "LeaveAccrualManagement": LeaveAccrualManagement,
+    "LeaveManagement": LeaveManagement,
+    "MSS": MSS,
+    "MasterData": MasterData,
+    "Offboarding": Offboarding,
+    "Onboarding": Onboarding,
+    "OrgStructure": OrgStructure,
+    "Payroll": Payroll,
+    "PayrollManagement": PayrollManagement,
+    "PerformanceManagement": PerformanceManagement,
+    "Projects": Projects,
     "PublicHolidays": PublicHolidays,
     "QIWA": QIWA,
-    "SINAD": SINAD,
-    "EOSBManagement": EOSBManagement,
-    "BudgetManagement": BudgetManagement,
-    "Offboarding": Offboarding,
-    "ChangeLog": ChangeLog,
     "Recruitment": Recruitment,
-    "Training": Training,
-    "HRDocumentGenerator": HRDocumentGenerator,
     "ReportBuilder": ReportBuilder,
+    "Reports": Reports,
+    "SINAD": SINAD,
+    "Shifts": Shifts,
+    "TimeManagement": TimeManagement,
+    "TimeTracking": TimeTracking,
+    "Training": Training,
+    "TravelExpense": TravelExpense,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {
