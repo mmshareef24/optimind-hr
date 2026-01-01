@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   FileText, Sparkles, Download, Send, Check, Loader2, 
-  AlertCircle, Eye, Edit, RefreshCw, Copy, Printer
+  AlertCircle, Eye, Edit, RefreshCw, Copy, Printer, X
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
@@ -612,6 +613,7 @@ Generate the complete document ready for review and signature.`;
 function TemplateManager({ templates, queryClient }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
   const [formData, setFormData] = useState({
     template_name: '',
     document_type: '',
@@ -764,6 +766,10 @@ function TemplateManager({ templates, queryClient }) {
                 </Badge>
               </div>
               <div className="flex gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={() => setPreviewTemplate(template)}>
+                  <Eye className="w-4 h-4 mr-1" />
+                  Preview
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => handleEdit(template)}>
                   Edit
                 </Button>
@@ -775,6 +781,75 @@ function TemplateManager({ templates, queryClient }) {
           </Card>
         ))}
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{previewTemplate?.template_name}</span>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewTemplate(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Document Type</p>
+                  <p className="text-sm text-slate-600">{previewTemplate.document_type?.replace(/_/g, ' ')}</p>
+                </div>
+                <Badge variant={previewTemplate.status === 'active' ? 'default' : 'secondary'}>
+                  {previewTemplate.status}
+                </Badge>
+              </div>
+              
+              {previewTemplate.description && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Description</p>
+                  <p className="text-sm text-slate-600">{previewTemplate.description}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium mb-2">Template Content</p>
+                <div className="bg-white border rounded-lg p-4 max-h-[400px] overflow-y-auto">
+                  <pre className="whitespace-pre-wrap font-mono text-sm text-slate-700">
+                    {previewTemplate.content}
+                  </pre>
+                </div>
+              </div>
+
+              {previewTemplate.compliance_notes && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Compliance Notes</p>
+                  <p className="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    {previewTemplate.compliance_notes}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  handleEdit(previewTemplate);
+                  setPreviewTemplate(null);
+                }}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Template
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  navigator.clipboard.writeText(previewTemplate.content);
+                  toast.success('Template content copied to clipboard');
+                }}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Content
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
